@@ -69,7 +69,10 @@ module Twostroke
       when :OPEN_BRACKET; array
       else error! "Unexpected #{peek_token.type}"
       end
-      if [:PLUS, :MINUS, :ASTERISK, :SLASH, :GT, :LT, :GTE, :LTE].include? peek_token.type
+      if [:PLUS, :MINUS, :ASTERISK, :SLASH, :GT, :LT,
+          :GTE, :LTE, :DOUBLE_EQUALS, :TRIPLE_EQUALS,
+          :NOT_EQUALS, :NOT_DOUBLE_EQUALS, :AND, :OR,
+          :AMPERSAND, :PIPE, :TILDE, :CARET, :MOD   ].include? peek_token.type
         op = next_token.type
         AST::UnsortedBinop.new left: expr, op: op, right: expression
       else
