@@ -2,18 +2,18 @@ module Twostroke
   class Lexer
     TOKENS = [
 
-      [ :MULTI_COMMENT, /\/\*.*?\*\// ],
+      [ :MULTI_COMMENT, %r{/\*.*?\*/} ],
       [ :SINGLE_COMMENT, /\/\/.*?$/ ],
 
       [ :WHITESPACE, /\s+/ ],
       [ :NUMBER, /\d+(\.\d*(e[+-]?\d+)?)?/, ->m { m[0].to_f } ],
 
-      *%w(function var if for while do this return throw try catch).map do |w|
+      *%w(function var if else for while do this return throw try catch).map do |w|
         [ w.upcase.intern, /#{w}/ ]
       end,
       [ :BAREWORD, /[a-zA-Z_][a-zA-Z_0-9]*/, ->m { m[0] } ],
 
-      [ :STRING, /(["'])(([^\\]|(\\["'\\bfnrt]|\\[0-6]{1,3}|\\x[a-fA-F0-9]{2}|\\u[a-fA-F0-9]{4}|[^\1])+))\1/, ->m do
+      [ :STRING, /(["'])(([^\\]|(\\["'\\bfnrt]|\\[0-6]{1,3}|\\x[a-fA-F0-9]{2}|\\u[a-fA-F0-9]{4}|[^\1\\])+))\1/, ->m do
         m[2].gsub(/\\([bfnrt])/) { |m|
           case m[1]
           when "b"; "\b"
@@ -67,7 +67,7 @@ module Twostroke
       [ :GT, />/ ],
 
     ].map do |a|
-      [a[0], Regexp.new("\\A#{a[1].source}"), a[2]]
+      [a[0], Regexp.new("\\A#{a[1].source}", Regexp::MULTILINE), a[2]]
     end
   end
 end

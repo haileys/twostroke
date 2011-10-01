@@ -1,9 +1,8 @@
 module Twostroke::AST
-  class Function < Base
-    attr_accessor :name, :arguments, :statements
+  class Body < Base
+    attr_accessor :statements
     
     def initialize(*args)
-      @arguments = []
       @statements = []
       super *args
     end

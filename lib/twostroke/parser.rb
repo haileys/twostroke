@@ -7,7 +7,7 @@ module Twostroke
     
     def initialize(tokens)
       @i = -1
-      @tokens = tokens
+      @tokens = tokens + [Token.new(type: :SEMICOLON)]
       @statements = []
     end
     
@@ -19,10 +19,10 @@ module Twostroke
   
   private
     def error!(msg)
-      raise ParseError, "at line #{token.line}, col #{token.col}. #{msg}"
+      raise ParseError, "Syntax error at line #{token.line}, col #{token.col}. #{msg}"
     end
     def assert_type(tok, *types)
-      error! "Found #{tok.type}, expected #{types.join ", "}" unless types.include? tok.type
+      error! "Found #{tok.type}#{"<#{tok.val}>" if tok.val}, expected #{types.join ", "}" unless types.include? tok.type
     end
     def stack
       @stack
@@ -37,6 +37,9 @@ module Twostroke
       @i += 1
       token
     end
+    def try_peek_token
+      @i + 1 < @tokens.length ? peek_token : nil
+    end
     def peek_token
       @tokens[@i + 1] or raise ParseError, "unexpected end of input"
     end
@@ -47,9 +50,12 @@ module Twostroke
       st = case peek_token.type
       when :RETURN; send :return
       when :VAR; var
+      when :IF; send :if
+      when :OPEN_BRACE; body
+      when :SEMICOLON; nil
       else; expression
       end
-      assert_type next_token, :SEMICOLON
+      next_token if try_peek_token && peek_token.type == :SEMICOLON
       st
     end
     
@@ -59,9 +65,10 @@ module Twostroke
       when :STRING; string
       when :NUMBER; number
       when :BAREWORD; bareword
+      when :OPEN_BRACE; object_literal
       else error! "Unexpected #{peek_token.type}"
       end
-      if [:PLUS, :MINUS, :ASTERISK, :SLASH].include? peek_token.type
+      if [:PLUS, :MINUS, :ASTERISK, :SLASH, :GT, :LT, :GTE, :LTE].include? peek_token.type
         op = next_token.type
         AST::UnsortedBinop.new left: expr, op: op, right: expression
       else
@@ -69,21 +76,59 @@ module Twostroke
       end
     end
     
+    def body
+      assert_type next_token, :OPEN_BRACE
+      body = AST::Body.new
+      while peek_token.type != :CLOSE_BRACE
+        body.statements.push statement
+      end
+      assert_type next_token, :CLOSE_BRACE
+      body
+    end
+    
     def bareword
       assert_type next_token, :BAREWORD
       var = AST::Variable.new name: token.val
       if peek_token.type == :OPEN_PAREN
-        c = call
-        c.callee = var
-        c
+        call var
+      elsif peek_token.type == :MEMBER_ACCESS
+        member_access var
       else
         var
       end
     end
     
-    def call
+    def if
+      assert_type next_token, :IF
       assert_type next_token, :OPEN_PAREN
-      c = AST::Call.new
+      node = AST::If.new condition: expression
+      assert_type next_token, :CLOSE_PAREN
+      node.then = body
+      if try_peek_token && peek_token.type == :ELSE
+        assert_type next_token, :ELSE
+        node.else = body
+      end
+      node
+    end
+    
+    def member_access(obj)
+      assert_type next_token, :MEMBER_ACCESS
+      assert_type next_token, :BAREWORD
+      access = AST::MemberAccess.new object: obj, member: token.val
+      if peek_token.type == :MEMBER_ACCESS
+        member_access access
+      elsif peek_token.type == :OPEN_PAREN
+        call access
+      elsif peek_token.type == :EQUALS
+        assignment access
+      else
+        access
+      end
+    end
+    
+    def call(callee)
+      assert_type next_token, :OPEN_PAREN
+      c = AST::Call.new callee: callee
       while peek_token.type != :CLOSE_PAREN
         c.arguments.push expression
         if peek_token.type == :COMMA
@@ -109,6 +154,11 @@ module Twostroke
       AST::Assignment.new left: decl, right: expression
     end
     
+    def assignment(lval)
+      assert_type next_token, :EQUALS
+      AST::Assignment.new left: lval, right: expression
+    end
+    
     def number
       assert_type next_token, :NUMBER
       AST::Number.new number: token.val
@@ -118,6 +168,23 @@ module Twostroke
       assert_type next_token, :STRING
       AST::String.new string: token.val
     end
+    
+    def object_literal
+      assert_type next_token, :OPEN_BRACE
+      obj = AST::ObjectLiteral.new
+      while peek_token.type != :CLOSE_BRACE
+        assert_type next_token, :BAREWORD, :STRING, :NUMBER
+        key = token
+        assert_type next_token, :COLON
+        obj.items.push [key, expression]
+        if peek_token.type == :COMMA
+          next_token
+          redo
+        end
+      end
+      next_token
+      obj
+    end      
     
     def function
       assert_type next_token, :FUNCTION
