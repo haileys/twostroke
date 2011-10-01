@@ -39,7 +39,7 @@ module Twostroke
           @tokens.push Token.new(:type => token[0], :val => token[2] ? token[2].call(m) : nil, :line => @line, :col => @col) unless [:WHITESPACE, :MULTI_COMMENT, :SINGLE_COMMENT].include? token[0]
           @str = m.post_match
           newlines = m[0].count "\n"
-          @col = 1 if newlines.zero?
+          @col = 1 if !newlines.zero?
           @line += newlines
           @col += m[0].length - (m[0].rindex("\n") || 0)
           return

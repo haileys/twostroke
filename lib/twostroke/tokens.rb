@@ -6,8 +6,7 @@ module Twostroke
       [ :SINGLE_COMMENT, /\/\/.*?$/ ],
 
       [ :WHITESPACE, /\s+/ ],
-      [ :INTEGER, /\d+/, ->m { m[0].to_i } ],
-      [ :FLOAT, /\d*\.\d+/, ->m{ m[0].to_f }],
+      [ :NUMBER, /\d+(\.\d*(e[+-]?\d+)?)?/, ->m { m[0].to_f } ],
 
       *%w(function var if for while do this return throw try catch).map do |w|
         [ w.upcase.intern, /#{w}/ ]

@@ -3,6 +3,8 @@ module Twostroke
   end
   
   class Parser
+    attr_reader :statements
+    
     def initialize(tokens)
       @i = -1
       @tokens = tokens
@@ -10,14 +12,14 @@ module Twostroke
     end
     
     def parse
-      while @i < tokens.length
+      while @i + 1 < @tokens.length
         statements.push statement
       end
     end
   
   private
     def error!(msg)
-      raise ParseError, "at line #{peek.line}, col #{peek.col}. #{msg}"
+      raise ParseError, "at line #{token.line}, col #{token.col}. #{msg}"
     end
     def assert_type(tok, *types)
       error! "Found #{tok.type}, expected #{types.join ", "}" unless types.include? tok.type
@@ -39,6 +41,50 @@ module Twostroke
       @tokens[@i + 1]
     end
   
+    ####################
+    
+    def statement
+      st = case peek_token.type
+      when :RETURN; send :return
+      when :VAR; var
+      else; expression
+      end
+      assert_type next_token, :SEMICOLON
+      st
+    end
+    
+    def expression
+      case peek_token.type
+      when :FUNCTION; function
+      when :STRING; string
+      when :NUMBER; number
+      end
+    end
+    
+    def return
+      assert_type next_token, :RETURN
+      AST::Return.new expression: expression
+    end
+    
+    def var
+      assert_type next_token, :VAR
+      assert_type next_token, :BAREWORD
+      decl = AST::Declaration.new(name: token.val)
+      return decl if peek_token.type == :SEMICOLON
+      assert_type next_token, :EQUALS
+      AST::Assignment.new left: decl, right: expression
+    end
+    
+    def number
+      assert_type next_token, :NUMBER
+      AST::Number.new number: token.val
+    end
+    
+    def string
+      assert_type next_token, :STRING
+      AST::String.new string: token.val
+    end
+    
     def function
       assert_type next_token, :FUNCTION
       fn = AST::Function.new arguments: [], statements: []
