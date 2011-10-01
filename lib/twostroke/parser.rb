@@ -66,6 +66,7 @@ module Twostroke
       when :NUMBER; number
       when :BAREWORD; bareword
       when :OPEN_BRACE; object_literal
+      when :OPEN_BRACKET; array
       else error! "Unexpected #{peek_token.type}"
       end
       if [:PLUS, :MINUS, :ASTERISK, :SLASH, :GT, :LT, :GTE, :LTE].include? peek_token.type
@@ -184,7 +185,21 @@ module Twostroke
       end
       next_token
       obj
-    end      
+    end
+    
+    def array
+      assert_type next_token, :OPEN_BRACKET
+      ary = AST::Array.new
+      while peek_token.type != :CLOSE_BRACKET
+        ary.items.push expression
+        if peek_token.type == :COMMA
+          next_token
+          redo
+        end
+      end
+      next_token
+      ary
+    end
     
     def function
       assert_type next_token, :FUNCTION
