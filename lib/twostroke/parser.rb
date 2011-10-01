@@ -72,7 +72,7 @@ module Twostroke
       if [:PLUS, :MINUS, :ASTERISK, :SLASH, :GT, :LT,
           :GTE, :LTE, :DOUBLE_EQUALS, :TRIPLE_EQUALS,
           :NOT_EQUALS, :NOT_DOUBLE_EQUALS, :AND, :OR,
-          :AMPERSAND, :PIPE, :TILDE, :CARET, :MOD   ].include? peek_token.type
+          :AMPERSAND, :PIPE, :CARET, :MOD].include? peek_token.type
         op = next_token.type
         AST::UnsortedBinop.new left: expr, op: op, right: expression
       else
