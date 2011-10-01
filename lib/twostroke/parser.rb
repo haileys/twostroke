@@ -31,14 +31,14 @@ module Twostroke
       @stack.last
     end
     def token
-      @tokens[@i]
+      @tokens[@i] or raise ParseError, "unexpected end of input"
     end
     def next_token
       @i += 1
       token
     end
     def peek_token
-      @tokens[@i + 1]
+      @tokens[@i + 1] or raise ParseError, "unexpected end of input"
     end
   
     ####################
@@ -54,11 +54,45 @@ module Twostroke
     end
     
     def expression
-      case peek_token.type
+      expr = case peek_token.type
       when :FUNCTION; function
       when :STRING; string
       when :NUMBER; number
+      when :BAREWORD; bareword
+      else error! "Unexpected #{peek_token.type}"
       end
+      if [:PLUS, :MINUS, :ASTERISK, :SLASH].include? peek_token.type
+        op = next_token.type
+        AST::UnsortedBinop.new left: expr, op: op, right: expression
+      else
+        expr
+      end
+    end
+    
+    def bareword
+      assert_type next_token, :BAREWORD
+      var = AST::Variable.new name: token.val
+      if peek_token.type == :OPEN_PAREN
+        c = call
+        c.callee = var
+        c
+      else
+        var
+      end
+    end
+    
+    def call
+      assert_type next_token, :OPEN_PAREN
+      c = AST::Call.new
+      while peek_token.type != :CLOSE_PAREN
+        c.arguments.push expression
+        if peek_token.type == :COMMA
+          next_token
+          redo
+        end
+      end
+      next_token
+      c
     end
     
     def return
