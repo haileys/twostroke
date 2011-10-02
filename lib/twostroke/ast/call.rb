@@ -8,7 +8,7 @@ module Twostroke::AST
     end
     
     def collapse
-      new callee: callee.collapse, arguments: arguments.map(&:collapse)
+      self.class.new callee: callee.collapse, arguments: arguments.map(&:collapse)
     end
   end
 end

@@ -8,7 +8,7 @@ module Twostroke::AST
     end
     
     def collapse
-      new statements: statements.reject(&:nil?).map(&:collapse)
+      self.class.new statements: statements.reject(&:nil?).map(&:collapse)
     end
   end
 end

@@ -13,7 +13,8 @@ module Twostroke
     
     def parse
       while @i + 1 < @tokens.length
-        statements.push statement
+        st = statement
+        statements.push st.collapse if st
       end
     end
   
@@ -64,7 +65,8 @@ module Twostroke
       if [:PLUS, :MINUS, :ASTERISK, :SLASH, :GT, :LT,
           :GTE, :LTE, :DOUBLE_EQUALS, :TRIPLE_EQUALS,
           :NOT_EQUALS, :NOT_DOUBLE_EQUALS, :AND, :OR,
-          :AMPERSAND, :PIPE, :CARET, :MOD].include? peek_token.type
+          :AMPERSAND, :PIPE, :CARET, :MOD, :LEFT_SHIFT,
+          :RIGHT_SHIFT, :RIGHT_TRIPLE_SHIFT ].include? peek_token.type
         binop expr
       else
         expr

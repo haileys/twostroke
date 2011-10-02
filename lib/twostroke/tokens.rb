@@ -8,7 +8,7 @@ module Twostroke
       [ :WHITESPACE, /\s+/ ],
       [ :NUMBER, /\d+(\.\d*(e[+-]?\d+)?)?/, ->m { m[0].to_f } ],
 
-      *%w(function var if else for while do this return throw try catch).map do |w|
+      *%w(function var if instanceof in else for while do this return throw try catch).map do |w|
         [ w.upcase.intern, /#{w}/ ]
       end,
       [ :BAREWORD, /[a-zA-Z_][a-zA-Z_0-9]*/, ->m { m[0] } ],
@@ -61,6 +61,9 @@ module Twostroke
       [ :TILDE, /~/ ],
       [ :CARET, /\^/ ],
 
+      [ :LEFT_SHIFT, /<</ ],
+      [ :RIGHT_TRIPLE_SHIFT, />>>/ ],
+      [ :RIGHT_SHIFT, />>/ ],
       [ :LTE, /<=/ ],
       [ :GTE, />=/ ],
       [ :LT, /</ ],

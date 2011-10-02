@@ -3,7 +3,7 @@ module Twostroke::AST
     attr_accessor :condition, :then, :else
     
     def collapse
-      new condition: condition.collapse, then: @then.reject(&:nil?).each(:collapse), else: @else.reject(&:nil?).each(:collapse)
+      self.class.new condition: condition.collapse, then: @then.reject(&:nil?).each(:collapse), else: @else.reject(&:nil?).each(:collapse)
     end
   end
 end

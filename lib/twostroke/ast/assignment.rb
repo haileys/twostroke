@@ -3,7 +3,7 @@ module Twostroke::AST
     attr_accessor :left, :right
     
     def collapse
-      new left: left.collapse, right: right.collapse
+      self.class.new left: left.collapse, right: right.collapse
     end
   end
 end

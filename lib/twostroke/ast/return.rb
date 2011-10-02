@@ -3,7 +3,7 @@ module Twostroke::AST
     attr_accessor :expression
     
     def collapse
-      new expression: expression.collapse
+      self.class.new expression: expression.collapse
     end
   end
 end

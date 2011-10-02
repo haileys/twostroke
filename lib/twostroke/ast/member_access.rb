@@ -3,7 +3,7 @@ module Twostroke::AST
     attr_accessor :object, :member
     
     def collapse
-      new object: object.collapse, member: member
+      self.class.new object: object.collapse, member: member
     end
   end
 end

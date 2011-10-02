@@ -8,7 +8,7 @@ module Twostroke::AST
     end
     
     def collapse
-      new items: items.map do |*item|
+      self.class.new items: items.map do |*item|
         k, v = item
         v.collapse
       end
