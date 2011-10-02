@@ -240,8 +240,8 @@ module Twostroke
       AST::Not.new value: expression_after_unary
     end
     
-    def binary_not
-      assert_type next_token, :NOT
+    def tilde
+      assert_type next_token, :TILDE
       AST::BinaryNot.new value: expression_after_unary
     end
   end
