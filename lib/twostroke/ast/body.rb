@@ -6,5 +6,9 @@ module Twostroke::AST
       @statements = []
       super *args
     end
+    
+    def collapse
+      new statements: statements.reject(&:nil?).map(&:collapse)
+    end
   end
 end

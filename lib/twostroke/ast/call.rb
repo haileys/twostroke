@@ -6,5 +6,9 @@ module Twostroke::AST
       @arguments = []
       super *args
     end
+    
+    def collapse
+      new callee: callee.collapse, arguments: arguments.map(&:collapse)
+    end
   end
 end

@@ -6,5 +6,9 @@ module Twostroke::AST
       @items = []
       super *args
     end
+    
+    def collapse
+      new items: items.map(&:collapse)
+    end
   end
 end
