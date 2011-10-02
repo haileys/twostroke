@@ -4,10 +4,30 @@ module Twostroke::AST
     
     def self.operator_class
       @@classes ||= {
-        :PLUS     => Addition,
-        :MINUS    => Subtraction,
-        :ASTERISK => Multiplication,
-        :SLASH    => Division,
+        :ASTERISK           => Multiplication,
+        :SLASH              => Division,
+        :MOD                => Modulus,
+        :PLUS               => Addition,
+        :MINUS              => Subtraction,
+        :LEFT_SHIFT         => LeftShift,
+        :RIGHT_SHIFT        => RightArithmeticShift,
+        :RIGHT_TRIPLE_SHIFT => RightLogicalShift,
+        :LT                 => LessThan,
+        :LTE                => LessThanEqual,
+        :GT                 => GreaterThan,
+        :GTE                => GreaterThanEqual,
+        :IN                 => In,
+        :INSTANCE_OF        => InstanceOf,
+        :DOUBLE_EQUALS      => Equality,
+        :NOT_EQUALS         => Inequality,
+        :TRIPLE_EQUALS      => StrictEquality,
+        :NOT_DOUBLE_EQUALS  => StrictInequality,
+        :AMPERSAND          => BitwiseAnd,
+        :CARET              => BitwiseXor,
+        :PIPE               => BitwiseOr,
+        :AND                => And,
+        :OR                 => Or
+        
       }
     end
     
@@ -63,6 +83,7 @@ module Twostroke::AST
           if token.is_a? Symbol
             r = stack.pop
             l = stack.pop
+            puts token
             stack.push UnsortedBinop.operator_class[token].new(left: l, right: r)
           else
             stack.push token

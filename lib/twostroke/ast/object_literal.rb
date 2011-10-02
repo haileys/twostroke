@@ -8,10 +8,8 @@ module Twostroke::AST
     end
     
     def collapse
-      self.class.new items: items.map do |*item|
-        k, v = item
-        v.collapse
-      end
+      collapsed = items.map { |k,v| [k, v.collapse] }
+      self.class.new items: collapsed
     end
   end
 end

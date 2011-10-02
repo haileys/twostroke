@@ -9,7 +9,7 @@ module Twostroke::AST
     end
     
     def collapse
-      self.class.new name: name, arguments: arguments, statements: statements.reject(&:nil?).map(:collapse)
+      self.class.new name: name, arguments: arguments, statements: statements.reject(&:nil?).map(&:collapse)
     end
   end
 end
