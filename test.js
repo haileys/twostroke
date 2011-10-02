@@ -8,4 +8,6 @@ var handy_stuff = {
 	}
 };
 
-var array = [1, 2, function() { return 3; }, "four"];
+if(!false == true) {
+	var array = [1, 2, function() { return 3; }, "four"];	
+}

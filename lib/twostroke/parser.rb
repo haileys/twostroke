@@ -60,6 +60,18 @@ module Twostroke
     end
     
     def expression
+      expr = expression_after_unary
+      if [:PLUS, :MINUS, :ASTERISK, :SLASH, :GT, :LT,
+          :GTE, :LTE, :DOUBLE_EQUALS, :TRIPLE_EQUALS,
+          :NOT_EQUALS, :NOT_DOUBLE_EQUALS, :AND, :OR,
+          :AMPERSAND, :PIPE, :CARET, :MOD].include? peek_token.type
+        binop expr
+      else
+        expr
+      end
+    end
+    
+    def expression_after_unary
       expr = case peek_token.type
       when :FUNCTION; function
       when :STRING; string
@@ -67,17 +79,22 @@ module Twostroke
       when :BAREWORD; bareword
       when :OPEN_BRACE; object_literal
       when :OPEN_BRACKET; array
+      when :NOT; send :not
+      when :TILDE; tilde
       else error! "Unexpected #{peek_token.type}"
       end
-      if [:PLUS, :MINUS, :ASTERISK, :SLASH, :GT, :LT,
-          :GTE, :LTE, :DOUBLE_EQUALS, :TRIPLE_EQUALS,
-          :NOT_EQUALS, :NOT_DOUBLE_EQUALS, :AND, :OR,
-          :AMPERSAND, :PIPE, :CARET, :MOD].include? peek_token.type
-        op = next_token.type
-        AST::UnsortedBinop.new left: expr, op: op, right: expression
+      if peek_token.type == :OPEN_PAREN
+        call expr
+      elsif peek_token.type == :MEMBER_ACCESS
+        member_access expr
       else
         expr
       end
+    end
+    
+    def binop(left)
+      next_token
+      AST::UnsortedBinop.new left: left, op: token.type, right: expression
     end
     
     def body
@@ -92,14 +109,7 @@ module Twostroke
     
     def bareword
       assert_type next_token, :BAREWORD
-      var = AST::Variable.new name: token.val
-      if peek_token.type == :OPEN_PAREN
-        call var
-      elsif peek_token.type == :MEMBER_ACCESS
-        member_access var
-      else
-        var
-      end
+      AST::Variable.new name: token.val
     end
     
     def if
@@ -223,6 +233,16 @@ module Twostroke
       end
       assert_type next_token, :CLOSE_BRACE
       fn
+    end
+    
+    def not
+      assert_type next_token, :NOT
+      AST::Not.new value: expression_after_unary
+    end
+    
+    def binary_not
+      assert_type next_token, :NOT
+      AST::BinaryNot.new value: expression_after_unary
     end
   end
 end
