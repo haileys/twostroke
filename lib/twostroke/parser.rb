@@ -357,7 +357,7 @@ module Twostroke
     end
     
     def post_decrement(obj)
-      assert_type next_token, :INCREMENT
+      assert_type next_token, :DECREMENT
       AST::PostDecrement.new value: obj
     end
     
@@ -367,7 +367,7 @@ module Twostroke
     end
     
     def pre_decrement(obj)
-      assert_type next_token, :INCREMENT
+      assert_type next_token, :DECREMENT
       AST::PreDecrement.new value: obj
     end
     
