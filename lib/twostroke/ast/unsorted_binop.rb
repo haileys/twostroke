@@ -83,7 +83,6 @@ module Twostroke::AST
           if token.is_a? Symbol
             r = stack.pop
             l = stack.pop
-            puts token
             stack.push UnsortedBinop.operator_class[token].new(left: l, right: r)
           else
             stack.push token
