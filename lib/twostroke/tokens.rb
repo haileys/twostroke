@@ -8,7 +8,7 @@ module Twostroke
       [ :WHITESPACE, /\s+/ ],
       [ :NUMBER, /\d+(\.\d*(e[+-]?\d+)?)?/, ->m { m[0].to_f } ],
 
-      *%w(function var if instanceof in else for while do this return throw typeof try catch).map do |w|
+      *%w(function var if instanceof in else for while do this return throw typeof try catch finally void).map do |w|
         [ w.upcase.intern, /#{w}(?=[^a-zA-Z_0-9])/ ]
       end,
       [ :BAREWORD, /[a-zA-Z_][a-zA-Z_0-9]*/, ->m { m[0] } ],

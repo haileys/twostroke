@@ -57,6 +57,7 @@ module Twostroke
       when :IF;         consume_semicolon = false; send :if
       when :FOR;        consume_semicolon = false; send :for
       when :WHILE;      consume_semicolon = false; send :while
+      when :TRY;        consume_semicolon = false; try
       when :OPEN_BRACE; consume_semicolon = false; body
       when :SEMICOLON;  nil
       else; expression
@@ -113,6 +114,7 @@ module Twostroke
       when :TILDE; tilde
       when :INCREMENT; pre_increment
       when :DECREMENT; pre_decrement
+      when :VOID; void
       when :PLUS; unary_plus
       when :MINUS; unary_minus
       when :TYPEOF; typeof
@@ -216,6 +218,39 @@ module Twostroke
       assert_type next_token, :CLOSE_PAREN
       node.body = statement
       node
+    end
+    
+    def try
+      try = AST::Try.new try_statements: []
+      assert_type next_token, :TRY
+      assert_type next_token, :OPEN_BRACE
+      while peek_token.type != :CLOSE_BRACE
+        try.try_statements << statement
+      end
+      assert_type next_token, :CLOSE_BRACE
+      assert_type next_token, :CATCH, :FINALLY
+      if token.type == :CATCH
+        try.catch_statements = []
+        assert_type next_token, :OPEN_PAREN
+        assert_type next_token, :BAREWORD
+        try.catch_variable = token.val
+        assert_type next_token, :CLOSE_PAREN
+        assert_type next_token, :OPEN_BRACE
+        while peek_token.type != :CLOSE_BRACE
+          try.catch_statements << statement
+        end
+        assert_type next_token, :CLOSE_BRACE
+      end
+      if try_peek_token && peek_token.type == :FINALLY
+        try.finally_statements = []
+        assert_type next_token, :FINALLY
+        assert_type next_token, :OPEN_BRACE
+        while peek_token.type != :CLOSE_BRACE
+          try.finally_statements << statement
+        end
+        assert_type next_token, :CLOSE_BRACE
+      end
+      try
     end
     
     def member_access(obj)
@@ -373,6 +408,11 @@ module Twostroke
     def tilde
       assert_type next_token, :TILDE
       AST::BinaryNot.new value: expression_after_unary
+    end
+    
+    def void
+      assert_type next_token, :VOID
+      AST::Void.new value: expression_after_unary
     end
     
     def unary_plus
