@@ -56,6 +56,7 @@ module Twostroke
       when :VAR;        var
       when :IF;         consume_semicolon = false; send :if
       when :FOR;        consume_semicolon = false; send :for
+      when :WHILE;      consume_semicolon = false; send :while
       when :OPEN_BRACE; consume_semicolon = false; body
       when :SEMICOLON;  nil
       else; expression
@@ -69,12 +70,24 @@ module Twostroke
     
     def expression(no_comma = false, no_in = false)
       expr = expression_after_unary no_comma
-      if [:PLUS, :MINUS, :ASTERISK, :SLASH, :GT, :LT,
-          :GTE, :LTE, :DOUBLE_EQUALS, :TRIPLE_EQUALS,
-          :NOT_EQUALS, :NOT_DOUBLE_EQUALS, :AND, :OR,
-          :AMPERSAND, :PIPE, :CARET, :MOD, :LEFT_SHIFT,
-          :RIGHT_SHIFT, :RIGHT_TRIPLE_SHIFT, :INSTANCEOF,
-          *(no_in ? [] : [:IN]) ].include? peek_token.type
+      if [:PLUS, :MINUS, :ASTERISK, :SLASH, :MOD,
+          :LEFT_SHIFT, :RIGHT_SHIFT, :RIGHT_TRIPLE_SHIFT,
+          :AMPERSAND, :CARET, :PIPE ].include? peek_token.type
+        # these operators can be combined with assignment
+        if look_ahead(2).type == :EQUALS
+          # combination assignment
+          op = next_token.type
+          assert_type next_token, :EQUALS
+          AST::UnsortedBinop.operator_class[op].new left: expr, assign_result_left: true, right: expression
+        else
+          binop expr
+        end
+      elsif [ :GT, :LT, :GTE, :LTE, :DOUBLE_EQUALS,
+              :TRIPLE_EQUALS, :NOT_EQUALS, :NOT_DOUBLE_EQUALS,
+              :AND, :OR, :LEFT_SHIFT, :RIGHT_SHIFT,
+              :RIGHT_TRIPLE_SHIFT, :INSTANCEOF,
+              *(no_in ? [] : [:IN]) ].include? peek_token.type
+        # these can't
         binop expr
       elsif peek_token.type == :EQUALS
         next_token
@@ -91,6 +104,7 @@ module Twostroke
       when :FUNCTION; function
       when :STRING; string
       when :NUMBER; number
+      when :THIS; this
       when :BAREWORD; bareword
       when :OPEN_PAREN; parens
       when :OPEN_BRACE; object_literal
@@ -137,6 +151,11 @@ module Twostroke
       end
       assert_type next_token, :CLOSE_BRACE
       body
+    end
+    
+    def this
+      assert_type next_token, :THIS
+      AST::This.new
     end
     
     def bareword
@@ -188,6 +207,15 @@ module Twostroke
         assert_type next_token, :CLOSE_PAREN
         AST::ForLoop.new initializer: initializer, condition: condition, increment: increment, body: statement
       end
+    end
+    
+    def while
+      assert_type next_token, :WHILE
+      assert_type next_token, :OPEN_PAREN
+      node = AST::While.new condition: expression
+      assert_type next_token, :CLOSE_PAREN
+      node.body = statement
+      node
     end
     
     def member_access(obj)
