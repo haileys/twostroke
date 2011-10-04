@@ -8,12 +8,12 @@ module Twostroke
       [ :WHITESPACE, /\s+/ ],
       [ :NUMBER, /\d+(\.\d*(e[+-]?\d+)?)?/, ->m { m[0].to_f } ],
 
-      *%w(function var if instanceof in else for while do this return throw try catch).map do |w|
+      *%w(function var if instanceof in else for while do this return throw typeof try catch).map do |w|
         [ w.upcase.intern, /#{w}/ ]
       end,
       [ :BAREWORD, /[a-zA-Z_][a-zA-Z_0-9]*/, ->m { m[0] } ],
 
-      [ :STRING, /(["'])(([^\\]|(\\["'\\bfnrt]|\\[0-6]{1,3}|\\x[a-fA-F0-9]{2}|\\u[a-fA-F0-9]{4}|[^\1\\])+))\1/, ->m do
+      [ :STRING, /(["'])((\\.|[^\1])*?[^\1\\]?)\1/, ->m do
         m[2].gsub(/\\([bfnrt])/) { |m|
           case m[1]
           when "b"; "\b"
@@ -38,6 +38,8 @@ module Twostroke
 
       [ :MEMBER_ACCESS, /\./ ],
 
+      [ :INCREMENT, /\+\+/ ],
+      [ :DECREMENT, /--/ ],
       [ :PLUS, /\+/ ],
       [ :MINUS, /-/ ],
       [ :ASTERISK, /\*/ ],
@@ -55,8 +57,8 @@ module Twostroke
       [ :TRIPLE_EQUALS, /===/ ],
       [ :DOUBLE_EQUALS, /==/ ],
       [ :EQUALS, /=/ ],
-      [ :NOT_DOUBLE_EQUAL, /!==/ ],
-      [ :NOT_EQUAL, /!=/ ],
+      [ :NOT_DOUBLE_EQUALS, /!==/ ],
+      [ :NOT_EQUALS, /!=/ ],
       [ :NOT, /!/ ],
       [ :TILDE, /~/ ],
       [ :CARET, /\^/ ],
