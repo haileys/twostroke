@@ -59,6 +59,7 @@ module Twostroke
       when :WHILE;      consume_semicolon = false; send :while
       when :TRY;        consume_semicolon = false; try
       when :OPEN_BRACE; consume_semicolon = false; body
+      when :FUNCTION;   consume_semicolon = false; function
       when :SEMICOLON;  nil
       else; expression
       end
@@ -69,7 +70,7 @@ module Twostroke
       st
     end
     
-    def expression(no_comma = false, no_in = false)
+    def expression(no_comma = false, no_in = false, no_ternary = false)
       expr = expression_after_unary no_comma
       if [:PLUS, :MINUS, :ASTERISK, :SLASH, :MOD,
           :LEFT_SHIFT, :RIGHT_SHIFT, :RIGHT_TRIPLE_SHIFT,
@@ -88,12 +89,18 @@ module Twostroke
               :AND, :OR, :LEFT_SHIFT, :RIGHT_SHIFT,
               :RIGHT_TRIPLE_SHIFT, :INSTANCEOF,
               *(no_in ? [] : [:IN]) ].include? peek_token.type
-        # these can't
-        binop expr
+        expr = binop expr
+        # this has a higher precedence than the ternary
+        # so we'll hackily check for a ternary after this
+        if try_peek_token && peek_token.type == :QUESTION
+          ternary(expr)
+        else
+          expr
+        end
       elsif peek_token.type == :EQUALS
         next_token
         AST::Assignment.new left: expr, right: expression(no_comma)
-      elsif peek_token.type == :QUESTION
+      elsif !no_ternary && peek_token.type == :QUESTION
         ternary(expr)
       else
         expr
@@ -106,6 +113,7 @@ module Twostroke
       when :STRING; string
       when :NUMBER; number
       when :THIS; this
+      when :NULL; null
       when :BAREWORD; bareword
       when :OPEN_PAREN; parens
       when :OPEN_BRACE; object_literal
@@ -142,7 +150,7 @@ module Twostroke
     
     def binop(left)
       next_token
-      AST::UnsortedBinop.new left: left, op: token.type, right: expression
+      AST::UnsortedBinop.new left: left, op: token.type, right: expression(false, false, true)
     end
     
     def body
@@ -158,6 +166,11 @@ module Twostroke
     def this
       assert_type next_token, :THIS
       AST::This.new
+    end
+    
+    def null
+      assert_type next_token, :NULL
+      AST::Null.new
     end
     
     def bareword
@@ -191,12 +204,25 @@ module Twostroke
       assert_type next_token, :FOR
       assert_type next_token, :OPEN_PAREN
       # decide if this is a for(... in ...) or a for(;;) loop
+      for_in = false
       saved_i = @i
-      stmt = statement(false)
-      assert_type next_token, :SEMICOLON, :CLOSE_PAREN
-      if token.type == :CLOSE_PAREN
+      if @i + 3 < @tokens.length && look_ahead(1).type == :VAR &&
+        look_ahead(2).type == :BAREWORD && look_ahead(3).type == :IN
+        for_in = true
+      else
+        stmt = statement(false)
+        assert_type next_token, :SEMICOLON, :CLOSE_PAREN
+        for_in = (token.type == :CLOSE_PAREN)
+      end
+      if for_in
         @i = saved_i # no luck parsing for(;;), reparse as for(..in..)
-        lval = expression(false, true)
+        if peek_token.type == :VAR
+          next_token
+          assert_type next_token, :BAREWORD
+          lval = AST::Declaration.new name: token.val
+        else
+          lval = expression(false, true)
+        end
         assert_type next_token, :IN
         obj = expression
         assert_type next_token, :CLOSE_PAREN
