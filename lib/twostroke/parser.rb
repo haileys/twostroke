@@ -67,13 +67,14 @@ module Twostroke
       st
     end
     
-    def expression(no_comma = false)
+    def expression(no_comma = false, no_in = false)
       expr = expression_after_unary no_comma
       if [:PLUS, :MINUS, :ASTERISK, :SLASH, :GT, :LT,
           :GTE, :LTE, :DOUBLE_EQUALS, :TRIPLE_EQUALS,
           :NOT_EQUALS, :NOT_DOUBLE_EQUALS, :AND, :OR,
           :AMPERSAND, :PIPE, :CARET, :MOD, :LEFT_SHIFT,
-          :RIGHT_SHIFT, :RIGHT_TRIPLE_SHIFT,  ].include? peek_token.type
+          :RIGHT_SHIFT, :RIGHT_TRIPLE_SHIFT, :INSTANCEOF,
+          *(no_in ? [] : [:IN]) ].include? peek_token.type
         binop expr
       elsif peek_token.type == :EQUALS
         next_token
@@ -169,11 +170,16 @@ module Twostroke
       assert_type next_token, :FOR
       assert_type next_token, :OPEN_PAREN
       # decide if this is a for(... in ...) or a for(;;) loop
+      saved_i = @i
       stmt = statement(false)
       assert_type next_token, :SEMICOLON, :CLOSE_PAREN
       if token.type == :CLOSE_PAREN
-        # this is a for(... in ...) loop. we'll figure out how to deal with that in a sec
-        error! "for..in loops not implemented yet!" # @TODO
+        @i = saved_i # no luck parsing for(;;), reparse as for(..in..)
+        lval = expression(false, true)
+        assert_type next_token, :IN
+        obj = expression
+        assert_type next_token, :CLOSE_PAREN
+        AST::ForIn.new lval: lval, object: obj, body: statement
       else
         initializer = stmt
         condition = statement(false)
