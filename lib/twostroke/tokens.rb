@@ -11,7 +11,7 @@ module Twostroke
       *%w(function var if instanceof in else for while do this return throw typeof try catch finally void null new).map do |w|
         [ w.upcase.intern, /#{w}(?=[^a-zA-Z_0-9])/ ]
       end,
-      [ :BAREWORD, /[a-zA-Z_][a-zA-Z_0-9]*/, ->m { m[0] } ],
+      [ :BAREWORD, /[a-zA-Z_\$][\$a-zA-Z_0-9]*/, ->m { m[0] } ],
 
       [ :STRING, /(["'])((\\.|[^\1])*?[^\1\\]?)\1/, ->m do
         m[2].gsub(/\\([bfnrt])/) { |m|
