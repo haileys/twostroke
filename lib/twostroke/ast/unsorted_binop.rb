@@ -27,7 +27,6 @@ module Twostroke::AST
         :PIPE               => BitwiseOr,
         :AND                => And,
         :OR                 => Or
-        
       }
     end
     

@@ -72,7 +72,7 @@ module Twostroke
     
     def expression(no_comma = false, no_in = false, no_ternary = false)
       expr = expression_after_unary no_comma
-      if [:PLUS, :MINUS, :ASTERISK, :SLASH, :MOD,
+      new_expr = if [:PLUS, :MINUS, :ASTERISK, :SLASH, :MOD,
           :LEFT_SHIFT, :RIGHT_SHIFT, :RIGHT_TRIPLE_SHIFT,
           :AMPERSAND, :CARET, :PIPE ].include? peek_token.type
         # these operators can be combined with assignment
@@ -99,21 +99,29 @@ module Twostroke
         end
       elsif peek_token.type == :EQUALS
         next_token
-        AST::Assignment.new left: expr, right: expression(no_comma)
+        AST::Assignment.new left: expr, right: expression(true)
       elsif !no_ternary && peek_token.type == :QUESTION
         ternary(expr)
       else
         expr
       end
+      
+      if !no_comma && peek_token.type == :COMMA
+        next_token
+        AST::MultiExpression.new left: new_expr, right: expression
+      else
+        new_expr
+      end
     end
     
-    def expression_after_unary(no_comma = false)
+    def expression_after_unary(no_comma = false, no_call = false)
       expr = case peek_token.type
       when :FUNCTION; function
       when :STRING; string
       when :NUMBER; number
       when :THIS; this
       when :NULL; null
+      when :NEW; send :new
       when :BAREWORD; bareword
       when :OPEN_PAREN; parens
       when :OPEN_BRACE; object_literal
@@ -129,7 +137,7 @@ module Twostroke
       else error! "Unexpected #{peek_token.type}"
       end
       loop do
-        if peek_token.type == :OPEN_PAREN
+        if !no_call && peek_token.type == :OPEN_PAREN
           expr = call expr
         elsif peek_token.type == :OPEN_BRACKET
           expr = index expr
@@ -292,6 +300,17 @@ module Twostroke
       else
         access
       end
+    end
+    
+    def new
+      assert_type next_token, :NEW
+      node = AST::New.new
+      node.callee = expression_after_unary(false, true)
+      if try_peek_token && peek_token.type == :OPEN_PAREN
+        call = call(node.callee)
+        node.arguments = call.arguments
+      end
+      node
     end
     
     def call(callee)
