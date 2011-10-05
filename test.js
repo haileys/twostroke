@@ -1,33 +1,46 @@
 //*
-var cubes, list, math, num, number, opposite, race, square;
-var __slice = Array.prototype.slice;
-number = 42;
-opposite = true;
-if (opposite) number = -42;
-square = function(x) {
-  return x * x;
+var Animal, Horse, Snake, sam, tom;
+var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
+  for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
+  function ctor() { this.constructor = child; }
+  ctor.prototype = parent.prototype;
+  child.prototype = new ctor;
+  child.__super__ = parent.prototype;
+  return child;
 };
-list = [1, 2, 3, 4, 5];
-math = {
-  root: Math.sqrt,
-  square: square,
-  cube: function(x) {
-    return x * square(x);
+Animal = (function() {
+  function Animal(name) {
+    this.name = name;
   }
-};
-race = function() {
-  var runners, winner;
-  winner = arguments[0], runners = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-  return print(winner, runners);
-};
-if (typeof elvis !== "undefined" && elvis !== null) alert("I knew it!");
-cubes = (function() {
-  var _i, _len, _results;
-  _results = [];
-  for (_i = 0, _len = list.length; _i < _len; _i++) {
-    num = list[_i];
-    _results.push(math.cube(num));
-  }
-  return _results;
+  Animal.prototype.move = function(meters) {
+    return alert(this.name + (" moved " + meters + "m."));
+  };
+  return Animal;
 })();
-/**/
+Snake = (function() {
+  __extends(Snake, Animal);
+  function Snake() {
+    Snake.__super__.constructor.apply(this, arguments);
+  }
+  Snake.prototype.move = function() {
+    alert("Slithering...");
+    return Snake.__super__.move.call(this, 5);
+  };
+  return Snake;
+})();
+Horse = (function() {
+  __extends(Horse, Animal);
+  function Horse() {
+    Horse.__super__.constructor.apply(this, arguments);
+  }
+  Horse.prototype.move = function() {
+    alert("Galloping...");
+    return Horse.__super__.move.call(this, 45);
+  };
+  return Horse;
+})();
+sam = new Snake("Sammy the Python");
+tom = new Horse("Tommy the Palomino");
+sam.move();
+tom.move();
+//*/
