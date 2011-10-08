@@ -4,10 +4,7 @@ require "pp"
 require "coderay"
 #require "pry"
 
-lexer = Twostroke::Lexer.new(ARGF.read)
-lexer.lex
-
-parser = Twostroke::Parser.new lexer.tokens
+parser = Twostroke::Parser.new Twostroke::Lexer.new(ARGF.read)
 parser.parse
 
 if Object.method_defined? :pry

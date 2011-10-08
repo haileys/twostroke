@@ -5,14 +5,14 @@ module Twostroke
   class Parser
     attr_reader :statements
     
-    def initialize(tokens)
+    def initialize(lexer)
       @i = -1
-      @tokens = tokens + [Token.new(type: :SEMICOLON)]
+      @lexer = lexer
       @statements = []
     end
     
     def parse
-      while @i + 1 < @tokens.length
+      while try_peek_token
         st = statement
         statements.push st.collapse if st
       end
@@ -25,27 +25,29 @@ module Twostroke
     def assert_type(tok, *types)
       error! "Found #{tok.type}#{"<#{tok.val}>" if tok.val}, expected #{types.join ", "}" unless types.include? tok.type
     end
-    def stack
-      @stack
+    
+    def save_state
+      { cur_token: @cur_token, peek_token: @peek_token, lexer_state: @lexer.state }
     end
-    def stack_top
-      @stack.last
+    def load_state(state)
+      @cur_token = state[:cur_token]
+      @peek_token = state[:peek_token]
+      @lexer.state = state[:lexer_state]
     end
+    
     def token
-      @tokens[@i] or raise ParseError, "unexpected end of input"
+      @cur_token or raise ParseError, "unexpected end of input"
     end
     def next_token
-      @i += 1
+      @cur_token = @peek_token || @lexer.read_token
+      @peek_token = nil
       token
     end
     def try_peek_token
-      @i + 1 < @tokens.length ? peek_token : nil
+      @peek_token ||= @lexer.read_token
     end
     def peek_token
-      @tokens[@i + 1] or raise ParseError, "unexpected end of input"
-    end
-    def look_ahead(n = 1)
-      @tokens[@i + n]
+      @peek_token ||= @lexer.read_token or raise ParseError, "unexpected end of input"
     end
     
     ####################
@@ -75,15 +77,18 @@ module Twostroke
       new_expr = if [:PLUS, :MINUS, :ASTERISK, :SLASH, :MOD,
           :LEFT_SHIFT, :RIGHT_SHIFT, :RIGHT_TRIPLE_SHIFT,
           :AMPERSAND, :CARET, :PIPE ].include? peek_token.type
-        # these operators can be combined with assignment
-        if look_ahead(2).type == :EQUALS
-          # combination assignment
-          op = next_token.type
-          assert_type next_token, :EQUALS
-          AST::UnsortedBinop.operator_class[op].new left: expr, assign_result_left: true, right: expression
-        else
-          binop expr
-        end
+          state = save_state
+          next_token
+          combined = (peek_token.type == :EQUALS)
+          load_state state
+          if combined
+            # combination assignment
+            op = next_token.type
+            assert_type next_token, :EQUALS
+            AST::UnsortedBinop.operator_class[op].new left: expr, assign_result_left: true, right: expression
+          else
+            binop expr
+          end
       elsif [ :GT, :LT, :GTE, :LTE, :DOUBLE_EQUALS,
               :TRIPLE_EQUALS, :NOT_EQUALS, :NOT_DOUBLE_EQUALS,
               :AND, :OR, :LEFT_SHIFT, :RIGHT_SHIFT,
@@ -207,7 +212,8 @@ module Twostroke
       end
       node
     end
-    
+
+=begin
     def for
       assert_type next_token, :FOR
       assert_type next_token, :OPEN_PAREN
@@ -244,6 +250,7 @@ module Twostroke
         AST::ForLoop.new initializer: initializer, condition: condition, increment: increment, body: statement
       end
     end
+=end
     
     def while
       assert_type next_token, :WHILE
