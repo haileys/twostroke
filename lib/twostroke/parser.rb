@@ -213,23 +213,24 @@ module Twostroke
       node
     end
 
-=begin
     def for
       assert_type next_token, :FOR
       assert_type next_token, :OPEN_PAREN
       # decide if this is a for(... in ...) or a for(;;) loop
-      for_in = false
-      saved_i = @i
-      if @i + 3 < @tokens.length && look_ahead(1).type == :VAR &&
-        look_ahead(2).type == :BAREWORD && look_ahead(3).type == :IN
+      saved_state = save_state
+      if next_token.type == :VAR && next_token.type == :BAREWORD && next_token.type == :IN
         for_in = true
+        load_state saved_state
       else
+        load_state saved_state
         stmt = statement(false)
         assert_type next_token, :SEMICOLON, :CLOSE_PAREN
         for_in = (token.type == :CLOSE_PAREN)
       end
       if for_in
-        @i = saved_i # no luck parsing for(;;), reparse as for(..in..)
+        # no luck parsing for(;;), reparse as for(..in..)
+        saved_state = save_state
+        
         if peek_token.type == :VAR
           next_token
           assert_type next_token, :BAREWORD
@@ -250,7 +251,6 @@ module Twostroke
         AST::ForLoop.new initializer: initializer, condition: condition, increment: increment, body: statement
       end
     end
-=end
     
     def while
       assert_type next_token, :WHILE
