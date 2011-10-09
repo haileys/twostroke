@@ -36,8 +36,8 @@ module Twostroke
       @line = 1
     end
     
-    def read_token
-      TOKENS.each do |token|
+    def read_token(allow_regexp = true)
+      TOKENS.select { |t| allow_regexp || t[0] != :REGEXP }.each do |token|
         m = token[1].match @str
         if m
           tok = Token.new(:type => token[0], :val => token[2] ? token[2].call(m) : nil, :line => @line, :col => @col)
@@ -46,7 +46,11 @@ module Twostroke
           @col = 1 if !newlines.zero?
           @line += newlines
           @col += m[0].length - (m[0].rindex("\n") || 0)
-          return tok unless [:WHITESPACE, :MULTI_COMMENT, :SINGLE_COMMENT].include? token[0]
+          if [:WHITESPACE, :MULTI_COMMENT, :SINGLE_COMMENT].include? token[0]
+            return read_token(allow_regexp)
+          else
+            return tok
+          end
         end
       end
       if @str.size > 0

@@ -1,9 +1,9 @@
 module Twostroke::AST
-  class Return < Base
+  class Delete < Base
     attr_accessor :expression
     
     def collapse
-      self.class.new expression: expression && expression.collapse
+      self.class.new expression: expression.collapse
     end
   end
 end

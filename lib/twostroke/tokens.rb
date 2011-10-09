@@ -8,7 +8,7 @@ module Twostroke
       [ :WHITESPACE, /\s+/ ],
       [ :NUMBER, /\d+(\.\d*(e[+-]?\d+)?)?/, ->m { m[0].to_f } ],
 
-      *%w(function var if instanceof in else for while do this return throw typeof try catch finally void null new).map do |w|
+      *%w(function var if instanceof in else for while do this return throw typeof try catch finally void null new delete).map do |w|
         [ w.upcase.intern, /#{w}(?=[^a-zA-Z_0-9])/ ]
       end,
       [ :BAREWORD, /[a-zA-Z_\$][\$a-zA-Z_0-9]*/, ->m { m[0] } ],
@@ -28,6 +28,8 @@ module Twostroke
         .gsub(/\\u([a-f0-9]{4})/i) { |m| m[1].to_i(16).chr }
         .gsub(/\\(.)/) { |m| m[1] }
       end ],
+      
+      [ :REGEXP, %r{/(?<src>(\\/|[^/])*?)/(?<opts>[gim]+)?}, ->m { [m[:src], m[:opts]] } ],
 
       [ :OPEN_PAREN, /\(/ ],
       [ :CLOSE_PAREN, /\)/ ],

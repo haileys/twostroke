@@ -38,16 +38,16 @@ module Twostroke
     def token
       @cur_token or raise ParseError, "unexpected end of input"
     end
-    def next_token
-      @cur_token = @peek_token || @lexer.read_token
+    def next_token(allow_regexp = true)
+      @cur_token = @peek_token || @lexer.read_token(allow_regexp)
       @peek_token = nil
       token
     end
-    def try_peek_token
-      @peek_token ||= @lexer.read_token
+    def try_peek_token(allow_regexp = true)
+      @peek_token ||= @lexer.read_token(allow_regexp)
     end
-    def peek_token
-      @peek_token ||= @lexer.read_token or raise ParseError, "unexpected end of input"
+    def peek_token(allow_regexp = true)
+      @peek_token ||= @lexer.read_token(allow_regexp) or raise ParseError, "unexpected end of input"
     end
     
     ####################
@@ -55,9 +55,12 @@ module Twostroke
     def statement(consume_semicolon = true)
       st = case peek_token.type
       when :RETURN;     send :return
+      when :THROW;      send :throw
+      when :DELETE;     delete
       when :VAR;        var
       when :IF;         consume_semicolon = false; send :if
       when :FOR;        consume_semicolon = false; send :for
+      when :DO;         send :do
       when :WHILE;      consume_semicolon = false; send :while
       when :TRY;        consume_semicolon = false; try
       when :OPEN_BRACE; consume_semicolon = false; body
@@ -76,7 +79,7 @@ module Twostroke
       expr = expression_after_unary no_comma
       new_expr = if [:PLUS, :MINUS, :ASTERISK, :SLASH, :MOD,
           :LEFT_SHIFT, :RIGHT_SHIFT, :RIGHT_TRIPLE_SHIFT,
-          :AMPERSAND, :CARET, :PIPE ].include? peek_token.type
+          :AMPERSAND, :CARET, :PIPE ].include? peek_token(false).type
           state = save_state
           next_token
           combined = (peek_token.type == :EQUALS)
@@ -85,7 +88,7 @@ module Twostroke
             # combination assignment
             op = next_token.type
             assert_type next_token, :EQUALS
-            AST::UnsortedBinop.operator_class[op].new left: expr, assign_result_left: true, right: expression
+            AST::UnsortedBinop.operator_class[op].new left: expr, assign_result_left: true, right: expression(true, false, true)
           else
             binop expr
           end
@@ -119,11 +122,12 @@ module Twostroke
       end
     end
     
-    def expression_after_unary(no_comma = false, no_call = false)
+    def expression_after_unary(no_comma = true, no_call = false)
       expr = case peek_token.type
       when :FUNCTION; function
       when :STRING; string
       when :NUMBER; number
+      when :REGEXP; regexp
       when :THIS; this
       when :NULL; null
       when :NEW; send :new
@@ -163,7 +167,7 @@ module Twostroke
     
     def binop(left)
       next_token
-      AST::UnsortedBinop.new left: left, op: token.type, right: expression(false, false, true)
+      AST::UnsortedBinop.new left: left, op: token.type, right: expression(true, false, true)
     end
     
     def body
@@ -194,9 +198,9 @@ module Twostroke
     def ternary(cond)
       assert_type next_token, :QUESTION
       ternary = AST::Ternary.new condition: cond
-      ternary.if_true = expression
+      ternary.if_true = expression(true)
       assert_type next_token, :COLON
-      ternary.if_false = expression
+      ternary.if_false = expression(true)
       ternary
     end
     
@@ -223,14 +227,13 @@ module Twostroke
         load_state saved_state
       else
         load_state saved_state
-        stmt = statement(false)
+        stmt = statement(false) unless peek_token.type == :SEMICOLON
         assert_type next_token, :SEMICOLON, :CLOSE_PAREN
         for_in = (token.type == :CLOSE_PAREN)
       end
+      load_state saved_state
       if for_in
-        # no luck parsing for(;;), reparse as for(..in..)
-        saved_state = save_state
-        
+        # no luck parsing for(;;), reparse as for(..in..)        
         if peek_token.type == :VAR
           next_token
           assert_type next_token, :BAREWORD
@@ -243,10 +246,11 @@ module Twostroke
         assert_type next_token, :CLOSE_PAREN
         AST::ForIn.new lval: lval, object: obj, body: statement
       else
-        initializer = stmt
-        condition = statement(false)
+        initializer = statement(false) unless peek_token.type == :SEMICOLON
         assert_type next_token, :SEMICOLON
-        increment = statement(false)
+        condition = statement(false) unless peek_token.type == :SEMICOLON
+        assert_type next_token, :SEMICOLON
+        increment = statement(false) unless peek_token.type == :CLOSE_PAREN
         assert_type next_token, :CLOSE_PAREN
         AST::ForLoop.new initializer: initializer, condition: condition, increment: increment, body: statement
       end
@@ -258,6 +262,16 @@ module Twostroke
       node = AST::While.new condition: expression
       assert_type next_token, :CLOSE_PAREN
       node.body = statement
+      node
+    end
+    
+    def do
+      assert_type next_token, :DO
+      node = AST::Do.new body: body
+      assert_type next_token, :WHILE
+      assert_type next_token, :OPEN_PAREN
+      node.condition = expression(false)
+      assert_type next_token, :CLOSE_PAREN
       node
     end
     
@@ -343,7 +357,18 @@ module Twostroke
     
     def return
       assert_type next_token, :RETURN
-      AST::Return.new expression: expression
+      expr = expression unless peek_token.type == :SEMICOLON
+      AST::Return.new expression: expr
+    end
+    
+    def throw
+      assert_type next_token, :THROW
+      AST::Throw.new expression: expression
+    end
+    
+    def delete
+      assert_type next_token, :DELETE
+      AST::Delete.new expression: expression
     end
     
     def var
@@ -391,6 +416,11 @@ module Twostroke
     def string
       assert_type next_token, :STRING
       AST::String.new string: token.val
+    end
+    
+    def regexp
+      assert_type next_token, :REGEXP
+      AST::Regexp.new regexp: token.val
     end
     
     def object_literal
@@ -487,14 +517,14 @@ module Twostroke
       AST::PostDecrement.new value: obj
     end
     
-    def pre_increment(obj)
+    def pre_increment
       assert_type next_token, :INCREMENT
-      AST::PreIncrement.new value: obj
+      AST::PreIncrement.new value: expression_after_unary
     end
     
-    def pre_decrement(obj)
+    def pre_decrement
       assert_type next_token, :DECREMENT
-      AST::PreDecrement.new value: obj
+      AST::PreDecrement.new value: expression_after_unary
     end
     
     def typeof
