@@ -7,7 +7,7 @@ module Twostroke
       [ :SINGLE_COMMENT, /\/\/.*?$/ ],
 
       [ :WHITESPACE, /\s+/ ],
-      [ :NUMBER, /(\d+(\.?\d*([eE][+-]?\d+)?)?|\.\d+([eE][+-]?\d+)?)/, ->m { m[0].to_f } ],
+      [ :NUMBER, /((?<oct>0[0-7]+)|(?<hex>0x[A-Fa-f0-9]+)|(?<to_f>(\d+(\.?\d*([eE][+-]?\d+)?)?|\.\d+([eE][+-]?\d+)?)))/, ->m { m[0].send m.names.first } ],
 
       *RESERVED.map do |w|
         [ w.upcase.intern, /#{w}(?=[^a-zA-Z_0-9])/ ]
