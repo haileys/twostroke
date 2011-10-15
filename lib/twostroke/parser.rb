@@ -55,11 +55,13 @@ module Twostroke
     def statement(consume_semicolon = true)
       st = case peek_token.type
       when :RETURN;     send :return
+      when :BREAK;      send :break
       when :THROW;      send :throw
       when :DELETE;     delete
       when :VAR;        var
       when :IF;         consume_semicolon = false; send :if
       when :FOR;        consume_semicolon = false; send :for
+      when :SWITCH;     consume_semicolon = false; send :switch
       when :DO;         send :do
       when :WHILE;      consume_semicolon = false; send :while
       when :TRY;        consume_semicolon = false; try
@@ -74,20 +76,20 @@ module Twostroke
       end
       st
     end
-    
+   
     def expression(no_comma = false, no_in = false, no_ternary = false)
       expr = expression_after_unary no_comma
-      new_expr = if [:PLUS, :MINUS, :ASTERISK, :SLASH, :MOD,
+      expr = if [:PLUS, :MINUS, :ASTERISK, :SLASH, :MOD,
           :LEFT_SHIFT, :RIGHT_SHIFT, :RIGHT_TRIPLE_SHIFT,
           :AMPERSAND, :CARET, :PIPE ].include? peek_token(false).type
           state = save_state
           next_token
-          combined = (peek_token.type == :EQUALS)
+          combined = (peek_token(false).type == :EQUALS)
           load_state state
           if combined
             # combination assignment
-            op = next_token.type
-            assert_type next_token, :EQUALS
+            op = next_token(false).type
+            assert_type next_token(false), :EQUALS
             AST::UnsortedBinop.operator_class[op].new left: expr, assign_result_left: true, right: expression(true, false, true)
           else
             binop expr
@@ -96,29 +98,32 @@ module Twostroke
               :TRIPLE_EQUALS, :NOT_EQUALS, :NOT_DOUBLE_EQUALS,
               :AND, :OR, :LEFT_SHIFT, :RIGHT_SHIFT,
               :RIGHT_TRIPLE_SHIFT, :INSTANCEOF,
-              *(no_in ? [] : [:IN]) ].include? peek_token.type
+              *(no_in ? [] : [:IN]) ].include? peek_token(false).type
         expr = binop expr
         # this has a higher precedence than the ternary
         # so we'll hackily check for a ternary after this
-        if try_peek_token && peek_token.type == :QUESTION
+        if try_peek_token && peek_token(false).type == :QUESTION
           ternary(expr)
         else
           expr
         end
-      elsif peek_token.type == :EQUALS
+      else
+        expr
+      end
+      expr = if peek_token(false).type == :EQUALS
         next_token
         AST::Assignment.new left: expr, right: expression(true)
-      elsif !no_ternary && peek_token.type == :QUESTION
+      elsif !no_ternary && peek_token(false).type == :QUESTION
         ternary(expr)
       else
         expr
       end
       
-      if !no_comma && peek_token.type == :COMMA
+      if !no_comma && peek_token(false).type == :COMMA
         next_token
-        AST::MultiExpression.new left: new_expr, right: expression
+        AST::MultiExpression.new left: expr, right: expression
       else
-        new_expr
+        expr
       end
     end
     
@@ -146,17 +151,17 @@ module Twostroke
       else error! "Unexpected #{peek_token.type}"
       end
       loop do
-        if !no_call && peek_token.type == :OPEN_PAREN
+        if !no_call && peek_token(false).type == :OPEN_PAREN
           expr = call expr
-        elsif peek_token.type == :OPEN_BRACKET
+        elsif peek_token(false).type == :OPEN_BRACKET
           expr = index expr
-        elsif peek_token.type == :MEMBER_ACCESS
+        elsif peek_token(false).type == :MEMBER_ACCESS
           expr = member_access expr
-        elsif !no_comma && peek_token.type == :COMMA
+        elsif !no_comma && peek_token(false).type == :COMMA
           expr = comma(expr)
-        elsif peek_token.type == :INCREMENT
+        elsif peek_token(false).type == :INCREMENT
           expr = post_increment expr
-        elsif peek_token.type == :DECREMENT
+        elsif peek_token(false).type == :DECREMENT
           expr = post_decrement expr
         else
           return expr
@@ -166,8 +171,8 @@ module Twostroke
     end
     
     def binop(left)
-      next_token
-      AST::UnsortedBinop.new left: left, op: token.type, right: expression(true, false, true)
+      op = next_token.type
+      AST::UnsortedBinop.new left: left, op: op, right: expression(true, false, true)
     end
     
     def body
@@ -256,6 +261,29 @@ module Twostroke
       end
     end
     
+    def switch
+      assert_type next_token, :SWITCH
+      assert_type next_token, :OPEN_PAREN
+      sw = AST::Switch.new expression: expression
+      assert_type next_token, :CLOSE_PAREN
+      assert_type next_token, :OPEN_BRACE
+      current_case = nil
+      while ![:CLOSE_BRACE].include? peek_token.type
+        if peek_token.type == :CASE
+          assert_type next_token, :CASE
+          expr = expression
+          current_case = AST::Case.new expression: expr
+          assert_type next_token, :COLON
+          sw.cases << current_case
+        else
+          error! "statements may only appear under a case" if current_case.nil?
+          current_case.statements << statement
+        end
+      end
+      assert_type next_token, :CLOSE_BRACE
+      sw
+    end
+    
     def while
       assert_type next_token, :WHILE
       assert_type next_token, :OPEN_PAREN
@@ -267,7 +295,7 @@ module Twostroke
     
     def do
       assert_type next_token, :DO
-      node = AST::Do.new body: body
+      node = AST::DoWhile.new body: body
       assert_type next_token, :WHILE
       assert_type next_token, :OPEN_PAREN
       node.condition = expression(false)
@@ -359,6 +387,11 @@ module Twostroke
       assert_type next_token, :RETURN
       expr = expression unless peek_token.type == :SEMICOLON
       AST::Return.new expression: expr
+    end
+    
+    def break
+      assert_type next_token, :BREAK
+      AST::Break.new
     end
     
     def throw

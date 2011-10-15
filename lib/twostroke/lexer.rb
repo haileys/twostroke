@@ -9,13 +9,6 @@ module Twostroke
         send "#{k}=", v
       end
     end
-    def is?(t)
-      if t.is_a? Array
-        t.include? type
-      else
-        t == type
-      end
-    end
   end
   
   class Lexer

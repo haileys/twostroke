@@ -6,9 +6,9 @@ module Twostroke
       [ :SINGLE_COMMENT, /\/\/.*?$/ ],
 
       [ :WHITESPACE, /\s+/ ],
-      [ :NUMBER, /\d+(\.\d*(e[+-]?\d+)?)?/, ->m { m[0].to_f } ],
+      [ :NUMBER, /\d+(\.?\d*([eE][+-]?\d+)?)?/, ->m { m[0].to_f } ],
 
-      *%w(function var if instanceof in else for while do this return throw typeof try catch finally void null new delete).map do |w|
+      *%w(function var if instanceof in else for while do this return throw typeof try catch finally void null new delete switch case break).map do |w|
         [ w.upcase.intern, /#{w}(?=[^a-zA-Z_0-9])/ ]
       end,
       [ :BAREWORD, /[a-zA-Z_\$][\$a-zA-Z_0-9]*/, ->m { m[0] } ],
@@ -29,7 +29,7 @@ module Twostroke
         .gsub(/\\(.)/) { |m| m[1] }
       end ],
       
-      [ :REGEXP, %r{/(?<src>(\\/|[^/])*?)/(?<opts>[gim]+)?}, ->m { [m[:src], m[:opts]] } ],
+      [ :REGEXP, %r{/(?<src>(\\.|[^\1])*?[^\1\\]?)/(?<opts>[gim]+)?}, ->m { [m[:src], m[:opts]] } ],
 
       [ :OPEN_PAREN, /\(/ ],
       [ :CLOSE_PAREN, /\)/ ],
