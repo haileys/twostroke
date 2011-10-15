@@ -57,7 +57,6 @@ module Twostroke
       when :RETURN;     send :return
       when :BREAK;      send :break
       when :THROW;      send :throw
-      when :DELETE;     delete
       when :VAR;        var
       when :IF;         consume_semicolon = false; send :if
       when :FOR;        consume_semicolon = false; send :for
@@ -71,8 +70,8 @@ module Twostroke
       else; expression
       end
       if consume_semicolon
-        #next_token if try_peek_token && peek_token.type == :SEMICOLON
-        assert_type next_token, :SEMICOLON
+        next_token if try_peek_token && peek_token.type == :SEMICOLON
+        #assert_type next_token, :SEMICOLON
       end
       st
     end
@@ -136,6 +135,7 @@ module Twostroke
       when :THIS; this
       when :NULL; null
       when :NEW; send :new
+      when :DELETE; delete
       when :BAREWORD; bareword
       when :OPEN_PAREN; parens
       when :OPEN_BRACE; object_literal
@@ -385,7 +385,7 @@ module Twostroke
     
     def return
       assert_type next_token, :RETURN
-      expr = expression unless peek_token.type == :SEMICOLON
+      expr = expression unless peek_token.type == :SEMICOLON || peek_token.type == :CLOSE_BRACE
       AST::Return.new expression: expr
     end
     
@@ -412,7 +412,7 @@ module Twostroke
     def var_rest
       assert_type next_token, :BAREWORD
       decl = AST::Declaration.new(name: token.val)
-      return decl if peek_token.type == :SEMICOLON
+      return decl if peek_token.type == :SEMICOLON || peek_token.type == :CLOSE_BRACE
       
       assert_type next_token, :COMMA, :EQUALS
       
@@ -420,7 +420,7 @@ module Twostroke
         AST::MultiExpression.new left: decl, right: var_rest
       else
         assignment = AST::Assignment.new left: decl, right: expression(true)
-        if peek_token.type == :SEMICOLON
+        if peek_token.type == :SEMICOLON || peek_token.type == :CLOSE_BRACE
           assignment
         elsif peek_token.type == :COMMA
           next_token

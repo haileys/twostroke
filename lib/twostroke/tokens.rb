@@ -1,14 +1,15 @@
 module Twostroke
   class Lexer
+    RESERVED = %w(function var if instanceof in else for while do this return throw typeof try catch finally void null new delete switch case break)
     TOKENS = [
 
       [ :MULTI_COMMENT, %r{/\*.*?\*/} ],
       [ :SINGLE_COMMENT, /\/\/.*?$/ ],
 
       [ :WHITESPACE, /\s+/ ],
-      [ :NUMBER, /\d+(\.?\d*([eE][+-]?\d+)?)?/, ->m { m[0].to_f } ],
+      [ :NUMBER, /(\d+(\.?\d*([eE][+-]?\d+)?)?|\.\d+([eE][+-]?\d+)?)/, ->m { m[0].to_f } ],
 
-      *%w(function var if instanceof in else for while do this return throw typeof try catch finally void null new delete switch case break).map do |w|
+      *RESERVED.map do |w|
         [ w.upcase.intern, /#{w}(?=[^a-zA-Z_0-9])/ ]
       end,
       [ :BAREWORD, /[a-zA-Z_\$][\$a-zA-Z_0-9]*/, ->m { m[0] } ],
