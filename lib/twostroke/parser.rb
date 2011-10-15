@@ -101,7 +101,7 @@ module Twostroke
         expr = binop expr
         # this has a higher precedence than the ternary
         # so we'll hackily check for a ternary after this
-        if try_peek_token && peek_token(false).type == :QUESTION
+        if !no_ternary && try_peek_token && peek_token(false).type == :QUESTION
           ternary(expr)
         else
           expr
