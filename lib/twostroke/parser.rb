@@ -268,16 +268,26 @@ module Twostroke
       assert_type next_token, :CLOSE_PAREN
       assert_type next_token, :OPEN_BRACE
       current_case = nil
+      default = false
       while ![:CLOSE_BRACE].include? peek_token.type
         if peek_token.type == :CASE
           assert_type next_token, :CASE
           expr = expression
-          current_case = AST::Case.new expression: expr
+          node = AST::Case.new expression: expr
           assert_type next_token, :COLON
-          sw.cases << current_case
+          sw.cases << node
+          current_case = node.statements
+        elsif peek_token.type == :DEFAULT
+          assert_type next_token, :DEFAULT
+          error! "only one default case allowed" if default
+          default = true
+          node = AST::Case.new
+          assert_type next_token, :COLON
+          sw.cases << node
+          current_case = node.statements
         else
           error! "statements may only appear under a case" if current_case.nil?
-          current_case.statements << statement
+          current_case << statement
         end
       end
       assert_type next_token, :CLOSE_BRACE

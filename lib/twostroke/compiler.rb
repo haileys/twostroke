@@ -358,4 +358,35 @@ private
     output "__tmp = #{stack}.pop();"
     output "#{stack}.push(new __tmp(#{args.join ", "}));"
   end
+  
+  def Switch(node)
+    compile node.cases.reverse.map { |c| c.expression }.reject(&:nil?)
+    cases = ["#{stack}.pop()"] * node.cases.size
+    output "__tmp = [#{cases.join ", "}]"
+    compile node.expression
+    output "switch(#{stack}.pop()) {"
+    indent
+    i = 0
+    node.cases.each do |c|
+      dedent
+      if c.expression
+        output "case __tmp[#{i}]:"
+        i += 1
+      else
+        output "default:"
+      end
+      indent
+      compile c.statements
+    end
+    dedent
+    output "}"
+  end
+  
+  def Break(node)
+    output "break;"
+  end
+  
+  def Continue(node)
+    output "continue;"
+  end
 end

@@ -1,6 +1,6 @@
 module Twostroke
   class Lexer
-    RESERVED = %w(function var if instanceof in else for while do this return throw typeof try catch finally void null new delete switch case break)
+    RESERVED = %w(function var if instanceof in else for while do this return throw typeof try catch finally void null new delete switch case break default)
     TOKENS = [
 
       [ :MULTI_COMMENT, %r{/\*.*?\*/} ],
