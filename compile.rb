@@ -7,9 +7,6 @@ parser.parse
 compiler = Twostroke::Compiler::TSASM.new parser.statements
 compiler.compile
 
-require "pry"
-pry binding
-
 #=begin
 compiler.bytecode.each do |section,instructions|
   puts "#{section}:"
