@@ -5,5 +5,13 @@ module Twostroke::AST
     def collapse
       self.class.new lval: lval.collapse, object: object.collapse, body: body.collapse
     end
+    
+    def walk(&bk)
+      if yield self
+        lval.walk &bk
+        object.walk &bk
+        body.walk &bk
+      end
+    end
   end
 end

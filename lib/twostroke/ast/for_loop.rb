@@ -8,5 +8,14 @@ module Twostroke::AST
         increment: increment && increment.collapse,
         body: body.collapse
     end
+    
+    def walk(&bk)
+      if yield self
+        initializer.walk &bk
+        condition.walk &bk
+        increment.walk &bk
+        body.walk &bk
+      end
+    end
   end
 end

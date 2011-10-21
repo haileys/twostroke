@@ -7,5 +7,13 @@ module Twostroke::AST
         catch_statements: (catch_statements && catch_statements.map(&:collapse)),
         finally_statements: (finally_statements && finally_statements.map(&:collapse))
     end
+    
+    def walk(&bk)
+      if yield self
+        try_statements.each { |s| s.walk &bk }
+        catch_statements.each { |s| s.walk &bk } if catch_statements
+        finally_statements.each { |s| s.walk &bk } if finally_statements
+      end
+    end
   end
 end

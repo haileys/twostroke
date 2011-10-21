@@ -11,5 +11,11 @@ module Twostroke::AST
     def collapse
       self.class.new name: name, arguments: arguments, statements: statements.reject(&:nil?).map(&:collapse)
     end
+    
+    def walk(&bk)
+      if yield self
+        statements.each { |s| s.walk &bk }
+      end
+    end
   end
 end

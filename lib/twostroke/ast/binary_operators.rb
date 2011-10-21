@@ -16,6 +16,13 @@ module Twostroke::AST
       def collapse
         self.class.new left: left.collapse, right: right.collapse, assign_result_left: assign_result_left
       end
+      
+      def walk(&bk)
+        if yield self
+          left.walk &bk
+          right.walk &bk
+        end
+      end
     end
     const_set op, klass
   end

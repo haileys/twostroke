@@ -10,5 +10,13 @@ module Twostroke::AST
     def collapse
       self.class.new items: items.map(&:collapse)
     end
+    
+    def walk(&bk)
+      if yield self
+        items.each do |item|
+          item.walk &bk
+        end
+      end
+    end
   end
 end

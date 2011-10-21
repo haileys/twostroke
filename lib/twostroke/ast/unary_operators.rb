@@ -7,6 +7,12 @@ module Twostroke::AST
         def collapse
           self.class.new value: value.collapse
         end
+        
+        def walk(&bk)
+          if yield self
+            value.walk &bk
+          end
+        end
       end
       const_set op, klass
     end

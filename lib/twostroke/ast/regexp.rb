@@ -5,5 +5,9 @@ module Twostroke::AST
     def collapse
       self
     end
+    
+    def walk(&bk)
+      yield self
+    end
   end
 end
