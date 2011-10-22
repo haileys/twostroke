@@ -28,6 +28,7 @@ class Twostroke::Compiler::TSASM
             
       ast.each { |node| hoist node }
       ast.each { |node| compile node }
+      output :ret
       
       fix_labels
     end
@@ -111,15 +112,23 @@ private
   # code generation
   
   { Addition: :add, Subtraction: :sub, Multiplication: :mul, Division: :div,
-    Equality: :eq, Inequality: :ne, StrictEquality: :seq, StrictInequality: :sne,
-    LessThan: :lt, GreaterThan: :gt, LessThanEqual: :lte, GreaterThanEqual: :gte,
-    BitwiseAnd: :and, BitwiseOr: :or, BitwiseXor: :xor }.each do |method,op|
+    Equality: :eq, StrictEquality: :seq, LessThan: :lt, GreaterThan: :gt,
+    LessThanEqual: :lte, GreaterThanEqual: :gte, BitwiseAnd: :and,
+    BitwiseOr: :or, BitwiseXor: :xor }.each do |method,op|
     define_method method do |node|
       compile node.left
       compile node.right
       output op
     end
     private method
+  end
+  def StrictInequality(node)
+    StrictEquality(node)
+    output :not
+  end
+  def Inequality(node)
+    Equality(node)
+    output :not
   end
   
   def post_mutate(left, op)
@@ -208,6 +217,18 @@ private
   
   def Variable(node)
     output :push, node.name.intern
+  end
+  
+  def Null(node)
+    output :null
+  end
+  
+  def True(node)
+    output :true
+  end
+  
+  def False(node)
+    output :false
   end
   
   def Function(node)

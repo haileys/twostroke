@@ -5,6 +5,7 @@ module Twostroke::Runtime::Types
     def initialize
       @properties = {}
       @fields = {}
+      @prototype = constructor && constructor.get("prototype")
     end
     
     def has_own_prop(prop)
@@ -34,10 +35,6 @@ module Twostroke::Runtime::Types
       else
         fields[prop] = val
       end
-    end
-    
-    def typeof
-      "object"
     end
   end
 end

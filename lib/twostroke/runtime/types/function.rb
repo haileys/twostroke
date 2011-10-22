@@ -12,10 +12,6 @@ module Twostroke::Runtime::Types
       function.call(this, *args)
     end
     
-    def typeof
-      "function"
-    end
-    
     def to_s
       "function #{name}() { #{source} }"
     end

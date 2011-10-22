@@ -134,6 +134,8 @@ module Twostroke
       when :REGEXP; regexp
       when :THIS; this
       when :NULL; null
+      when :TRUE; send :true
+      when :FALSE; send :false
       when :NEW; send :new
       when :DELETE; delete
       when :BAREWORD; bareword
@@ -193,6 +195,16 @@ module Twostroke
     def null
       assert_type next_token, :NULL
       AST::Null.new
+    end
+    
+    def true
+      assert_type next_token, :TRUE
+      AST::True.new
+    end
+    
+    def false
+      assert_type next_token, :FALSE
+      AST::False.new
     end
     
     def bareword
