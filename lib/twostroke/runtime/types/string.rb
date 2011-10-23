@@ -36,6 +36,7 @@ module Twostroke::Runtime::Types
     end
     
     def get(prop)
+      prop = prop.to_s
       if prop =~ /\A\d+\z/
         string[prop.to_i]
       else
