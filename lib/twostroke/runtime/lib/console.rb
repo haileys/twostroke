@@ -1,6 +1,6 @@
 module Twostroke::Runtime
   Lib.register do |scope|
-    log = Types::Function.new nil do |this, *args|
+    log = Types::Function.new nil do |this, args|
       puts args.join(" ")
     end
   
