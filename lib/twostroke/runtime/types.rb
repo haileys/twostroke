@@ -25,7 +25,7 @@ module Twostroke::Runtime::Types
   end
   
   def self.promote_primitive(obj)
-    if obj.nil? || obj.is_a?(Null)
+    if obj.nil?
       nil
     elsif obj == true || obj == false
       Boolean.new obj
@@ -98,6 +98,7 @@ module Twostroke::Runtime::Types
   end
 =end
   
+  require File.expand_path("../types/object.rb", __FILE__) # pre-require this as it's needed by every other class
   Dir.glob File.expand_path("../types/*", __FILE__) do |f|
     require f
   end

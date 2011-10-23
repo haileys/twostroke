@@ -4,12 +4,12 @@ module Twostroke::Runtime::Types
     
     def initialize(boolean)
       @boolean = boolean
-      super
+      super()
     end
     
     def constructor
-      unless @@constructor
-        @@constructor ||= Function.new nil, name: "Boolean" do |this, *args|
+      unless defined?(@@constructor)
+        @@constructor = Function.new nil, name: "Boolean" do |this, *args|
           Boolean.new Types.to_boolean(args[0])
         end
         proto = Object.new

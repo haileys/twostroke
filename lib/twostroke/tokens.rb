@@ -1,6 +1,6 @@
 module Twostroke
   class Lexer
-    RESERVED = %w(function var if instanceof in else for while do this return throw typeof try catch finally void null new delete switch case break default true false)
+    RESERVED = %w(function var if instanceof in else for while do this return throw typeof try catch finally void null new delete switch case break continue default true false)
     TOKENS = [
 
       [ :MULTI_COMMENT, %r{/\*.*?\*/} ],
@@ -9,7 +9,12 @@ module Twostroke
       [ :WHITESPACE, /\s+/ ],
       [ :NUMBER, /((?<oct>0[0-7]+)|(?<hex>0x[A-Fa-f0-9]+)|(?<to_f>(\d+(\.?\d*([eE][+-]?\d+)?)?|\.\d+([eE][+-]?\d+)?)))/, ->m do
         method, number = m.names.zip(m.captures).select { |k,v| v }.first
-        number.send method
+        n = number.send method
+        if (n % 1).zero?
+          n.to_i
+        else
+          n
+        end
       end ],
 
       *RESERVED.map do |w|

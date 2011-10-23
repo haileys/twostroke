@@ -1,9 +1,10 @@
 class Twostroke::Compiler::TSASM
-  attr_accessor :bytecode, :ast
+  attr_accessor :bytecode, :ast, :prefix
   
-  def initialize(ast)
+  def initialize(ast, prefix = nil)
     @methods = Hash[self.class.private_instance_methods(false).map { |name| [name, true] }]
     @ast = ast
+    @prefix = prefix
   end
   
   def compile(node = nil)
@@ -22,12 +23,15 @@ class Twostroke::Compiler::TSASM
     else
       @indent = 0
       @bytecode = Hash.new { |h,k| h[k] = [] }
-      @current_section = :main
+      @current_section = :"#{prefix}main"
       @auto_inc = 0
-      @sections = [:main]
+      @sections = [:"#{prefix}main"]
+      @break_stack = []
+      @continue_stack = []
             
       ast.each { |node| hoist node }
       ast.each { |node| compile node }
+      output :undefined
       output :ret
       
       fix_labels
@@ -94,15 +98,18 @@ private
     @auto_inc += 1
   end
   
-  def mutate(left)
+  def mutate(left, right)
     if type(left) == :Variable || type(left) == :Declaration
+      compile right
       output :set, left.name.intern
     elsif type(left) == :MemberAccess
       compile left.object
+      compile right
       output :setprop, left.member.intern
     elsif type(left) == :Index  
       compile left.object
       compile left.index
+      compile right
       output :setindex
     else
       error! "Bad lval in assignment"
@@ -116,9 +123,35 @@ private
     LessThanEqual: :lte, GreaterThanEqual: :gte, BitwiseAnd: :and,
     BitwiseOr: :or, BitwiseXor: :xor }.each do |method,op|
     define_method method do |node|
-      compile node.left
-      compile node.right
-      output op
+      if node.assign_result_left
+        if type(node.left) == :Variable || type(node.left) == :Declaration
+          compile node.left
+          compile node.right
+          output op
+          output :set, node.left.name.intern
+        elsif type(node.left) == :MemberAccess
+          compile node.left.object
+          dup
+          output :member, node.left.member.intern
+          compile node.right
+          output op
+          output :setprop, node.left.member.intern          
+        elsif type(node.left) == :Index
+          compile node.left.object
+          compile node.left.index
+          output :dup, 2
+          output :index
+          compile node.right
+          output op
+          output :setindex
+        else
+          error! "Bad lval in combined operation/assignment"
+        end
+      else
+        compile node.left
+        compile node.right
+        output op
+      end
     end
     private method
   end
@@ -232,7 +265,7 @@ private
   end
   
   def Function(node)
-    fnid = :"fn_#{uniqid}"
+    fnid = :"#{@prefix}fn_#{uniqid}"
     
     section fnid
     node.arguments.each do |arg|
@@ -265,8 +298,7 @@ private
   end
   
   def Assignment(node)
-    compile node.right
-    mutate node.left
+    mutate node.left, node.right
   end
   
   def String(node)
@@ -298,7 +330,29 @@ private
       args << k
       compile v
     end
-    output :object, *args
+    output :object, args.map(&:val)
+  end
+  
+  def Array(node)
+    node.items.each do |item|
+      compile item
+    end
+    output :array, node.items.size
+  end
+  
+  def While(node)
+    start_label = uniqid
+    end_label = uniqid
+    @continue_stack.push start_label
+    @break_stack.push end_label
+    output :".label", start_label
+    compile node.condition
+    output :jif, end_label
+    compile node.body
+    output :jmp, start_label
+    output :".label", end_label
+    @continue_stack.pop
+    @break_stack.pop
   end
   
   def MemberAccess(node)
@@ -344,6 +398,8 @@ private
     compile node.initializer
     start_label = uniqid
     end_label = uniqid
+    @continue_stack.push start_label
+    @break_stack.push end_label
     output :".label", start_label
     compile node.condition
     output :jif, end_label
@@ -351,5 +407,31 @@ private
     compile node.increment
     output :jmp, start_label
     output :".label", end_label
+    @continue_stack.pop
+    @break_stack.pop
+  end
+  
+  def Not(node)
+    compile node.value
+    output :not
+  end
+  
+  def Break(node)
+    output :jmp, @break_stack.last
+  end
+  
+  def Continue(node)
+    output :jmp, @continue_stack.last
+  end
+  
+  def TypeOf(node)
+    compile node.value
+    output :typeof
+  end
+  
+  def Void(node)
+    compile node.value
+    output :pop
+    output :undefined
   end
 end

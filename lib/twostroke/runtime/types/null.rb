@@ -3,5 +3,9 @@ module Twostroke::Runtime::Types
     def self.null
       @@null ||= new
     end
+    
+    def to_s
+      "null"
+    end
   end
 end

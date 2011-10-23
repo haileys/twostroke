@@ -4,12 +4,12 @@ module Twostroke::Runtime::Types
     
     def initialize(number)
       @number = number
-      super
+      super()
     end
     
     def constructor
-      unless @@constructor
-        @@constructor ||= Function.new nil, name: "Number" do |this, *args|
+      unless defined?(@@constructor)
+        @@constructor = Function.new nil, name: "Number" do |this, *args|
           Number.new Types.to_number(args[0])
         end
         proto = Object.new

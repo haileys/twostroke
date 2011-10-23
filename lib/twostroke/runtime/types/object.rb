@@ -13,28 +13,32 @@ module Twostroke::Runtime::Types
       properties.has_key?(prop) || fields.has_key?(prop)
     end
     
-    def get(prop)
+    def get(prop, this = self)
       prop = prop.to_s
       if properties.has_key? prop
-        properties[prop][:getter].call(properties[prop])
+        properties[prop][:getter].call(this)
       elsif fields.has_key? prop
         fields[prop]
       else
-        prototype && prototype.get(prop)
+        prototype && prototype.get(prop, this)
       end
     end
     
-    def set(prop, val)
+    def set(prop, val, this = self)
       prop = prop.to_s
       if properties.has_key? prop
-        properties[prop][:setter].call(properties[prop], val)
+        properties[prop][:setter].call(this, val)
       elsif fields.has_key? prop
         fields[prop] = val
       elsif prototype
-        prototype.set(prop, val)
+        prototype.set(prop, val, this)
       else
         fields[prop] = val
       end
+    end
+    
+    def to_s
+      "{ #{fields.map { |k,v| "'#{k}': #{v}" }.join ", " } }"
     end
   end
 end

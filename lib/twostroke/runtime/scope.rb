@@ -1,5 +1,7 @@
 module Twostroke::Runtime
   class Scope
+    attr_reader :parent
+    
     def initialize(parent = nil)
       @locals = {}
       @parent = parent

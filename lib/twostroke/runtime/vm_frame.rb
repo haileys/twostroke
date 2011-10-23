@@ -2,9 +2,11 @@ module Twostroke::Runtime
   class VM::Frame
     attr_reader :vm, :insns, :stack, :sp_stack, :ip, :scope
     
-    def initialize(vm, section)
+    def initialize(vm, section, callee = nil)
       @vm = vm
+      @section = section
       @insns = vm.bytecode[section]
+      @callee = callee
     end
     
     def execute(scope)
@@ -46,23 +48,30 @@ module Twostroke::Runtime
       arg.times { args.unshift @stack.pop }
       fun = stack.pop
       error! "TypeError: called_non_callable" unless fun.is_a? Types::Function #@TODO
-      fun.call(scope.global_scope, args)
+      stack.push fun.call(scope.global_scope, args)
     end
     
     def thiscall(arg)
       args = []
       arg.times { args.unshift stack.pop }
       fun = stack.pop
-      error! "TypeError: called_non_callable" unless fun.is_a? Types::Function #@TODO
-      fun.call(stack.pop, args)
+      unless fun.is_a? Types::Function #@TODO
+        error! "TypeError: called_non_callable" 
+      end
+      stack.push fun.call(stack.pop, args)
     end
     
     def dup(arg)
-      stack.push stack.last
+      n = arg || 1
+      stack.push *stack[-n..-1]
     end
     
     def member(arg)
-      stack.push Types.promote_primitive(stack.pop).get(arg)
+      obj = Types.promote_primitive(stack.pop)
+      error! "TypeError: non_object_property_load" unless obj.is_a?(Types::Object)
+#      require 'pry'
+#      pry binding
+      stack.push obj.get(arg)
     end
     
     def set(arg)
@@ -124,9 +133,144 @@ module Twostroke::Runtime
       end
     end
     
-  private
+    def jit(arg)
+      if Types.is_truthy stack.pop
+        @ip = arg.to_i
+      end
+    end
+    
+    def not(arg)
+      stack.push Types.is_falsy(stack.pop)
+    end
+    
+    def inc(arg)
+      stack.push Types.to_number(stack.pop) + 1
+    end
+    
+    def dec(arg)
+      stack.push Types.to_number(stack.pop) - 1
+    end
+    
+    def pop(arg)
+      stack.pop
+    end
+    
+    def index(arg)
+      index = Types.to_string stack.pop
+      obj = Types.promote_primitive(stack.pop)
+      error! "TypeError: non_object_property_load" unless obj.is_a?(Types::Object) #@TODO
+      stack.push obj.get(index)
+    end
+    
+    def array(arg)
+      args = []
+      arg.times { args.unshift stack.pop }
+      stack.push Types::Array.new(args)
+    end
+    
+    def undefined(arg)
+      stack.push nil
+    end
+    
+    def add(arg)
+      right = Types.promote_primitive stack.pop
+      left = Types.promote_primitive stack.pop
+      if left.is_a?(Types::Number) && right.is_a?(Types::Number)
+        stack.push left.number + right.number
+      elsif left.is_a?(Types::Null) && right.is_a?(Types::Number)
+        stack.push right.number
+      elsif left.nil? && right.is_a?(Types::Number)
+        stack.push Float::NAN
+      elsif right.is_a?(Types::Null) && left.is_a?(Types::Number)
+        stack.push left.number
+      elsif right.nil? && left.is_a?(Types::Number)
+        stack.push Float::NAN
+      else
+        stack.push Types.to_string(left) + Types.to_string(right)
+      end
+    end
+    
+    def sub(arg)
+      right = Types.to_number(stack.pop)
+      left = Types.to_number(stack.pop)
+      stack.push left - right
+    end
+    
+    def setindex(arg)
+      val = stack.pop
+      index = stack.pop
+      obj = Types.promote_primitive(stack.pop)
+      error! "TypeError: non_object_property_store" unless obj.is_a?(Types::Object) #@TODO
+      obj.set index, val
+      stack.push val
+    end
+    
+    def lt(arg)
+      comparison_oper :<
+    end
+    
+    def lte(arg)
+      comparison_oper :<=
+    end
+    
+    def gt(arg)
+      comparison_oper :>
+    end
+    
+    def gte(arg)
+      comparison_oper :>=
+    end
+    
+    def typeof(arg)
+      obj = stack.pop
+      if obj.nil?
+        stack.push "undefined"
+      elsif obj.is_a?(Types::Function)
+        stack.push "function"
+      elsif obj.is_a?(Types::Object)
+        stack.push "object"
+      elsif obj.is_a?(Types::Null)
+        stack.push "object" # wtf?
+      elsif obj.is_a?(Float) || obj.is_a?(Fixnum)
+        stack.push "number"
+      elsif obj.is_a?(String)
+        stack.push "string"
+      else
+        stack.push ""
+      end
+    end
+    
+    def close(arg)
+      fun = Types::Function.new(->(this, args) { VM::Frame.new(vm, arg, fun).execute(scope.close) }, source: "TODO", name: "TODO")
+      stack.push fun
+    end
+    
+    def callee(arg)
+      stack.push @callee
+    end
+    
+    def object(arg)
+      obj = Types::Object.new
+      kvs = []
+      arg.reverse_each { |a| kvs << [a, stack.pop] }
+      kvs.reverse_each { |kv| obj.set kv[0], kv[1] }
+      stack.push obj
+    end
+    
+  private  
+    def comparison_oper(op)
+      right = Types.promote_primitive stack.pop
+      left = Types.promote_primitive stack.pop
+      
+      if left.is_a?(Types::String) && right.is_a?(Types::String)
+        stack.push left.string.send op, right.string
+      else
+        stack.push Types.to_number(left).send op, Types.to_number(right)
+      end
+    end
+  
     def error!(msg)
-      vm.send :error!, msg
+      vm.send :error!, "#{msg} (at #{@section}+#{@ip - 1})"
     end
   end
 end

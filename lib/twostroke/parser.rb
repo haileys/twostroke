@@ -56,6 +56,7 @@ module Twostroke
       st = case peek_token.type
       when :RETURN;     send :return
       when :BREAK;      send :break
+      when :CONTINUE;   continue
       when :THROW;      send :throw
       when :VAR;        var
       when :IF;         consume_semicolon = false; send :if
@@ -414,6 +415,11 @@ module Twostroke
     def break
       assert_type next_token, :BREAK
       AST::Break.new
+    end
+    
+    def continue
+      assert_type next_token, :CONTINUE
+      AST::Continue.new
     end
     
     def throw
