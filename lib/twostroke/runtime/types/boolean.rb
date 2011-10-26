@@ -1,33 +1,23 @@
 module Twostroke::Runtime::Types
-  class Boolean < Object
-    attr_accessor :boolean
-    
+  class Boolean < Primitive
+    def self.true
+      @@true ||= Boolean.new(true)
+    end
+    def self.false
+      @@false ||= Null.new(false)
+    end
+  
+    attr_reader :boolean
     def initialize(boolean)
       @boolean = boolean
-      super()
     end
     
-    def constructor
-      unless defined?(@@constructor)
-        @@constructor = Function.new nil, name: "Boolean" do |this, *args|
-          Boolean.new Types.to_boolean(args[0])
-        end
-        proto = Object.new
-        @@constructor.set "prototype", proto
-      end
-      @@constructor
+    def ===(other)
+      other.is_a?(Boolean) && boolean == other.boolean
     end
     
-    def to_boolean
-      boolean
-    end
-    
-    def to_number
-      boolean ? 1 : 0
-    end
-    
-    def to_string
-      boolean.to_s
+    def typeof
+      "boolean"
     end
   end
 end

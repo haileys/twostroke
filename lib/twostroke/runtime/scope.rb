@@ -42,19 +42,19 @@ module Twostroke::Runtime
     def initialize(root_name = "window", root_object = nil)
       @root_name = root_name
       @root_object = root_object || Types::Object.new
-      @root_object.set root_name, @root_object
+      @root_object.put root_name.to_s, @root_object
     end
     
     def get_var(var)
-      if @root_object.has_own_prop var
-        @root_object.get var
+      if @root_object.has_own_property var.to_s
+        @root_object.get var.to_s
       else
         raise "ReferenceError: undefined variable #{var}" #@TODO
       end
     end
     
     def set_var(var, value)
-      @root_object.set var, value
+      @root_object.put var.to_s, value
     end
     
     def global_scope

@@ -1,11 +1,15 @@
 module Twostroke::Runtime::Types
-  class Null
-    def self.null
-      @@null ||= new
+  class Null < Primitive
+    def self.new
+      @@null ||= Null.allocate
     end
     
-    def to_s
-      "null"
+    def ===(other)
+      other.is_a?(Null)
+    end
+    
+    def typeof
+      "object"
     end
   end
 end

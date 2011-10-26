@@ -1,15 +1,13 @@
 module Twostroke::Runtime
-  Lib.register do |scope|
-    log = Types::Function.new nil do |this, args|
-      puts args.join(" ")
-    end
+  Lib.register do |scope|    
+    log = Types::Function.new(->(this, args) { puts args.map { |o| Types.to_string(o).string }.join(" ") }, nil, "log", ["string"])
   
     console = Types::Object.new
     ["log", "info", "warn", "error"].each do |m|
-      console.set m, log
+      console.put m, log
     end
-    console.set "gets", Types::Function.new(->(this,args) { gets })
-    console.set "_print", Types::Function.new(->(this,args) { print *args })
+    console.put "_gets", Types::Function.new(->(this,args) { Types::String.new gets }, nil, "_gets", [])
+    console.put "_print", Types::Function.new(->(this,args) { print args.map { |o| Types.to_string(o).string }.join(" ") }, nil, "_print", ["string"])
     scope.set_var "console", console
   end
 end

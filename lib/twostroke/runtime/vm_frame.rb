@@ -33,11 +33,15 @@ module Twostroke::Runtime
       scope.declare arg.intern
     end
     
+    ## instructions
+    
     def push(arg)
       if arg.is_a? Symbol
-        stack.push scope.get_var arg
-      elsif arg.is_a?(Fixnum) || arg.is_a?(Float) || arg.is_a?(String)
-        stack.push arg
+        stack.push scope.get_var(arg)
+      elsif arg.is_a?(Fixnum) || arg.is_a?(Float)
+        stack.push Types::Number.new(arg)
+      elsif arg.is_a?(String)
+        stack.push Types::String.new(arg)
       else
         error! "bad argument to push instruction"
       end
@@ -47,17 +51,15 @@ module Twostroke::Runtime
       args = []
       arg.times { args.unshift @stack.pop }
       fun = stack.pop
-      error! "TypeError: called_non_callable" unless fun.is_a? Types::Function #@TODO
-      stack.push fun.call(scope.global_scope, args)
+      error! "TypeError: called_non_callable" unless fun.respond_to?(:call) #@TODO
+      stack.push fun.call(scope.global_scope.root_object, args)
     end
     
     def thiscall(arg)
       args = []
       arg.times { args.unshift stack.pop }
       fun = stack.pop
-      unless fun.is_a? Types::Function #@TODO
-        error! "TypeError: called_non_callable" 
-      end
+      error! "TypeError: called_non_callable" unless fun.respond_to?(:call) #@TODO
       stack.push fun.call(stack.pop, args)
     end
     
@@ -67,11 +69,7 @@ module Twostroke::Runtime
     end
     
     def member(arg)
-      obj = Types.promote_primitive(stack.pop)
-      error! "TypeError: non_object_property_load" unless obj.is_a?(Types::Object)
-#      require 'pry'
-#      pry binding
-      stack.push obj.get(arg)
+      stack.push Types.to_object(stack.pop).get(arg.to_s)
     end
     
     def set(arg)
@@ -84,30 +82,15 @@ module Twostroke::Runtime
     
     def eq(arg)
       ## javascript is fucked
-      error! "== not implemented, please use === and convert types accordingly"
+      error! "== not yet implemented, please use === and convert types accordingly"
     end
     
     def seq(arg)
-      b = Types.promote_primitive stack.pop
-      a = Types.promote_primitive stack.pop
-      if a.class != b.class
-        stack.push false
-      elsif a.is_a?(Types::String)
-        stack.push(a.string == b.string)
-      elsif a.is_a?(Types::Boolean)
-        stack.push(a.boolean == b.boolean)
-      elsif a.is_a?(Types::Number)
-        if a.number.is_a?(Float) && a.number.nan?
-          stack.push false
-        elsif b.number.is_a?(Float) && b.number.nan?
-          stack.push false
-        else
-          stack.push(a.number == b.number)
-        end
-      elsif a.is_a?(Types::Null) || a.nil?
-        stack.push true
+      if a.class == b.class
+        a === b
       else
-        stack.push false
+        # @TODO: coerce
+        raise "@TODO"
       end
     end
     
@@ -116,11 +99,11 @@ module Twostroke::Runtime
     end
     
     def true(arg)
-      stack.push true
+      stack.push Types::Boolean.new(true)
     end
     
     def false(arg)
-      stack.push false
+      stack.push Types::Boolean.new(false)
     end
     
     def jmp(arg)
@@ -140,15 +123,15 @@ module Twostroke::Runtime
     end
     
     def not(arg)
-      stack.push Types.is_falsy(stack.pop)
+      stack.push Types::Boolean.new(Types.is_falsy(stack.pop))
     end
     
     def inc(arg)
-      stack.push Types.to_number(stack.pop) + 1
+      stack.push Types::Number.new(Types.to_number(stack.pop).number + 1)
     end
     
     def dec(arg)
-      stack.push Types.to_number(stack.pop) - 1
+      stack.push Types::Number.new(Types.to_number(stack.pop).number - 1)
     end
     
     def pop(arg)
@@ -156,10 +139,8 @@ module Twostroke::Runtime
     end
     
     def index(arg)
-      index = Types.to_string stack.pop
-      obj = Types.promote_primitive(stack.pop)
-      error! "TypeError: non_object_property_load" unless obj.is_a?(Types::Object) #@TODO
-      stack.push obj.get(index)
+      index = Types.to_string(stack.pop).string
+      stack.push Types.to_object(stack.pop).get(index)
     end
     
     def array(arg)
@@ -169,10 +150,12 @@ module Twostroke::Runtime
     end
     
     def undefined(arg)
-      stack.push nil
+      stack.push Types::Undefined.new
     end
     
     def add(arg)
+      #@TODO
+=begin
       right = Types.promote_primitive stack.pop
       left = Types.promote_primitive stack.pop
       if left.is_a?(Types::Number) && right.is_a?(Types::Number)
@@ -188,20 +171,19 @@ module Twostroke::Runtime
       else
         stack.push Types.to_string(left) + Types.to_string(right)
       end
+=end
     end
     
     def sub(arg)
-      right = Types.to_number(stack.pop)
-      left = Types.to_number(stack.pop)
-      stack.push left - right
+      right = Types.to_number(stack.pop).number
+      left = Types.to_number(stack.pop).number
+      stack.push Types::Number.new(left - right)
     end
     
     def setindex(arg)
       val = stack.pop
-      index = stack.pop
-      obj = Types.promote_primitive(stack.pop)
-      error! "TypeError: non_object_property_store" unless obj.is_a?(Types::Object) #@TODO
-      obj.set index, val
+      index = Types.to_string(stack.pop).string
+      Types.to_object(stack.pop).put index, val
       stack.push val
     end
     
@@ -222,26 +204,12 @@ module Twostroke::Runtime
     end
     
     def typeof(arg)
-      obj = stack.pop
-      if obj.nil?
-        stack.push "undefined"
-      elsif obj.is_a?(Types::Function)
-        stack.push "function"
-      elsif obj.is_a?(Types::Object)
-        stack.push "object"
-      elsif obj.is_a?(Types::Null)
-        stack.push "object" # wtf?
-      elsif obj.is_a?(Float) || obj.is_a?(Fixnum)
-        stack.push "number"
-      elsif obj.is_a?(String)
-        stack.push "string"
-      else
-        stack.push ""
-      end
+      stack.push Types::String.new(stack.pop.typeof)
     end
     
     def close(arg)
-      fun = Types::Function.new(->(this, args) { VM::Frame.new(vm, arg, fun).execute(scope.close) }, source: "TODO", name: "TODO")
+      arguments = vm.bytecode[arg].take_while { |ins,arg| ins == :".arg" }.map(&:last).map(&:to_s)
+      fun = Types::Function.new(->(this, args) { VM::Frame.new(vm, arg, fun).execute(scope.close) }, "source @TODO", "name @TODO", arguments)
       stack.push fun
     end
     
@@ -253,12 +221,25 @@ module Twostroke::Runtime
       obj = Types::Object.new
       kvs = []
       arg.reverse_each { |a| kvs << [a, stack.pop] }
-      kvs.reverse_each { |kv| obj.set kv[0], kv[1] }
+      kvs.reverse_each { |kv| obj.put kv[0].to_s, kv[1] }
       stack.push obj
+    end
+    
+    def negate(arg)
+      Types::Number.new(-Types.to_number(stack.pop).number)
+    end
+    
+    def pushsp(arg)
+      sp_stack.push stack.size
+    end
+    
+    def popsp(arg)
+      @stack = stack[0...sp_stack.pop]
     end
     
   private  
     def comparison_oper(op)
+=begin
       right = Types.promote_primitive stack.pop
       left = Types.promote_primitive stack.pop
       
@@ -267,6 +248,8 @@ module Twostroke::Runtime
       else
         stack.push Types.to_number(left).send op, Types.to_number(right)
       end
+=end
+      #@TODO
     end
   
     def error!(msg)

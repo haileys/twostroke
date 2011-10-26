@@ -324,6 +324,16 @@ private
     output :".label", end_label
   end
   
+  def And(node)
+    compile node.left
+    output :dup
+    end_label = uniqid
+    output :jif, end_label
+    output :pop
+    compile node.right
+    output :".label", end_label
+  end
+  
   def ObjectLiteral(node)
     args = []
     node.items.each do |k,v|
@@ -390,6 +400,18 @@ private
     end
   end
   
+  def Ternary(node)
+    compile node.condition
+    else_label = uniqid
+    end_label = uniqid
+    output :jif, else_label
+    compile node.if_true
+    output :jmp, end_label
+    output :".label", else_label
+    compile node.if_false
+    output :".label", end_label
+  end
+  
   def Body(node)
     node.statements.each { |s| compile s }
   end
@@ -433,5 +455,10 @@ private
     compile node.value
     output :pop
     output :undefined
+  end
+  
+  def Negation(node)
+    compile node.value
+    output :negate
   end
 end
