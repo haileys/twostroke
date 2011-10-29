@@ -32,6 +32,15 @@ module Twostroke::Runtime
           this.call(_scope, args.first || Undefined.new, args.drop(1) + _args)
         end, nil, nil, [])
       end, nil, "bind", [])
+    # Function.prototype.call
+    proto.put "call", Types::Function.new(->(scope, this, args) do
+        raise "TypeError: cannot call Function.prototype.call on non-callable object" unless this.respond_to?(:call)
+        this.call(scope, args.first || Undefined.new, args.drop(1))
+      end, nil, "call", [])
+    # Function.prototype.toString
+    proto.put "toString", Types::Function.new(->(scope, this, args) do
+        this.primitive_value
+      end)
     obj.put "prototype", proto
     
     obj.put "fromCharCode", Types::Function.new(->(scope, this, args) {
