@@ -6,6 +6,7 @@ module Twostroke::Runtime
     proto = Types::Object.new
     proto.put "toString", Types::Function.new(->(scope, this, args) { this.is_a?(Types::NumberObject) ? Types::String.new(this.number.to_s) : raise("TypeError: @TODO") }, nil, "toString", [])
     proto.put "valueOf", Types::Function.new(->(scope, this, args) { this.is_a?(Types::NumberObject) ? Types::Number.new(this.number) : Types.to_primitive(this) }, nil, "valueOf", [])
+    # Number.prototype.toExponential
     proto.put "toExponential", Types::Function.new(->(scope, this, args) do
         n = Types.to_number(this)
         if n.nan? || n.infinite?
@@ -26,7 +27,16 @@ module Twostroke::Runtime
           end
         end
       end, nil, "toExponential", [])
-    
+    # Number.prototype.toFixed
+    proto.put "toFixed", Types::Function.new(->(scope, this, args) do
+        digits = Types.to_number(args[0] || Undefined.new)
+        if digits.nan? || digits.infinite?
+          digits = 0
+        else
+          digits = digits.number
+        end
+        Types::String.new sprintf("%.#{[[0,digits].max,20].min}f", Types.to_number(this).number)
+      end, nil, "toFixed", [])
     obj.put "prototype", proto
     obj.put "MAX_VALUE", Types::Number.new(Float::MAX)
     obj.put "MIN_VALUE", Types::Number.new(Float::MIN)
