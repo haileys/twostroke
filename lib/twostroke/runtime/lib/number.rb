@@ -37,6 +37,18 @@ module Twostroke::Runtime
         end
         Types::String.new sprintf("%.#{[[0,digits].max,20].min}f", Types.to_number(this).number)
       end, nil, "toFixed", [])
+    # Number.prototype.toLocaleString
+    proto.put "toLocaleString", proto.get("toString")
+    # Number.prototype.toString
+    proto.put "toPrecision", Types::Function(->(scope, this, args) do
+        digits = Types.to_number(args[0] || Undefined.new)
+        if digits.nan? || digits.infinite?
+          digits = 0
+        else
+          digits = digits.number
+        end
+        Types::Number.new Types.to_number(this).number.round([[digits,0].max, 100].min)
+      end, nil, "toString", [])
     obj.put "prototype", proto
     obj.put "MAX_VALUE", Types::Number.new(Float::MAX)
     obj.put "MIN_VALUE", Types::Number.new(Float::MIN)
