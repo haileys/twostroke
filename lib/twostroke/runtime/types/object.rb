@@ -65,9 +65,13 @@ module Twostroke::Runtime::Types
       # @TODO?
     end
     
-    def put(prop, value)
+    def put(prop, value, this = self)
       if accessors.has_key? prop
-        accessors[prop][:set].(self, value) if accessors[prop][:set] && accessors[prop][:writable]
+        accessors[prop][:set].(this, value) if accessors[prop][:set] && accessors[prop][:writable]
+      elsif properties.has_key? prop
+        properties[prop] = value
+      elsif @prototype && @prototype.has_property(prop)
+        @prototype.put prop, value, this
       else
         properties[prop] = value
       end
@@ -135,7 +139,7 @@ module Twostroke::Runtime::Types
         descriptor[:set] = ->(this, value) { descriptor[:value] = value }
         descriptor[:value] ||= Undefined.new
       else
-        descriptor[:writable] = true
+        descriptor[:writable] = true if descriptor.has_key?(:set)
       end
       accessors[prop] = descriptor
     end

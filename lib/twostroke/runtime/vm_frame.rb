@@ -93,6 +93,13 @@ module Twostroke::Runtime
       scope.set_var arg, stack.last
     end
     
+    def setprop(arg)
+      val = stack.pop
+      obj = stack.pop
+      obj.put arg.to_s, val
+      stack.push val
+    end
+    
     def ret(arg)
       @return = true
     end

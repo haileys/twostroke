@@ -24,7 +24,7 @@ module Twostroke::Runtime
     end
     
     def declare(var)
-      @locals[var] = nil
+      @locals[var] = Types::Undefined.new
     end
     
     def close
@@ -51,6 +51,9 @@ module Twostroke::Runtime
       else
         raise "ReferenceError: undefined variable #{var}" #@TODO
       end
+    end
+    
+    def declare(var)
     end
     
     def set_var(var, value)
