@@ -40,11 +40,11 @@ module Twostroke::Runtime
     # Function.prototype.toString
     proto.put "toString", Types::Function.new(->(scope, this, args) do
         this.primitive_value
-      end)
+      end, nil, "toString", [])
     obj.put "prototype", proto
     
-    obj.put "fromCharCode", Types::Function.new(->(scope, this, args) {
-      Types::String.new args.map { |a| Types.to_number(a).number.to_i.chr }.join
-    }, nil, "fromCharCode", [])
+    obj.put "fromCharCode", Types::Function.new(->(scope, this, args) do
+        Types::String.new args.map { |a| Types.to_number(a).number.to_i.chr }.join
+      end, nil, "fromCharCode", [])
   end
 end

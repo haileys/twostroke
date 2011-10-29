@@ -47,6 +47,8 @@ module Twostroke::Runtime
         stack.push scope.get_var(arg)
       elsif arg.is_a?(Fixnum) || arg.is_a?(Float)
         stack.push Types::Number.new(arg)
+      elsif arg.is_a?(Bignum)
+        stack.push Types::Number.new(arg.to_f)
       elsif arg.is_a?(String)
         stack.push Types::String.new(arg)
       else

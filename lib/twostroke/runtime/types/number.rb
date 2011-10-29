@@ -17,5 +17,8 @@ module Twostroke::Runtime::Types
     def nan?
       number.is_a?(Float) && number.nan?
     end
+    def infinite?
+      number.is_a?(Float) && number.infinite?
+    end
   end
 end
