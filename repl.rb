@@ -61,7 +61,7 @@ loop do
     end
   
     bytecode[:"repl_#{sect}_main"][-2] = [:ret] # hacky way to make main return the last evaluated value
-    obj = vm.execute :"repl_#{sect}_main"
+    obj = vm.execute :"repl_#{sect}_main", vm.global_scope
     str = if obj.is_a? T::String
       Paint[obj.string.inspect, :green]
     elsif obj.is_a? T::Number
