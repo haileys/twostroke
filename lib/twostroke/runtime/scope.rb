@@ -56,6 +56,10 @@ module Twostroke::Runtime
     def declare(var)
     end
     
+    def close
+      Scope.new self
+    end
+    
     def set_var(var, value)
       @root_object.put var.to_s, value
     end

@@ -9,6 +9,7 @@ module Twostroke::Runtime
     proto.define_own_property "arity", get: ->(this) { this.arguments.size }, writable: false
     proto.define_own_property "length", get: ->(this) { this.arguments.size }, writable: false
     proto.define_own_property "name", get: ->(this) { this.name }, writable: false
+    # Function.prototype.apply
     proto.put "apply", Types::Function.new(->(scope, this, args) do
         raise "TypeError: cannot call Function.prototype.apply on non-callable object" unless this.respond_to?(:call)
         call_this = args[0] || Types::Undefined.new
@@ -24,6 +25,13 @@ module Twostroke::Runtime
         end
         this.call scope, call_this, call_args
       end, nil, "apply", [])
+    # Function.prototype.bind
+    proto.put "bind", Types::Function.new(->(scope, this, args) do
+        raise "TypeError: cannot call Function.prototype.bind on non-callable object" unless this.respond_to?(:call)
+        Types::Function.new(->(_scope, _this, _args) do
+          this.call(_scope, args.first || Undefined.new, args.drop(1) + _args)
+        end, nil, nil, [])
+      end, nil, "bind", [])
     obj.put "prototype", proto
     
     obj.put "fromCharCode", Types::Function.new(->(scope, this, args) {

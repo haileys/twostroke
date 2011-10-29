@@ -9,13 +9,14 @@ module Twostroke::Runtime
       @callee = callee
     end
     
-    def execute(scope, this = nil)
+    def execute(scope, this = nil, args = [])
       @scope = scope || Scope.new(vm.global_scope)
       @stack = []
       @sp_stack = []
       @ip = 0
       @return = false
       @this = this || @scope.global_scope.root_object
+      @args = args
       
       until @return
         ins, arg = *insns[ip]
@@ -32,6 +33,11 @@ module Twostroke::Runtime
     
     define_method ".local" do |arg|
       scope.declare arg.intern
+    end
+    
+    define_method ".arg" do |arg|
+      scope.declare arg.intern
+      scope.set_var arg.intern, @args.shift || Undefined.new
     end
     
     ## instructions
@@ -233,7 +239,7 @@ module Twostroke::Runtime
     
     def close(arg)
       arguments = vm.bytecode[arg].take_while { |ins,arg| ins == :".arg" }.map(&:last).map(&:to_s)
-      fun = Types::Function.new(->(outer_scope, this, args) { VM::Frame.new(vm, arg, fun).execute(scope.close, this) }, "source @TODO", "name @TODO", arguments)
+      fun = Types::Function.new(->(outer_scope, this, args) { VM::Frame.new(vm, arg, fun).execute(scope.close, this, args) }, "source @TODO", "name @TODO", arguments)
       stack.push fun
     end
     
