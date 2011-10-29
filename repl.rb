@@ -2,6 +2,7 @@ $LOAD_PATH << File.expand_path("../lib", __FILE__)
 require "twostroke"
 T = Twostroke::Runtime::Types
 require "paint"
+require "coderay"
 
 bytecode = {}
 vm = Twostroke::Runtime::VM.new bytecode
@@ -11,12 +12,41 @@ sect = 0
 
 trap "SIGINT" do
   print "\r"
+  system "stty -raw echo"
   exit!
 end
 
 loop do
+  src = ""
+  system "stty raw -echo"
   print Paint[">>> ", :bright]
-  src = $stdin.gets.chomp + ";"
+  loop do
+    c = STDIN.getc
+    if c.ord == 3
+      # ctrl+c
+      print "\r"
+      system "stty -raw echo"
+      exit!
+    elsif c.ord == 127
+      # backspace
+      src = src[0...-1]
+      print "\e[1D \e[1D"
+    elsif c.ord == 24
+      # ctrl+x
+      src = ""
+    elsif c.ord == 13
+      # enter
+      break
+    elsif c =~ /[[:print:]]/
+      src << c
+    end
+    print "\r"
+    print Paint[">>> ", :bright]
+    print CodeRay.scan(src, :javascript).encode :terminal
+  end
+  system "stty -raw echo"
+  puts
+  src << ";"
 
   begin
     parser = Twostroke::Parser.new(Twostroke::Lexer.new(src))
@@ -35,7 +65,7 @@ loop do
     str = if obj.is_a? T::String
       Paint[obj.string.inspect, :green]
     elsif obj.is_a? T::Number
-      Paint[obj.number.inspect, :cyan]
+      Paint[obj.number.inspect, :blue, :bright]
     elsif obj.is_a? T::Boolean
       Paint[obj.boolean.inspect, :magenta]
     elsif obj.is_a?(T::Null)

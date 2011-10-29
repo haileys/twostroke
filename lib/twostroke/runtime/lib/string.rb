@@ -6,6 +6,7 @@ module Twostroke::Runtime
     proto = Types::Object.new
     proto.put "toString", Types::Function.new(->(scope, this, args) { this.is_a?(Types::StringObject) ? Types::String.new(this.string) : raise("TypeError: @TODO") }, nil, "toString", [])
     proto.put "valueOf", Types::Function.new(->(scope, this, args) { this.is_a?(Types::StringObject) ? Types::String.new(this.string) : Types.to_primitive(this) }, nil, "valueOf", [])
+    proto.define_own_property "length", get: ->(this) { Types::Number.new this.string.size }, writable: false, enumerable: false
     obj.put "prototype", proto
     
     obj.put "fromCharCode", Types::Function.new(->(scope, this, args) {

@@ -19,6 +19,14 @@ module Twostroke::Runtime
       def primitive_value
         String.new string
       end
+      
+      def get(prop, this = self)
+        if prop =~ /\A\d+\z/
+          String.new string[prop.to_i]
+        else
+          super prop, this
+        end
+      end
     end
   end
 end

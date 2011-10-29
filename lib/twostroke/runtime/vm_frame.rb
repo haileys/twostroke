@@ -9,12 +9,13 @@ module Twostroke::Runtime
       @callee = callee
     end
     
-    def execute(scope)
+    def execute(scope, this = nil)
       @scope = scope || Scope.new(vm.global_scope)
       @stack = []
       @sp_stack = []
       @ip = 0
       @return = false
+      @this = this || @scope.global_scope.root_object
       
       until @return
         ins, arg = *insns[ip]
@@ -225,7 +226,7 @@ module Twostroke::Runtime
     
     def close(arg)
       arguments = vm.bytecode[arg].take_while { |ins,arg| ins == :".arg" }.map(&:last).map(&:to_s)
-      fun = Types::Function.new(->(outer_scope, this, args) { VM::Frame.new(vm, arg, fun).execute(scope.close) }, "source @TODO", "name @TODO", arguments)
+      fun = Types::Function.new(->(outer_scope, this, args) { VM::Frame.new(vm, arg, fun).execute(scope.close, this) }, "source @TODO", "name @TODO", arguments)
       stack.push fun
     end
     
@@ -251,6 +252,10 @@ module Twostroke::Runtime
     
     def popsp(arg)
       @stack = stack[0...sp_stack.pop]
+    end
+    
+    def this(arg)
+      stack.push @this
     end
     
   private
