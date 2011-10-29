@@ -15,11 +15,30 @@ module Twostroke::Runtime::Types
     end
     
     def prototype=(object)
-      # check that setting the property will not lead to a recursive prototype chain
-      proto = object.prototype
-      proto = object.prototype until proto.nil? || proto.equal?(object)
-      raise "Cannot create recursive prototype chain!" if proto
-      @prototype = object
+      if object.is_a? Object
+        # check that setting the property will not lead to a recursive prototype chain
+        proto = object.prototype
+        proto = object.prototype until proto.nil? || proto.equal?(object)
+        raise "Cannot create recursive prototype chain!" if proto
+        @prototype = object
+      end
+    end
+    
+    def constructing?
+      @constructing
+    end
+    
+    def construct(opts = {})
+      @constructing = true
+      opts.each do |k,v|
+        if respond_to? "#{k}="
+          send "#{k}=", v
+        else
+          instance_variable_set "@#{k}", v
+        end
+      end
+      yield
+      @constructing = false
     end
     
     def get(prop, this = self)
@@ -28,7 +47,7 @@ module Twostroke::Runtime::Types
       elsif properties.has_key? prop
         properties[prop]
       else
-        prototype ? Undefined.new : prototype.get(prop, this)
+        prototype && prototype.is_a?(Object) ? prototype.get(prop, this) : Undefined.new
       end
     end
     
@@ -84,12 +103,12 @@ module Twostroke::Runtime::Types
       if hint == "String"
         toString = get "toString"
         if toString.respond_to? :call
-          str = toString.call(self)
+          str = toString.call(nil, self, [])
           return str if str.is_a? Primitive
         end
         valueOf = get "valueOf"
         if valueOf.respond_to? :call
-          val = valueOf.call(self)
+          val = valueOf.call(nil, self, [])
           return val if val.is_a? Primitive
         end
         # @TODO throw real type error object
@@ -97,12 +116,12 @@ module Twostroke::Runtime::Types
       elsif hint == "Number"
         valueOf = get "valueOf"
         if valueOf.respond_to? :call
-          val = valueOf.call(self)
+          val = valueOf.call(nil, self, [])
           return val if val.is_a? Primitive
         end
         toString = get "toString"
         if toString.respond_to? :call
-          str = toString.call(self)
+          str = toString.call(nil, self, [])
           return str if str.is_a? Primitive
         end
         # @TODO throw real type error object
@@ -118,7 +137,7 @@ module Twostroke::Runtime::Types
       else
         descriptor[:writable] = true
       end
-      properties[prop] = descriptor
+      accessors[prop] = descriptor
     end
   end
 end

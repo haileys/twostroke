@@ -52,7 +52,7 @@ module Twostroke::Runtime
       arg.times { args.unshift @stack.pop }
       fun = stack.pop
       error! "TypeError: called_non_callable" unless fun.respond_to?(:call) #@TODO
-      stack.push fun.call(scope.global_scope.root_object, args)
+      stack.push fun.call(scope, scope.global_scope.root_object, args)
     end
     
     def thiscall(arg)
@@ -60,7 +60,23 @@ module Twostroke::Runtime
       arg.times { args.unshift stack.pop }
       fun = stack.pop
       error! "TypeError: called_non_callable" unless fun.respond_to?(:call) #@TODO
-      stack.push fun.call(stack.pop, args)
+      stack.push fun.call(scope, Types.to_object(stack.pop), args)
+    end
+    
+    def newcall(arg)
+      args = []
+      arg.times { args.unshift @stack.pop }
+      fun = stack.pop
+      error! "TypeError: called_non_callable" unless fun.respond_to?(:call) #@TODO
+      obj = Types::Object.new
+      obj.construct prototype: fun.get("prototype"), _class: fun.name do
+        retn = fun.call(scope, obj, args)
+        if retn.is_a?(Types::Undefined)
+          stack.push obj
+        else
+          stack.push retn
+        end
+      end
     end
     
     def dup(arg)
@@ -95,7 +111,7 @@ module Twostroke::Runtime
     end
     
     def null(arg)
-      stack.push Types::Null.null
+      stack.push Types::Null.new
     end
     
     def true(arg)
@@ -209,7 +225,7 @@ module Twostroke::Runtime
     
     def close(arg)
       arguments = vm.bytecode[arg].take_while { |ins,arg| ins == :".arg" }.map(&:last).map(&:to_s)
-      fun = Types::Function.new(->(this, args) { VM::Frame.new(vm, arg, fun).execute(scope.close) }, "source @TODO", "name @TODO", arguments)
+      fun = Types::Function.new(->(outer_scope, this, args) { VM::Frame.new(vm, arg, fun).execute(scope.close) }, "source @TODO", "name @TODO", arguments)
       stack.push fun
     end
     
@@ -237,7 +253,7 @@ module Twostroke::Runtime
       @stack = stack[0...sp_stack.pop]
     end
     
-  private  
+  private
     def comparison_oper(op)
 =begin
       right = Types.promote_primitive stack.pop
