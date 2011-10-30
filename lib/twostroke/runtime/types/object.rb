@@ -7,7 +7,7 @@ module Twostroke::Runtime::Types
       @extensible = true
       @properties = {}
       @accessors = {}
-      @prototype ||= defined?(@@_prototype) ? @@_prototype : Undefined.new
+      @prototype ||= defined?(@@_prototype) ? @@_prototype : Null.new
     end
     
     def self.set_global_prototype(proto)

@@ -186,24 +186,14 @@ module Twostroke::Runtime
     end
     
     def add(arg)
-      #@TODO
-=begin
-      right = Types.promote_primitive stack.pop
-      left = Types.promote_primitive stack.pop
-      if left.is_a?(Types::Number) && right.is_a?(Types::Number)
-        stack.push left.number + right.number
-      elsif left.is_a?(Types::Null) && right.is_a?(Types::Number)
-        stack.push right.number
-      elsif left.nil? && right.is_a?(Types::Number)
-        stack.push Float::NAN
-      elsif right.is_a?(Types::Null) && left.is_a?(Types::Number)
-        stack.push left.number
-      elsif right.nil? && left.is_a?(Types::Number)
-        stack.push Float::NAN
+      right = Types.to_primitive stack.pop
+      left = Types.to_primitive stack.pop
+      
+      if left.is_a?(Types::String) || right.is_a?(Types::String)
+        Types::String.new(Types.to_string(left).string + Types.to_string(right).string)
       else
-        stack.push Types.to_string(left) + Types.to_string(right)
+        Types::Number.new(Types.to_number(left).number + Types.to_number(right).number)
       end
-=end
     end
     
     def sub(arg)
@@ -241,7 +231,7 @@ module Twostroke::Runtime
     
     def close(arg)
       arguments = vm.bytecode[arg].take_while { |ins,arg| ins == :".arg" }.map(&:last).map(&:to_s)
-      fun = Types::Function.new(->(outer_scope, this, args) { VM::Frame.new(vm, arg, fun).execute(scope.close, this, args) }, "source @TODO", "name @TODO", arguments)
+      fun = Types::Function.new(->(outer_scope, this, args) { VM::Frame.new(vm, arg, fun).execute(scope.close, this, args) }, "...", "", arguments)
       stack.push fun
     end
     
