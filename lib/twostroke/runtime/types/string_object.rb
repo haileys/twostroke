@@ -6,12 +6,9 @@ module Twostroke::Runtime
           Function.new(->(scope, this, args) { this.constructing? ? Types.to_object(Types.to_string(args[0] || Undefined.new)) : Types.to_string(args[0]) }, nil, "String", [])
       end
     
-      def prototype
-        @prototype ||= StringObject.constructor_function.get("prototype")
-      end
-    
       attr_reader :string
       def initialize(string)
+        @prototype = StringObject.constructor_function.get("prototype")
         @string = string
         super()
       end

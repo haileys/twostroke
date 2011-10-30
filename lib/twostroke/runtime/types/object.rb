@@ -3,11 +3,15 @@ module Twostroke::Runtime::Types
     attr_reader :accessors, :properties, :prototype, :_class, :extensible
     private :accessors, :properties
     def initialize
-      @prototype = nil
-      @_class = ""
+      @_class ||= "Object"
       @extensible = true
       @properties = {}
       @accessors = {}
+      @prototype ||= defined?(@@_prototype) ? @@_prototype : Undefined.new
+    end
+    
+    def self.set_global_prototype(proto)
+      @@_prototype = proto
     end
     
     def typeof
@@ -15,13 +19,7 @@ module Twostroke::Runtime::Types
     end
     
     def prototype=(object)
-      if object.is_a? Object
-        # check that setting the property will not lead to a recursive prototype chain
-        proto = object.prototype
-        proto = object.prototype until proto.nil? || proto.equal?(object)
-        raise "Cannot create recursive prototype chain!" if proto
-        @prototype = object
-      end
+      @prototype = object
     end
     
     def constructing?
@@ -70,8 +68,8 @@ module Twostroke::Runtime::Types
         accessors[prop][:set].(this, value) if accessors[prop][:set] && accessors[prop][:writable]
       elsif properties.has_key? prop
         properties[prop] = value
-      elsif @prototype && @prototype.has_property(prop)
-        @prototype.put prop, value, this
+      #elsif prototype && prototype.is_a?(Object) && prototype.has_accessor(prop)
+      #  prototype.put prop, value, this
       else
         properties[prop] = value
       end
@@ -82,7 +80,11 @@ module Twostroke::Runtime::Types
     end
     
     def has_property(prop)
-      accessors.has_key?(prop) || properties.has_key?(prop) || (prototype && prototype.has_property(prop))
+      accessors.has_key?(prop) || properties.has_key?(prop) || (prototype && prototype.is_a?(Object) && prototype.has_property(prop))
+    end
+    
+    def has_accessor(prop)
+      accessors.has_key?(prop)
     end
     
     def has_own_property(prop)
@@ -97,7 +99,7 @@ module Twostroke::Runtime::Types
       end
     end
     
-    def default_value(hint = nil)
+    def default_value(hint = nil)      
       if hint.nil?
         # @TODO
         # hint = is_a?(Date) ? "String" : "Number"

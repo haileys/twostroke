@@ -40,7 +40,7 @@ module Twostroke::Runtime
     # Number.prototype.toLocaleString
     proto.put "toLocaleString", proto.get("toString")
     # Number.prototype.toString
-    proto.put "toPrecision", Types::Function(->(scope, this, args) do
+    proto.put "toPrecision", Types::Function.new(->(scope, this, args) do
         digits = Types.to_number(args[0] || Undefined.new)
         if digits.nan? || digits.infinite?
           digits = 0

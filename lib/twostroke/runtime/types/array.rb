@@ -15,13 +15,10 @@ module Twostroke::Runtime
       def items
         (0...@length).map { |idx| get idx.to_s }
       end
-  
-      def prototype
-        @prototype ||= Array.constructor_function.get("prototype")
-      end
     
       attr_accessor :length
       def initialize(items = [])
+        @prototype = Array.constructor_function.get("prototype")
         @length = items.size
         super()
         (0...@length).each { |i| put i.to_s, items[i] }

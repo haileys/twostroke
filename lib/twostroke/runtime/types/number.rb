@@ -9,7 +9,7 @@ module Twostroke::Runtime::Types
       other.is_a?(Number) && number == other.number
     end
     def typeof
-      "string"
+      "number"
     end
     def zero?
       number.zero?

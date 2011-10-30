@@ -5,10 +5,6 @@ module Twostroke::Runtime::Types
         Function.new(->(scope, this, args) { raise "@TODO" }, nil, "Function", [])
     end
     
-    def prototype
-      @prototype ||= Function.constructor_function.get("prototype")
-    end
-    
     attr_reader :arguments, :name, :source, :function
     def initialize(function, source, name, arguments)
       @function = function
@@ -16,6 +12,11 @@ module Twostroke::Runtime::Types
       @name = name
       @arguments = arguments
       super()
+      @prototype = nil
+    end
+    
+    def prototype
+      @prototype ||= Function.constructor_function.get("prototype")
     end
     
     def typeof
