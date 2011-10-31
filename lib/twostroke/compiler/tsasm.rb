@@ -52,7 +52,7 @@ private
         end
       end
       bytecode[k] = v.select do |ins|
-        if [:jmp, :jit, :jif].include?(ins[0])
+        if [:jmp, :jit, :jif, :pushcatch, :pushfinally].include?(ins[0])
           ins[1] = labels_at[ins[1]]
         end
         ins[0] != :".label"
@@ -312,6 +312,40 @@ private
       output :undefined
     end
     output :ret
+  end
+  
+  def Throw(node)
+    compile node.expression
+    output :_throw
+  end
+  
+  def Try(node)
+    if node.catch_variable
+      catch_label = uniqid
+      output :pushcatch, catch_label
+    end
+    finally_label = uniqid
+    if node.finally_statements
+      output :pushfinally, finally_label
+    end
+    end_label = uniqid
+    compile node.try_statements
+    # no exceptions? clean up
+    output :popcatch if node.catch_variable
+    output :popfinally if node.catch_variable
+    output :jmp, finally_label
+    
+    if node.catch_variable
+      output :".label", catch_label
+      output :".catch", node.catch_variable.intern
+      output :popcatch
+      compile node.catch_statements
+    end
+    output :".label", finally_label
+    if node.finally_statements
+      output :popfinally
+      compile node.finally_statements
+    end
   end
   
   def Or(node)

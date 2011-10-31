@@ -1,3 +1,4 @@
+/*
 var program = "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.";
 var memory = [0];
 var ptr = 0;
@@ -43,3 +44,17 @@ for(var ip = 0; ip < program.length; ip++) {
 			break;
 	}
 }
+*/
+
+function x() {
+	try {
+		throw 1;
+	} catch(e) {
+		throw "foo";
+		return "fail";
+	} finally {
+		return "pass";
+	}
+}
+
+console.log(x());

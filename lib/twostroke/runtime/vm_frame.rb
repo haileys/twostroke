@@ -1,6 +1,6 @@
 module Twostroke::Runtime
   class VM::Frame
-    attr_reader :vm, :insns, :stack, :sp_stack, :ip, :scope
+    attr_reader :vm, :insns, :stack, :sp_stack, :catch_stack, :finally_stack, :exception, :ip, :scope
     
     def initialize(vm, section, callee = nil)
       @vm = vm
@@ -13,6 +13,8 @@ module Twostroke::Runtime
       @scope = scope || Scope.new(vm.global_scope)
       @stack = []
       @sp_stack = []
+      @catch_stack = []
+      @finally_stack = []
       @ip = 0
       @return = false
       @this = this || @scope.global_scope.root_object
@@ -23,8 +25,10 @@ module Twostroke::Runtime
         st = @stack.size
         @ip += 1
         if respond_to? ins
-          public_send ins, arg
-          #puts "stack imbalance after #{ins}@#{@section}+#{@ip - 1}: #{stack.size - st}"
+          if @exception = catch(:exception) { public_send ins, arg; nil }
+            throw :exception, @exception if catch_stack.empty?
+            @ip = catch_stack.last
+          end
         else
           error! "unknown instruction #{ins}"
         end
@@ -40,6 +44,11 @@ module Twostroke::Runtime
     define_method ".arg" do |arg|
       scope.declare arg.intern
       scope.set_var arg.intern, @args.shift || Undefined.new
+    end
+    
+    define_method ".catch" do |arg|
+      scope.declare arg.intern
+      scope.set_var arg.intern, @exception
     end
     
     ## instructions
@@ -111,7 +120,16 @@ module Twostroke::Runtime
     end
     
     def ret(arg)
-      @return = true
+      if finally_stack.empty?
+        @return = true
+      else
+        @ip = finally_stack.last
+      end
+    end
+    
+    def _throw(arg)
+      throw :exception, stack.pop
+      #raise ExceptionCarrier.new(stack.pop)
     end
     
     def eq(arg)
@@ -267,6 +285,22 @@ module Twostroke::Runtime
     
     def popsp(arg)
       @stack = stack[0...sp_stack.pop]
+    end
+    
+    def pushcatch(arg)
+      catch_stack.push arg
+    end
+    
+    def popcatch(arg)
+      catch_stack.pop
+    end
+    
+    def pushfinally(arg)
+      finally_stack.push arg
+    end
+    
+    def popfinally(arg)
+      finally_stack.pop
     end
     
     def this(arg)
