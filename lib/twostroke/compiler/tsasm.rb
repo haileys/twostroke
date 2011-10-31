@@ -412,6 +412,35 @@ private
     output :".label", end_label
   end
   
+  def Switch(node)
+    cases = node.cases.map { |c| [uniqid, c] }
+    default = cases.select { |l,c| c.expression.nil? }.first
+    end_label = uniqid
+    compile node.expression
+    output :pushsp
+    
+    @break_stack.push end_label
+    
+    cases.select { |l,c| c.expression }.each do |label, c|
+      output :popsp
+      output :pushsp
+      output :dup
+      compile c.expression
+      output :seq
+      output :jit, label
+    end
+    output :popsp # restore sp stack
+    output :jmp, (default ? default[0] : end_label)
+    
+    cases.each do |label, c|
+      output :".label", label
+      compile c.statements
+    end
+    
+    output :".label", end_label
+    @break_stack.pop
+  end
+  
   def Body(node)
     node.statements.each { |s| compile s }
   end
