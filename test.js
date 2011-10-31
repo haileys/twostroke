@@ -2,8 +2,7 @@ var program = "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++
 var memory = [0];
 var ptr = 0;
 var stack = [];
-var ip = 0;
-while(ip < program.length) {
+for(var ip = 0; ip < program.length; ip++) {
 	if(program[ip] === '[') {
 		if(!memory[ptr]) {
 			var nesting = 0;
@@ -36,6 +35,4 @@ while(ip < program.length) {
 	} else if(program[ip] === '.') {
 		console._print(String.fromCharCode(memory[ptr]));
 	}
-	++ip;
 }
-

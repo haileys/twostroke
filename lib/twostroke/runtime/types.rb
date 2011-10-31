@@ -70,7 +70,7 @@ module Twostroke::Runtime::Types
   
   def self.is_falsy(object)
     if object.is_a?(Boolean)
-      !obj.boolean
+      !object.boolean
     elsif object.is_a?(Null) || object.is_a?(Undefined)
       true
     elsif object.is_a?(String)

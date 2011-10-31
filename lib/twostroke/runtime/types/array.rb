@@ -11,21 +11,32 @@ module Twostroke::Runtime
               end
             end, nil, "Array", [])
       end
-      
-      def items
-        (0...@length).map { |idx| get idx.to_s }
-      end
     
-      attr_accessor :length
+      attr_accessor :items
       def initialize(items = [])
         @prototype = Array.constructor_function.get("prototype")
-        @length = items.size
         super()
-        (0...@length).each { |i| put i.to_s, items[i] }
+        @items = items
       end
-    
-      def primitive_value
-        String.new string
+      
+      def length
+        items.size
+      end
+      
+      def get(prop, this = self)
+        if prop =~ /\A\d+\z/
+          items[prop.to_i]
+        else
+          super prop, this
+        end
+      end
+      
+      def put(prop, val, this = self)
+        if prop =~ /\A\d+\z/
+          items[prop.to_i] = val
+        else
+          super prop, val, this
+        end
       end
     end
   end

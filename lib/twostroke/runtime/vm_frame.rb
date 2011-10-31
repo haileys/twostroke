@@ -20,9 +20,11 @@ module Twostroke::Runtime
       
       until @return
         ins, arg = *insns[ip]
+        st = @stack.size
         @ip += 1
         if respond_to? ins
           public_send ins, arg
+          #puts "stack imbalance after #{ins}@#{@section}+#{@ip - 1}: #{stack.size - st}"
         else
           error! "unknown instruction #{ins}"
         end
@@ -118,8 +120,10 @@ module Twostroke::Runtime
     end
     
     def seq(arg)
+      a = stack.pop
+      b = stack.pop
       if a.class == b.class
-        a === b
+        stack.push Types::Boolean.new(a === b)
       else
         # @TODO: coerce
         raise "@TODO"
@@ -172,7 +176,7 @@ module Twostroke::Runtime
     
     def index(arg)
       index = Types.to_string(stack.pop).string
-      stack.push Types.to_object(stack.pop).get(index)
+      stack.push(Types.to_object(stack.pop).get(index) || Types::Undefined.new)
     end
     
     def array(arg)
@@ -186,13 +190,19 @@ module Twostroke::Runtime
     end
     
     def add(arg)
-      right = Types.to_primitive stack.pop
-      left = Types.to_primitive stack.pop
+      r = stack.pop
+      l = stack.pop
+      unless l && r
+        require 'pry'
+        pry binding
+      end
+      right = Types.to_primitive r
+      left = Types.to_primitive l
       
       if left.is_a?(Types::String) || right.is_a?(Types::String)
-        Types::String.new(Types.to_string(left).string + Types.to_string(right).string)
+        stack.push Types::String.new(Types.to_string(left).string + Types.to_string(right).string)
       else
-        Types::Number.new(Types.to_number(left).number + Types.to_number(right).number)
+        stack.push Types::Number.new(Types.to_number(left).number + Types.to_number(right).number)
       end
     end
     
@@ -248,7 +258,7 @@ module Twostroke::Runtime
     end
     
     def negate(arg)
-      Types::Number.new(-Types.to_number(stack.pop).number)
+      stack.push Types::Number.new(-Types.to_number(stack.pop).number)
     end
     
     def pushsp(arg)
@@ -265,17 +275,14 @@ module Twostroke::Runtime
     
   private
     def comparison_oper(op)
-=begin
-      right = Types.promote_primitive stack.pop
-      left = Types.promote_primitive stack.pop
+      right = Types.to_primitive stack.pop
+      left = Types.to_primitive stack.pop
       
       if left.is_a?(Types::String) && right.is_a?(Types::String)
-        stack.push left.string.send op, right.string
+        stack.push Types::Boolean.new(left.string.send op, right.string)
       else
-        stack.push Types.to_number(left).send op, Types.to_number(right)
+        stack.push Types::Boolean.new(Types.to_number(left).number.send op, Types.to_number(right).number)
       end
-=end
-      #@TODO
     end
   
     def error!(msg)

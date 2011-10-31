@@ -10,8 +10,8 @@ compiler.compile
 #=begin
 compiler.bytecode.each do |section,instructions|
   puts "#{section}:"
-  instructions.each do |ins|
-    puts "    #{ins[0]}#{" " * (12 - ins[0].size)}#{ins.drop(1).map { |x| x.is_a?(String) ? x.inspect : x }.join ", "}"
+  instructions.each_with_index do |ins,offset|
+    puts "#{sprintf "%4d", offset}    #{ins[0]}#{" " * (12 - ins[0].size)}#{ins.drop(1).map { |x| x.is_a?(String) ? x.inspect : x }.join ", "}"
   end
 end
 #=end

@@ -20,6 +20,17 @@ module Twostroke::Runtime
       end
       Boolean.new false
     }, nil, "isPrototypeOf", [])
+    proto.put "propertyIsEnumerable", Types::Function.new(->(scope, this, args) {
+      this = Types.to_object(this)
+      prop = Types.to_string(args[0]).string
+      if this.has_accessor(prop)
+        Boolean.new this.accessors[prop][:enumerable]
+      elsif this.has_property
+        Boolean.new true
+      else
+        Boolean.new false
+      end
+    }, nil, "propertyIsEnumerable", [])
     
     Types::Object.set_global_prototype proto
   end

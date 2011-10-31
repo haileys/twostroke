@@ -24,9 +24,14 @@ loop do
     c = STDIN.getc
     if c.ord == 3
       # ctrl+c
-      print "\r"
-      system "stty -raw echo"
-      exit!
+      if src.empty?
+        print "\r"
+        system "stty -raw echo"
+        exit!
+      else
+        print "\r    #{' ' * src.size}"
+        src = ""
+      end
     elsif c.ord == 127
       # backspace
       src = src[0...-1]
