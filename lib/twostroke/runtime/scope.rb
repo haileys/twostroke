@@ -23,6 +23,10 @@ module Twostroke::Runtime
       end
     end
     
+    def has_var(var)
+      @locals.has_key?(var) || parent.has_var(var)
+    end
+    
     def declare(var)
       @locals[var] = Types::Undefined.new
     end
@@ -51,6 +55,10 @@ module Twostroke::Runtime
       else
         raise "ReferenceError: undefined variable #{var}" #@TODO
       end
+    end
+    
+    def has_var(var)
+      @root_object.has_own_property var.to_s
     end
     
     def declare(var)

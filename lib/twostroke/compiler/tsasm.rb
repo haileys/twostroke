@@ -510,8 +510,12 @@ private
   end
   
   def TypeOf(node)
-    compile node.value
-    output :typeof
+    if node.value.is_a?(Twostroke::AST::Variable)
+      output :typeof, node.value.name.intern
+    else
+      compile node.value
+      output :typeof
+    end
   end
   
   def Void(node)

@@ -133,19 +133,15 @@ module Twostroke::Runtime
     end
     
     def eq(arg)
-      ## javascript is fucked
-      error! "== not yet implemented, please use === and convert types accordingly"
+      b = stack.pop
+      a = stack.pop
+      stack.push Types::Boolean.new(Types.eq(a, b))
     end
     
     def seq(arg)
-      a = stack.pop
       b = stack.pop
-      if a.class == b.class
-        stack.push Types::Boolean.new(a === b)
-      else
-        # @TODO: coerce
-        raise "@TODO"
-      end
+      a = stack.pop
+      stack.push Types::Boolean.new(Types.seq(a, b))
     end
     
     def null(arg)
@@ -230,6 +226,18 @@ module Twostroke::Runtime
       stack.push Types::Number.new(left - right)
     end
     
+    def mul(arg)
+      right = Types.to_number(stack.pop).number
+      left = Types.to_number(stack.pop).number
+      stack.push Types::Number.new(left * right)
+    end
+    
+    def div(arg)
+      right = Types.to_number(stack.pop).number
+      left = Types.to_number(stack.pop).number
+      stack.push Types::Number.new(left / right)
+    end
+    
     def setindex(arg)
       val = stack.pop
       index = Types.to_string(stack.pop).string
@@ -254,7 +262,11 @@ module Twostroke::Runtime
     end
     
     def typeof(arg)
-      stack.push Types::String.new(stack.pop.typeof)
+      if arg
+        stack.push Types::String.new(scope.has_var(arg) ? scope.get_var(arg).typeof : "undefined")
+      else
+        stack.push Types::String.new(stack.pop.typeof)
+      end
     end
     
     def close(arg)
