@@ -66,8 +66,11 @@ loop do
     end
   
     bytecode[:"repl_#{sect}_main"][-2] = [:ret] # hacky way to make main return the last evaluated value
-    obj = vm.execute :"repl_#{sect}_main", vm.global_scope
-
+    obj = nil
+    exception = catch(:exception) { obj = vm.execute :"repl_#{sect}_main", vm.global_scope; nil }
+    if exception
+      obj = exception
+    end
     str = if obj.is_a? T::String
       Paint[obj.string.inspect, :green]
     elsif obj.is_a? T::Number
@@ -81,7 +84,13 @@ loop do
     else
       Twostroke::Runtime::Types.to_string(obj).string
     end
-    puts " => #{str}"
+    
+    if exception
+      print Paint["!!!", :white, :red] + " "
+    else
+      print " => "
+    end
+    puts str
   rescue => e
     if ARGV.include? "--debug"
       puts "#{e.class.name}: #{e.message}"

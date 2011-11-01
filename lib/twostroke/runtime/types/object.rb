@@ -44,6 +44,8 @@ module Twostroke::Runtime::Types
         accessors[prop][:get].(this)
       elsif properties.has_key? prop
         properties[prop]
+      elsif prop == "prototype" # lazily create prototype property
+        properties[prop] = Object.new
       else
         prototype && prototype.is_a?(Object) ? prototype.get(prop, this) : Undefined.new
       end
@@ -54,6 +56,8 @@ module Twostroke::Runtime::Types
         accessors[prop][:get] ? accessors[prop][:get].(this) : Undefined.new
       elsif properties.has_key? prop
         properties[prop]
+      elsif prop == "prototype" # lazily create prototype property
+        properties[prop] = Object.new
       else
         Undefined.new
       end
@@ -80,7 +84,7 @@ module Twostroke::Runtime::Types
     end
     
     def has_property(prop)
-      accessors.has_key?(prop) || properties.has_key?(prop) || (prototype && prototype.is_a?(Object) && prototype.has_property(prop))
+      accessors.has_key?(prop) || properties.has_key?(prop) || (prototype && prototype.is_a?(Object) && prototype.has_property(prop)) || prop == "prototype"
     end
     
     def has_accessor(prop)
@@ -88,13 +92,13 @@ module Twostroke::Runtime::Types
     end
     
     def has_own_property(prop)
-      accessors.has_key?(prop) || properties.has_key?(prop)
+      accessors.has_key?(prop) || properties.has_key?(prop) || prop == "prototype"
     end
     
     def delete(prop)
       if accessors.has_key? prop
         accessors.delete prop if accessors[prop][:configurable]
-      else        
+      elsif prop != "prototype"
         properties.delete prop
       end
     end
