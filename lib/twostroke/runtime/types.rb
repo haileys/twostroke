@@ -56,7 +56,7 @@ module Twostroke::Runtime::Types
   
   def self.to_object(object)
     if object.is_a?(Undefined) || object.is_a?(Null)
-      raise "TypeError: cannot convert null or undefined to object" #@TODO
+      Lib.throw_type_error "cannot convert null or undefined to object"
     elsif object.is_a?(Boolean)
       BooleanObject.new object.boolean
     elsif object.is_a?(Number)

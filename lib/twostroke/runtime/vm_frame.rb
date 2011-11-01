@@ -71,7 +71,7 @@ module Twostroke::Runtime
       args = []
       arg.times { args.unshift @stack.pop }
       fun = stack.pop
-      error! "TypeError: called_non_callable" unless fun.respond_to?(:call) #@TODO
+      Lib.throw_type_error "called non callable" unless fun.respond_to?(:call)
       stack.push fun.call(scope, scope.global_scope.root_object, args)
     end
     
@@ -79,7 +79,7 @@ module Twostroke::Runtime
       args = []
       arg.times { args.unshift stack.pop }
       fun = stack.pop
-      error! "TypeError: called_non_callable" unless fun.respond_to?(:call) #@TODO
+      Lib.throw_type_error "called non callable" unless fun.respond_to?(:call)
       stack.push fun.call(scope, Types.to_object(stack.pop), args)
     end
     
@@ -87,7 +87,7 @@ module Twostroke::Runtime
       args = []
       arg.times { args.unshift @stack.pop }
       fun = stack.pop
-      error! "TypeError: called_non_callable" unless fun.respond_to?(:call) #@TODO
+      Lib.throw_type_error "called non callable" unless fun.respond_to?(:call)
       obj = Types::Object.new
       obj.construct prototype: fun.get("prototype"), _class: fun.name do
         retn = fun.call(scope, obj, args)
@@ -129,7 +129,6 @@ module Twostroke::Runtime
     
     def _throw(arg)
       throw :exception, stack.pop
-      #raise ExceptionCarrier.new(stack.pop)
     end
     
     def eq(arg)
@@ -271,6 +270,7 @@ module Twostroke::Runtime
     
     def close(arg)
       arguments = vm.bytecode[arg].take_while { |ins,arg| ins == :".arg" }.map(&:last).map(&:to_s)
+      scope = @scope
       fun = Types::Function.new(->(outer_scope, this, args) { VM::Frame.new(vm, arg, fun).execute(scope.close, this, args) }, "...", "", arguments)
       stack.push fun
     end

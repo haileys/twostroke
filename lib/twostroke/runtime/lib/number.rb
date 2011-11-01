@@ -4,7 +4,13 @@ module Twostroke::Runtime
     scope.set_var "Number", obj
     
     proto = Types::Object.new
-    proto.put "toString", Types::Function.new(->(scope, this, args) { this.is_a?(Types::NumberObject) ? Types::String.new(this.number.to_s) : raise("TypeError: @TODO") }, nil, "toString", [])
+    proto.put "toString", Types::Function.new(->(scope, this, args) {
+      if this.is_a?(Types::NumberObject)
+        Types::String.new(this.number.to_s)
+      else
+        Lib.throw_type_error "Number.prototype.toString is not generic"
+      end
+    }, nil, "toString", [])
     proto.put "valueOf", Types::Function.new(->(scope, this, args) { this.is_a?(Types::NumberObject) ? Types::Number.new(this.number) : Types.to_primitive(this) }, nil, "valueOf", [])
     # Number.prototype.toExponential
     proto.put "toExponential", Types::Function.new(->(scope, this, args) do

@@ -53,7 +53,7 @@ module Twostroke::Runtime
       if @root_object.has_own_property var.to_s
         @root_object.get var.to_s
       else
-        raise "ReferenceError: undefined variable #{var}" #@TODO
+        Lib.throw_reference_error "undefined variable #{var}"
       end
     end
     

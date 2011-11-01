@@ -58,3 +58,20 @@ test("cubes", function() {
 	
 	assert(cubes == "1,8,27,64,125");
 });
+
+test('fill("cup")', function() {
+	var fill;
+	fill = function(container, liquid) {
+	  if (liquid == null) liquid = "coffee";
+	  return "Filling the " + container + " with " + liquid + "...";
+	};
+	
+	assert(fill("cup") == "Filling the cup with coffee...");
+});
+
+test('song.join(" ... ")', function() {
+	var song;
+	song = ["do", "re", "mi", "fa", "so"];
+	
+	assert(song.join(" ... ") == "do ... re ... mi ... fa ... so");
+});
