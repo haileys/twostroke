@@ -9,10 +9,10 @@ module Twostroke::Runtime
     
     proto.put "toString", Types::Function.new(->(scope, this, args) { Types::String.new "[object #{this._class || "Object"}]" }, nil, "toString", [])
     proto.put "valueOf", Types::Function.new(->(scope, this, args) { this }, nil, "valueOf", [])
-    proto.put "hasOwnProperty", Types::Function.new(->(scope, this, args) {
+    obj.put "hasOwnProperty", Types::Function.new(->(scope, this, args) {
       Types::Boolean.new Types.to_object(this).has_own_property(Types.to_string(args[0]).string)
     }, nil, "hasOwnProperty", [])
-    proto.put "isPrototypeOf", Types::Function.new(->(scope, this, args) {
+    obj.put "isPrototypeOf", Types::Function.new(->(scope, this, args) {
       proto = Types.to_object(args[0]).prototype
       this = Types.to_object(this)
       while proto.is_a?(Types::Object)
@@ -21,7 +21,7 @@ module Twostroke::Runtime
       end
       Boolean.new false
     }, nil, "isPrototypeOf", [])
-    proto.put "propertyIsEnumerable", Types::Function.new(->(scope, this, args) {
+    obj.put "propertyIsEnumerable", Types::Function.new(->(scope, this, args) {
       this = Types.to_object(this)
       prop = Types.to_string(args[0]).string
       if this.has_accessor(prop)

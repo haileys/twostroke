@@ -1,54 +1,61 @@
 $LOAD_PATH << File.expand_path("../lib", __FILE__)
 require "twostroke"
-require "pp"
-require "coderay"
-require "pry"
+require "paint"
 
-output = nil
+vm = Twostroke::Runtime::VM.new({})
+Twostroke::Runtime::Lib.setup_environment vm
 
-def time(name)
-  start = Time.now.to_f
-  yield
-  finish = Time.now.to_f
-  puts "#{name}: #{((finish-start)*1000).round 1} ms"
-end
+T = Twostroke::Runtime::Types
+vm.global_scope.set_var "assert", T::Function.new(->(scope, this, args) {
+  throw :test_failure, (args[1] ? T.to_string(args[1]).string : "") unless T.is_truthy(args[0])
+}, nil, nil, [])
+vm.global_scope.set_var "test", T::Function.new(->(scope, this, args) {
+  test_name = T.to_string(args[0] || T::Undefined.new).string
+  exception = nil
+  failure = nil
+  begin
+    failure = catch(:test_failure) do
+      exception = catch(:exception) do
+        if args[1].respond_to? :call
+          args[1].call(nil, vm.global_scope, [])
+        else
+          throw :test_failure, "" unless T.is_truthy args[1]
+        end
+        false
+      end
+      false
+    end
+  rescue => error
+  end
+  if failure
+    puts "   #{Paint[" FAIL", :red]}  #{test_name}"
+    puts "      Assertion failed: #{failure || "(no message)"}"
+  elsif exception
+    puts "   #{Paint["ERROR", :yellow]}  #{test_name}"
+    puts "      Uncaught exception: #{T.to_string(exception).string}"
+  elsif error
+    puts "   #{Paint["ERROR", :yellow]}  #{test_name}"
+    puts "      Internal Twostroke Error: #{error} at:"
+    error.backtrace.each do |bt|
+      puts "        #{bt}"
+    end
+  else
+    puts "   #{Paint[" PASS", :green]}  #{test_name}"
+  end
+}, nil, nil, [])
 
-def pretty(obj)
-  red=`tput setaf 1`
-  green=`tput setaf 2`
-  yellow=`tput setaf 3`
-  pink=`tput setaf 5`
-  blue=`tput setaf 6`
-  reset=`tput sgr0`
+Dir["test/**/*.js"].each do |test|
+  puts Paint[test, :bright, :white]
   
-  obj.pretty_inspect
-    .gsub(/<([A-Z][a-zA-Z]*(::[A-Za-z][A-Za-z]*)*)/) { |m| "<#{red}#{$1}#{reset}" }
-    .gsub(/([^:])(:[a-z]+)/i)     { |m| "#{$1}#{pink}#{$2}#{reset}" }
-    .gsub(/"([^"]+)"/)            { |m| "#{green}\"#{$1}\"#{reset}" }
-    .gsub(/=([\d\.\d]+)/)         { |m| "=#{yellow}#{$1}#{reset}" }
-    .gsub(/(@[a-z_][a-z_0-9]*)/i) { |m| "#{blue}#{$1}#{reset}" }
-end
-
-lexer = Twostroke::Lexer.new(File.read ARGV.first)
-if ARGV.include? "--tokens"
-  output = []
-  while lexer.str.size > 0
-    puts inspect(lexer.read_token)
-  end
-elsif ARGV.include? "--bench"
-  time "lexing" do
-    lexer.read_token while lexer.str.size > 0
-  end
-  lexer = Twostroke::Lexer.new(File.read ARGV.first)
-  time "parsing" do
-    parser = Twostroke::Parser.new lexer
-    parser.parse
-  end
-  exit
-else
-  parser = Twostroke::Parser.new lexer
+  parser = Twostroke::Parser.new(Twostroke::Lexer.new(File.read test))
   parser.parse
-  output = parser.statements
-end
+  
+  compiler = Twostroke::Compiler::TSASM.new parser.statements, "test_#{test}_"
+  compiler.compile
 
-puts pretty(output)
+  compiler.bytecode.each do |k,v|
+    vm.bytecode[k] = v
+  end
+  
+  vm.execute :"test_#{test}_main"
+end
