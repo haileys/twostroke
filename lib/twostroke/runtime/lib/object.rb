@@ -8,6 +8,7 @@ module Twostroke::Runtime
     scope.set_var "Object", obj
     
     proto.put "toString", Types::Function.new(->(scope, this, args) { Types::String.new "[object #{this._class || "Object"}]" }, nil, "toString", [])
+    proto.put "valueOf", Types::Function.new(->(scope, this, args) { this }, nil, "valueOf", [])
     proto.put "hasOwnProperty", Types::Function.new(->(scope, this, args) {
       Types::Boolean.new Types.to_object(this).has_own_property(Types.to_string(args[0]).string)
     }, nil, "hasOwnProperty", [])

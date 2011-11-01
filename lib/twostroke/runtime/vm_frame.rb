@@ -43,7 +43,7 @@ module Twostroke::Runtime
     
     define_method ".arg" do |arg|
       scope.declare arg.intern
-      scope.set_var arg.intern, @args.shift || Undefined.new
+      scope.set_var arg.intern, @args.shift || Types::Undefined.new
     end
     
     define_method ".catch" do |arg|
