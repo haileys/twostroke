@@ -6,7 +6,7 @@ require "coderay"
 
 bytecode = {}
 vm = Twostroke::Runtime::VM.new bytecode
-Twostroke::Runtime::Lib.setup_environment vm.global_scope
+Twostroke::Runtime::Lib.setup_environment vm
 
 sect = 0
 

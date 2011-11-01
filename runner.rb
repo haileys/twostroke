@@ -8,7 +8,7 @@ compiler = Twostroke::Compiler::TSASM.new parser.statements
 compiler.compile
 
 vm = Twostroke::Runtime::VM.new compiler.bytecode
-Twostroke::Runtime::Lib.setup_environment vm.global_scope
+Twostroke::Runtime::Lib.setup_environment vm
 
 if ARGV.include? "--pry"
   require "pry"
