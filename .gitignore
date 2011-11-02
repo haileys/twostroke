@@ -1,3 +1,4 @@
 *.gem
 etc/
 test.js
+coverage/
