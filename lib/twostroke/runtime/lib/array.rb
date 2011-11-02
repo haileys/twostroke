@@ -16,12 +16,23 @@ module Twostroke::Runtime
       Lib.throw_type_error "Array.prototype.pop is not generic" unless this.is_a? Types::Array
       this.items.pop || Types::Undefined.new
     }, nil, "pop", [])
+    # Array.prototype.shift
+    proto.put "shift", Types::Function.new(->(scope, this, args) {
+      Lib.throw_type_error "Array.prototype.shift is not generic" unless this.is_a? Types::Array
+      this.items.shift || Types::Undefined.new
+    }, nil, "shift", [])
     # Array.prototype.push
     proto.put "push", Types::Function.new(->(scope, this, args) {
       Lib.throw_type_error "Array.prototype.push is not generic" unless this.is_a? Types::Array
       args.each { |a| this.items.push a }
       Types::Number.new this.items.size
     }, nil, "push", [])
+    # Array.prototype.unshift
+    proto.put "unshift", Types::Function.new(->(scope, this, args) {
+      Lib.throw_type_error "Array.prototype.unshift is not generic" unless this.is_a? Types::Array
+      args.each { |a| this.items.unshift a }
+      Types::Number.new this.items.size
+    }, nil, "unshift", [])
     # Array.prototype.slice
     proto.put "slice", Types::Function.new(->(scope, this, args) {
       Lib.throw_type_error "Array.prototype.slice is not generic" unless this.is_a? Types::Array
@@ -34,6 +45,13 @@ module Twostroke::Runtime
         Types::Array.new this.items[begin_index.number.to_i..end_index.number.to_i]
       end
     }, nil, "slice", [])
+    # Array.prototype.sort
+    proto.put "sort", Types::Function.new(->(scope, this, args) {
+      Lib.throw_type_error "Array.prototype.sort is not generic" unless this.is_a? Types::Array
+      sortfn = args[0] || ->(scope, this, args) { Types::Number.new(Types.to_string(args[0]).string <=> Types.to_string(args[0]).string) }
+      this.items.sort! { |a,b| Types.to_number(sortfn.(scope, this, [a,b])).number }
+      this
+    }, nil, "sort", [])
     # Array.prototype.length
     proto.define_own_property "length", get: ->(this) { Types::Number.new this.items.size }, set: ->(this,val) do
         Lib.throw_type_error "Array.prototype.length is not generic" unless this.is_a? Types::Array
