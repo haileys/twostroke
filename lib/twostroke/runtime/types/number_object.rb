@@ -6,7 +6,7 @@ module Twostroke::Runtime::Types
           if this.constructing?
             Twostroke::Runtime::Types.to_object(Twostroke::Runtime::Types.to_number(args[0] || Undefined.new))
           else
-            Twostroke::Runtime::Types.to_boolean(args[0])
+            Twostroke::Runtime::Types.to_number(args[0])
           end
         }, nil, "Number", [])
     end

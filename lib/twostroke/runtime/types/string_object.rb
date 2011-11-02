@@ -24,6 +24,24 @@ module Twostroke::Runtime
           super prop, this
         end
       end
+      
+      def has_property(prop)
+        if prop =~ /\A\d+\z/
+          i = prop.to_i
+          i >= 0 && i < string.size
+        else
+          super prop
+        end
+      end
+      
+      def has_own_property(prop)
+        if prop =~ /\A\d+\z/
+          i = prop.to_i
+          i >= 0 && i < string.size
+        else
+          super prop
+        end
+      end
     end
   end
 end

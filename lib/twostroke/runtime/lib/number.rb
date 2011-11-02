@@ -59,7 +59,7 @@ module Twostroke::Runtime
     obj.put "MAX_VALUE", Types::Number.new(Float::MAX)
     obj.put "MIN_VALUE", Types::Number.new(Float::MIN)
     obj.put "NaN", Types::Number.new(Float::NAN)
-    obj.put "NEGATIVE_INFINITY", Types::Number.new(Float::INFINITY)
-    obj.put "POSITIVE_INFINITY", Types::Number.new(-Float::INFINITY)
+    obj.put "NEGATIVE_INFINITY", Types::Number.new(-Float::INFINITY)
+    obj.put "POSITIVE_INFINITY", Types::Number.new(Float::INFINITY)
   end
 end

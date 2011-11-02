@@ -121,7 +121,7 @@ module Twostroke::Runtime::Types
           val = valueOf.call(nil, self, [])
           return val if val.is_a? Primitive
         end
-        Lib.throw_type_error "could not convert object to string"
+        Twostroke::Runtime::Lib.throw_type_error "could not convert object to string"
       elsif hint == "Number"
         valueOf = get "valueOf"
         if valueOf.respond_to? :call
@@ -133,7 +133,7 @@ module Twostroke::Runtime::Types
           str = toString.call(nil, self, [])
           return str if str.is_a? Primitive
         end
-        Lib.throw_type_error "could not convert object to string"
+        Twostroke::Runtime::Lib.throw_type_error "could not convert object to string"
       end
     end
     

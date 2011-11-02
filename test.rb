@@ -1,3 +1,6 @@
+require "simplecov"
+SimpleCov.start
+
 $LOAD_PATH << File.expand_path("../lib", __FILE__)
 require "twostroke"
 require "paint"
@@ -8,6 +11,9 @@ Twostroke::Runtime::Lib.setup_environment vm
 T = Twostroke::Runtime::Types
 vm.global_scope.set_var "assert", T::Function.new(->(scope, this, args) {
   throw :test_failure, (args[1] ? T.to_string(args[1]).string : "") unless T.is_truthy(args[0])
+}, nil, nil, [])
+vm.global_scope.set_var "assert_equal", T::Function.new(->(scope, this, args) {
+  throw :test_failure, "<#{T.to_string(args[0]).string}> !== <#{T.to_string(args[1]).string}>" unless T.seq args[0], args[1]
 }, nil, nil, [])
 vm.global_scope.set_var "test", T::Function.new(->(scope, this, args) {
   test_name = T.to_string(args[0] || T::Undefined.new).string
