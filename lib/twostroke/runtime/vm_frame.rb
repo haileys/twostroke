@@ -108,6 +108,12 @@ module Twostroke::Runtime
       stack.push Types.to_object(stack.pop).get(arg.to_s)
     end
     
+    def in(arg)
+      obj = Types.to_object stack.pop
+      idx = Types.to_string stack.pop
+      stack.push Types::Boolean.new(obj.has_property idx.string)
+    end
+    
     def set(arg)
       scope.set_var arg, stack.last
     end
@@ -205,10 +211,6 @@ module Twostroke::Runtime
     def add(arg)
       r = stack.pop
       l = stack.pop
-      unless l && r
-        require 'pry'
-        pry binding
-      end
       right = Types.to_primitive r
       left = Types.to_primitive l
       

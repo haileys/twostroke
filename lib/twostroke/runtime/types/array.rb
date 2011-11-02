@@ -38,6 +38,15 @@ module Twostroke::Runtime
           super prop, val, this
         end
       end
+      
+      def has_property(prop)
+        if prop =~ /\A\d+\z/
+          i = prop.to_i
+          i >= 0 && i < items.size
+        else
+          super prop
+        end
+      end
     end
   end
 end

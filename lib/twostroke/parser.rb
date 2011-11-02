@@ -363,11 +363,11 @@ module Twostroke
       assert_type next_token, :MEMBER_ACCESS
       assert_type next_token, :BAREWORD
       access = AST::MemberAccess.new object: obj, member: token.val
-      if peek_token.type == :MEMBER_ACCESS
+      if peek_token(false).type == :MEMBER_ACCESS
         member_access access
-      elsif peek_token.type == :OPEN_PAREN
+      elsif peek_token(false).type == :OPEN_PAREN
         call access
-      elsif peek_token.type == :EQUALS
+      elsif peek_token(false).type == :EQUALS
         assignment access
       else
         access

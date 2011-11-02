@@ -11,9 +11,9 @@ module Twostroke::AST
     
     def walk(&bk)
       if yield self
-        initializer.walk &bk
-        condition.walk &bk
-        increment.walk &bk
+        initializer.walk(&bk) if initializer
+        condition.walk(&bk) if condition
+        increment.walk(&bk) if increment
         body.walk &bk
       end
     end

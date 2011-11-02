@@ -13,7 +13,7 @@ class Twostroke::Compiler::TSASM
         # hoist named functions to top
         node.select { |n| n.is_a?(Twostroke::AST::Function) && n.name }.each { |n| compile n }
         node.reject { |n| n.is_a?(Twostroke::AST::Function) && n.name }.each { |n| compile n }
-      else
+      else        
         if @methods[type(node)]
           send type(node), node if node
         else
@@ -121,7 +121,7 @@ private
   { Addition: :add, Subtraction: :sub, Multiplication: :mul, Division: :div,
     Equality: :eq, StrictEquality: :seq, LessThan: :lt, GreaterThan: :gt,
     LessThanEqual: :lte, GreaterThanEqual: :gte, BitwiseAnd: :and,
-    BitwiseOr: :or, BitwiseXor: :xor }.each do |method,op|
+    BitwiseOr: :or, BitwiseXor: :xor, In: :in }.each do |method,op|
     define_method method do |node|
       if node.assign_result_left
         if type(node.left) == :Variable || type(node.left) == :Declaration
@@ -480,16 +480,16 @@ private
   end
   
   def ForLoop(node)
-    compile node.initializer
+    compile node.initializer if node.initializer
     start_label = uniqid
     end_label = uniqid
     @continue_stack.push start_label
     @break_stack.push end_label
     output :".label", start_label
-    compile node.condition
+    compile node.condition if node.condition
     output :jif, end_label
     compile node.body
-    compile node.increment
+    compile node.increment if node.increment
     output :jmp, start_label
     output :".label", end_label
     @continue_stack.pop
