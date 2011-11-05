@@ -10,6 +10,7 @@ module Twostroke::Runtime
       INITIALIZERS << bk
     end
   
+    require File.expand_path("../lib/object.rb", __FILE__)
     Dir.glob File.expand_path("../lib/*.rb", __FILE__) do |f|
       require f
     end
