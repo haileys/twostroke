@@ -19,7 +19,7 @@ module Twostroke::Runtime
       obj.put "prototype", obj.prototype
       Lib.define_singleton_method "throw_#{e.downcase}_error" do |message|
         exc = Types::Object.new
-        exc.construct prototype: obj.prototype, _class: "#{e}Error" do
+        exc.construct prototype: obj.prototype, _class: obj do
           exc.put "name", Types::String.new("#{e}Error")
           exc.put "message", Types::String.new(message)
         end

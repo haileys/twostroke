@@ -35,13 +35,13 @@ module Twostroke::Runtime
     proto.put "bind", Types::Function.new(->(scope, this, args) do
         Lib.throw_type_error "cannot call Function.prototype.bind on non-callable object" unless this.respond_to?(:call)
         Types::Function.new(->(_scope, _this, _args) do
-          this.call(_scope, args.first || Undefined.new, args.drop(1) + _args)
+          this.call(_scope, args.first || Types::Undefined.new, args.drop(1) + _args)
         end, nil, nil, [])
       end, nil, "bind", [])
     # Function.prototype.call
     proto.put "call", Types::Function.new(->(scope, this, args) do
         Lib.throw_type_error "cannot call Function.prototype.call on non-callable object" unless this.respond_to?(:call)
-        this.call(scope, args.first || Undefined.new, args.drop(1))
+        this.call(scope, args.first || Types::Undefined.new, args[1..-1])
       end, nil, "call", [])
     # Function.prototype.toString
     proto.put "toString", Types::Function.new(->(scope, this, args) do

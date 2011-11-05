@@ -103,7 +103,7 @@ module Twostroke::Runtime
       fun = stack.pop
       Lib.throw_type_error "called non callable" unless fun.respond_to?(:call)
       obj = Types::Object.new
-      obj.construct prototype: fun.get("prototype"), _class: fun.name do
+      obj.construct prototype: fun.get("prototype"), _class: fun do
         retn = fun.call(scope, obj, args)
         if retn.is_a?(Types::Undefined)
           stack.push obj
@@ -248,6 +248,28 @@ module Twostroke::Runtime
       stack.push Types.to_number(stack.pop)
     end
     
+    def regexp(arg)
+      stack.push Types::RegExp.new(Regexp.new *arg)
+    end
+    
+    def sal(arg)
+      r = Types.to_uint32(stack.pop) & 31
+      l = Types.to_int32 stack.pop
+      stack.push Types::Number.new(l << r)
+    end
+    
+    def sar(arg)
+      r = Types.to_uint32(stack.pop) & 31
+      l = Types.to_int32 stack.pop
+      stack.push Types::Number.new(l >> r)
+    end
+    
+    def slr(arg)
+      r = Types.to_uint32(stack.pop) & 31
+      l = Types.to_uint32 stack.pop
+      stack.push Types::Number.new(l >> r)
+    end
+    
     def add(arg)
       r = stack.pop
       l = stack.pop
@@ -276,7 +298,7 @@ module Twostroke::Runtime
     def div(arg)
       right = Types.to_number(stack.pop).number
       left = Types.to_number(stack.pop).number
-      stack.push Types::Number.new(left / right)
+      stack.push Types::Number.new(left / right.to_f)
     end
     
     def setindex(arg)

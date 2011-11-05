@@ -8,17 +8,22 @@ require "paint"
 vm = Twostroke::Runtime::VM.new({})
 Twostroke::Runtime::Lib.setup_environment vm
 
+asserts = 0
+
 T = Twostroke::Runtime::Types
 vm.global_scope.set_var "assert", T::Function.new(->(scope, this, args) {
   throw :test_failure, (args[1] ? T.to_string(args[1]).string : "") unless T.is_truthy(args[0])
+  asserts += 1
 }, nil, nil, [])
 vm.global_scope.set_var "assert_equal", T::Function.new(->(scope, this, args) {
-  throw :test_failure, "<#{T.to_string(args[0]).string}> !== <#{T.to_string(args[1]).string}>  #{T.to_string(args[2].string) if args[2]}" unless T.seq args[0], args[1]
+  throw :test_failure, "<#{T.to_string(args[0]).string}> !== <#{T.to_string(args[1]).string}>  #{T.to_string(args[2]).string if args[2]}" unless T.seq args[0], args[1]
+  asserts += 1
 }, nil, nil, [])
 vm.global_scope.set_var "test", T::Function.new(->(scope, this, args) {
   test_name = T.to_string(args[0] || T::Undefined.new).string
   exception = nil
   failure = nil
+  asserts = 0
   begin
     failure = catch(:test_failure) do
       exception = catch(:exception) do
@@ -35,13 +40,13 @@ vm.global_scope.set_var "test", T::Function.new(->(scope, this, args) {
   end
   if failure
     puts "   #{Paint[" FAIL", :red]}  #{test_name}"
-    puts "      Assertion failed: #{failure || "(no message)"}"
+    puts "      Assertion failed after #{asserts} assertions: #{failure || "(no message)"}"
   elsif exception
     puts "   #{Paint["ERROR", :yellow]}  #{test_name}"
-    puts "      Uncaught exception: #{T.to_string(exception).string}"
+    puts "      Uncaught exception after #{asserts} assertions: #{T.to_string(exception).string}"
   elsif error
     puts "   #{Paint["ERROR", :yellow]}  #{test_name}"
-    puts "      Internal Twostroke Error: #{error} at:"
+    puts "      Internal error after #{asserts} assertions: #{error} at:"
     error.backtrace.each do |bt|
       puts "        #{bt}"
     end
@@ -50,7 +55,13 @@ vm.global_scope.set_var "test", T::Function.new(->(scope, this, args) {
   end
 }, nil, nil, [])
 
-Dir["test/**/*.js"].each do |test|
+if ARGV.empty?
+  tests = Dir["test/**/*.js"]
+else
+  tests = ARGV.map { |f| "test/#{f}.js" }
+end
+
+tests.each do |test|
   puts Paint[test, :bright, :white]
   
   parser = Twostroke::Parser.new(Twostroke::Lexer.new(File.read test))
@@ -63,5 +74,13 @@ Dir["test/**/*.js"].each do |test|
     vm.bytecode[k] = v
   end
   
-  vm.execute :"test_#{test}_main"
+  exception = catch(:exception) do
+    vm.execute :"test_#{test}_main"
+    nil
+  end
+  
+  if exception
+    puts "   #{Paint["ERROR", :yellow]}"
+    puts "      Uncaught exception: #{T.to_string(exception).string}"
+  end
 end

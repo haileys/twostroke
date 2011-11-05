@@ -1,8 +1,11 @@
 module Twostroke::Runtime::Types
   class Function < Object
     def self.constructor_function
-      @@constructor_function ||=
-        Function.new(->(scope, this, args) { raise "@TODO" }, nil, "Function", [])
+      unless defined?(@@constructor_function)
+        @@constructor_function = Function.new(->(scope, this, args) { raise "@TODO" }, nil, "Function", [])
+        @@constructor_function._class = @@constructor_function
+      end
+      @@constructor_function
     end
     
     attr_reader :arguments, :name, :source, :function
@@ -11,8 +14,13 @@ module Twostroke::Runtime::Types
       @source = source
       @name = name
       @arguments = arguments
+      # setting @_class to Function's constructor would result in a stack overflow,
+      # so we'll set it to nil and patch things up after @@constructor_function has
+      # been set
+      @_class = nil unless defined?(@@constructor_function)
       super()
       @prototype = nil
+      put "prototype", Object.new
     end
     
     def prototype

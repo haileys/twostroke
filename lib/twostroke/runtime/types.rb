@@ -38,6 +38,26 @@ module Twostroke::Runtime::Types
     end
   end
   
+  def self.to_int32(object)
+    num = to_number object
+    if num.nan? || num.infinite?
+      0
+    else
+      int32 = num.number.to_i & 0xffff_ffff
+      int32 -= 2 ** 31 if int32 >= 2 ** 31
+      int32
+    end
+  end
+  
+  def self.to_uint32(object)
+    num = to_number object
+    if num.nan? || num.infinite?
+      0
+    else
+      num.number.to_i & 0xffff_ffff
+    end
+  end
+  
   def self.to_string(object)
     if object.is_a?(Undefined)
       String.new "undefined"

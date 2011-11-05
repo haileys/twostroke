@@ -1,13 +1,14 @@
 module Twostroke::Runtime::Types
   class Object < Value
-    attr_reader :accessors, :properties, :prototype, :_class, :extensible
+    attr_accessor :_class
+    attr_reader :accessors, :properties, :prototype, :extensible
     private :accessors, :properties
     def initialize
-      @_class ||= "Object"
       @extensible = true
       @properties = {}
       @accessors = {}
       @prototype ||= defined?(@@_prototype) ? @@_prototype : Null.new
+      @_class = self.class.constructor_function if !defined?(@_class) && self.class.respond_to?(:constructor_function)
     end
     
     def self.set_global_prototype(proto)
@@ -24,6 +25,16 @@ module Twostroke::Runtime::Types
     
     def constructing?
       @constructing
+    end
+    
+    # this allows us to treat the object like a generic array
+    # the value of this method is not memoized, so call sparingly
+    def generic_items
+      return items if respond_to? :items
+      len = Twostroke::Runtime::Types.to_number(get "length").number
+      return [] if (len.is_a?(Float) && (len.nan? || len.infinite?)) || len < 0
+      len = len.to_i
+      (0...len).map { |i| get i.to_s }
     end
     
     def construct(opts = {})

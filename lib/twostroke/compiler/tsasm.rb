@@ -124,7 +124,7 @@ private
     Equality: :eq, StrictEquality: :seq, LessThan: :lt, GreaterThan: :gt,
     LessThanEqual: :lte, GreaterThanEqual: :gte, BitwiseAnd: :and,
     BitwiseOr: :or, BitwiseXor: :xor, In: :in, RightArithmeticShift: :sar,
-    LeftArithmeticShift: :lsr, RightLogicalShift: :slr, InstanceOf: :instanceof,
+    LeftShift: :sal, RightLogicalShift: :slr, InstanceOf: :instanceof,
   }.each do |method,op|
     define_method method do |node|
       if node.assign_result_left
@@ -551,6 +551,10 @@ private
       compile node.value
       output :typeof
     end
+  end
+  
+  def BracketedExpression(node)
+    compile node.value
   end
   
   def Void(node)

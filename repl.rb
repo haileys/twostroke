@@ -8,6 +8,20 @@ bytecode = {}
 vm = Twostroke::Runtime::VM.new bytecode
 Twostroke::Runtime::Lib.setup_environment vm
 
+ARGV.each do |inc|
+  parser = Twostroke::Parser.new(Twostroke::Lexer.new(File.read inc))
+  parser.parse
+
+  compiler = Twostroke::Compiler::TSASM.new parser.statements, "include_#{inc}_"
+  compiler.compile
+
+  compiler.bytecode.each do |k,v|
+    bytecode[k] = v
+  end
+  
+  vm.execute :"include_#{inc}_main", vm.global_scope
+end
+
 sect = 0
 
 trap "SIGINT" do
