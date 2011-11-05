@@ -391,7 +391,6 @@
   // passed-in arrays. (Aliased as "intersect" for back-compat.)
   _.intersection = _.intersect = function(array) {
     var rest = slice.call(arguments, 1);
-	console.log(rest);
     return _.filter(_.uniq(array), function(item) {
       return _.every(rest, function(other) {
         return _.indexOf(other, item) >= 0;
