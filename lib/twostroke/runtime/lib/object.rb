@@ -10,14 +10,16 @@ module Twostroke::Runtime
     proto.put "toString", Types::Function.new(->(scope, this, args) { Types::String.new "[object #{this._class || "Object"}]" }, nil, "toString", [])
     proto.put "valueOf", Types::Function.new(->(scope, this, args) { this }, nil, "valueOf", [])
     proto.put "hasOwnProperty", Types::Function.new(->(scope, this, args) {
-      Types::Boolean.new Types.to_object(this || Undefined.new).has_own_property(Types.to_string(args[0] || Undefined.new).string)
+      Types::Boolean.new Types.to_object(this || Types::Undefined.new).has_own_property(Types.to_string(args[0] || Types::Undefined.new).string)
     }, nil, "hasOwnProperty", [])
     proto.put "isPrototypeOf", Types::Function.new(->(scope, this, args) {
-      proto = Types.to_object(args[0] || Undefined.new).prototype
-      this = Types.to_object(this || Types::Undefined.new)
-      while proto.is_a?(Types::Object)
-        return Boolean.new(true) if args[0] == proto
-        proto = proto.prototype
+      if args[0].is_a? Types::Object
+        proto = args[0].prototype
+        this = Types.to_object(this || Types::Undefined.new)
+        while proto.is_a?(Types::Object)
+          return Types::Boolean.new(true) if this == proto
+          proto = proto.prototype
+        end
       end
       Types::Boolean.new false
     }, nil, "isPrototypeOf", [])

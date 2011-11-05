@@ -9,11 +9,10 @@ test("hasOwnProperty", function() {
 });
 
 test("isPrototypeOf", function() {
-	assert_equal(Object.isPrototypeOf(console, "log"), true);
-	assert_equal(Object.hasOwnProperty("test", "length"), false);
-	assert_equal(Object.hasOwnProperty("test", 0), true);
-	assert_equal(Object.hasOwnProperty("test", 99), false);
-	assert_equal(Object.hasOwnProperty([1], 0), true);
-	assert_equal(Object.hasOwnProperty([1], 99), false);
-	assert_equal(Object.hasOwnProperty({ a: 1 }, "a"), true);
+	assert_equal(Object.prototype.isPrototypeOf(console), true);
+	assert_equal(Object.isPrototypeOf(console), false);
+	assert_equal(Number.prototype.isPrototypeOf(new Number(1)), true);
+	assert_equal(Number.prototype.isPrototypeOf(1), false);
+	assert_equal(String.prototype.isPrototypeOf(new String("hi")), true);
+	assert_equal(String.prototype.isPrototypeOf("hi"), false);
 });
