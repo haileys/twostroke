@@ -15,7 +15,7 @@ fs.readdirSync("test/").map(function(test) { return "test/" + test; }).forEach(f
 			};
 			assert_equal = function(a, b, msg) {
 				if(a !== b) {
-					throw name + "\n      " + "Assertion failed: <" + a.toString() + "> !== <" + b.toString() + ">";
+					throw name + "\n      " + "Assertion failed: <" + typeof a + ":" + a.toString() + "> !== <" + typeof b + ":" + b.toString() + ">";
 				}
 			}
 			try {

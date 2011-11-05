@@ -18,7 +18,7 @@ module Twostroke::Runtime
     # Function.prototype.apply
     proto.put "apply", Types::Function.new(->(scope, this, args) do
         Lib.throw_type_error "cannot call Function.prototype.apply on non-callable object" unless this.respond_to?(:call)
-        call_this = args[0] || Types::Undefined.new
+        call_this = Types.to_object(args[0] || Types::Undefined.new)
         call_args = []
         unless args[1].nil? || args[1].is_a?(Types::Null) || args[1].is_a?(Types::Undefined)
           args[1] = Types.to_object(args[1])
