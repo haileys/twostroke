@@ -301,6 +301,12 @@ module Twostroke::Runtime
       stack.push Types::Number.new(left / right.to_f)
     end
     
+    def mod(arg)
+      right = Types.to_number(stack.pop).number
+      left = Types.to_number(stack.pop).number
+      stack.push Types::Number.new(left % right)
+    end
+    
     def setindex(arg)
       val = stack.pop
       index = Types.to_string(stack.pop).string

@@ -125,6 +125,7 @@ private
     LessThanEqual: :lte, GreaterThanEqual: :gte, BitwiseAnd: :and,
     BitwiseOr: :or, BitwiseXor: :xor, In: :in, RightArithmeticShift: :sar,
     LeftShift: :sal, RightLogicalShift: :slr, InstanceOf: :instanceof,
+    Modulus: :mod
   }.each do |method,op|
     define_method method do |node|
       if node.assign_result_left
@@ -179,13 +180,15 @@ private
       compile left.object
       output :dup
       output :member, left.member.intern
-      output :dup
-      output :tst # Temp STore
       output op
       output :setprop, left.member.intern
-      output :tld # Temp LoaD
     elsif type(left) == :Index  
-      error! "post-mutatation of array index not supported yet" # @TODO
+      compile left.object
+      compile left.index
+      output :dup, 2
+      output :index
+      output op
+      output :setindex
     else
       error! "Bad lval in post-mutation"
     end
