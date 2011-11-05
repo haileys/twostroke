@@ -208,6 +208,10 @@ module Twostroke::Runtime
       stack.push Types::Undefined.new
     end
     
+    def number(arg)
+      stack.push Types.to_number(stack.pop)
+    end
+    
     def add(arg)
       r = stack.pop
       l = stack.pop

@@ -414,6 +414,11 @@ private
     output :push, node.number
   end
   
+  def UnaryPlus(node)
+    compile node.value
+    output :number
+  end
+  
   def This(node)
     output :this
   end
