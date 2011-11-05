@@ -13,7 +13,9 @@ class Twostroke::Compiler::TSASM
         # hoist named functions to top
         node.select { |n| n.is_a?(Twostroke::AST::Function) && n.name }.each { |n| compile n }
         node.reject { |n| n.is_a?(Twostroke::AST::Function) && n.name }.each { |n| compile n }
-      else        
+      elsif node.is_a? Symbol
+        send node
+      else
         if @methods[type(node)]
           send type(node), node if node
         else
@@ -52,7 +54,7 @@ private
         end
       end
       bytecode[k] = v.select do |ins|
-        if [:jmp, :jit, :jif, :pushcatch, :pushfinally].include?(ins[0])
+        if [:jmp, :jit, :jif, :pushcatch, :pushfinally, :jiee].include?(ins[0])
           ins[1] = labels_at[ins[1]]
         end
         ins[0] != :".label"
@@ -121,7 +123,9 @@ private
   { Addition: :add, Subtraction: :sub, Multiplication: :mul, Division: :div,
     Equality: :eq, StrictEquality: :seq, LessThan: :lt, GreaterThan: :gt,
     LessThanEqual: :lte, GreaterThanEqual: :gte, BitwiseAnd: :and,
-    BitwiseOr: :or, BitwiseXor: :xor, In: :in }.each do |method,op|
+    BitwiseOr: :or, BitwiseXor: :xor, In: :in, RightArithmeticShift: :sar,
+    LeftArithmeticShift: :lsr, RightLogicalShift: :slr, InstanceOf: :instanceof,
+  }.each do |method,op|
     define_method method do |node|
       if node.assign_result_left
         if type(node.left) == :Variable || type(node.left) == :Declaration
@@ -262,6 +266,10 @@ private
   
   def False(node)
     output :false
+  end
+  
+  def Regexp(node)
+    output :regexp, node.regexp
   end
   
   def Function(node)
@@ -499,6 +507,28 @@ private
     output :".label", end_label
     @continue_stack.pop
     @break_stack.pop
+  end
+  
+  def _enum_next
+    output :enumnext
+  end
+  
+  def ForIn(node)
+    end_label = uniqid
+    loop_label = uniqid
+    @break_stack.push end_label
+    @continue_stack.push loop_label
+    compile node.object
+    output :enum
+    output :".label", loop_label
+    output :jiee, end_label
+    mutate node.lval, :_enum_next
+    compile node.body
+    output :jmp, loop_label
+    output :".label", end_label
+    output :popenum
+    @break_stack.pop
+    @continue_stack.pop
   end
   
   def Not(node)

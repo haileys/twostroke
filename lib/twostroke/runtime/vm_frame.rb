@@ -1,6 +1,6 @@
 module Twostroke::Runtime
   class VM::Frame
-    attr_reader :vm, :insns, :stack, :sp_stack, :catch_stack, :finally_stack, :exception, :ip, :scope
+    attr_reader :vm, :insns, :stack, :sp_stack, :catch_stack, :finally_stack, :enum_stack, :exception, :ip, :scope
     
     def initialize(vm, section, callee = nil)
       @vm = vm
@@ -9,16 +9,30 @@ module Twostroke::Runtime
       @callee = callee
     end
     
+    def arguments_object
+      arguments = Types::Object.new
+      @args.each_with_index { |arg,i| arguments.put i.to_s, arg }
+      arguments.put "length", Types::Number.new(@args.size)
+      arguments.put "callee", @callee
+      arguments
+    end
+    
     def execute(scope, this = nil, args = [])
       @scope = scope || Scope.new(vm.global_scope)
       @stack = []
       @sp_stack = []
       @catch_stack = []
       @finally_stack = []
+      @enum_stack = []
       @ip = 0
       @return = false
       @this = this || @scope.global_scope.root_object
       @args = args
+      if @callee
+        # the arguments object is only available within functions
+        scope.declare :arguments
+        scope.set_var :arguments, arguments_object
+      end
       
       until @return
         ins, arg = *insns[ip]
@@ -112,6 +126,28 @@ module Twostroke::Runtime
       obj = Types.to_object stack.pop
       idx = Types.to_string stack.pop
       stack.push Types::Boolean.new(obj.has_property idx.string)
+    end
+    
+    def enum(arg)
+      obj = Types.to_object stack.pop
+      props = []
+      obj.each_enumerable_property { |p| props.push p }
+      @enum_stack.push [props, 0]
+    end
+
+    def enumnext(arg)
+      enum = @enum_stack.last
+      stack.push Types::String.new(enum[0][enum[1]])
+      enum[1] += 1
+    end
+    
+    def jiee(arg)
+      enum = @enum_stack.last
+      @ip = arg if enum[1] >= enum[0].size
+    end
+    
+    def popenum(arg)
+      @enum_stack.pop
     end
     
     def set(arg)

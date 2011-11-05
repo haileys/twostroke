@@ -42,6 +42,11 @@ module Twostroke::Runtime
           super prop
         end
       end
+      
+      def each_enumerable_property(&bk)
+        (0...string.length).map(&:to_s).each &bk
+        super &bk
+      end
     end
   end
 end

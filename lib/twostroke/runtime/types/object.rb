@@ -63,6 +63,14 @@ module Twostroke::Runtime::Types
       # @TODO?
     end
     
+    def each_enumerable_property(&bk)
+      accessors.select { |k,v| v[:enumerable] }.each { |k,v| yield k }
+      properties.reject { |k,v| accessors[k] }.each { |k,v| yield k }
+      if prototype && prototype.is_a?(Object)
+        prototype.each_enumerable_property &bk
+      end
+    end
+    
     def put(prop, value, this = self)
       if accessors.has_key? prop
         accessors[prop][:set].(this, value) if accessors[prop][:set] && accessors[prop][:writable]
