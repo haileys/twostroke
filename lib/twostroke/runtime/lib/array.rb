@@ -8,7 +8,7 @@ module Twostroke::Runtime
     proto.put "toString", Types::Function.new(->(scope, this, args) do
         Lib.throw_type_error "Array.prototype.toString is not generic" unless this.is_a?(Types::Array)
         Types::String.new this.items.map { |o| 
-            if o.is_a?(Types::Undefined) || o.is_a?(Types::Null)
+            if o.nil? || o.is_a?(Types::Undefined) || o.is_a?(Types::Null)
               ""
             else
               Types.to_string(o).string
@@ -54,6 +54,7 @@ module Twostroke::Runtime
     proto.put "sort", Types::Function.new(->(scope, this, args) {
       Lib.throw_type_error "Array.prototype.sort is not generic" unless this.is_a? Types::Array
       sortfn = args[0] || ->(scope, this, args) { Types::Number.new(Types.to_string(args[0]).string <=> Types.to_string(args[1]).string) }
+      this.items.reject!(&:nil?)
       this.items.sort! { |a,b| Types.to_number(sortfn.(scope, this, [a,b])).number }
       this
     }, nil, "sort", [])

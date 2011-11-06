@@ -15,7 +15,7 @@ module Twostroke::Runtime::Types
       elsif object.is_a?(Number)
         !object.zero? && !object.nan?
       elsif object.is_a?(String)
-        object.string == ""
+        object.string != ""
       else
         true
       end
@@ -89,21 +89,11 @@ module Twostroke::Runtime::Types
   end
   
   def self.is_falsy(object)
-    if object.is_a?(Boolean)
-      !object.boolean
-    elsif object.is_a?(Null) || object.is_a?(Undefined)
-      true
-    elsif object.is_a?(String)
-      object.string == ""
-    elsif object.is_a?(Number)
-      object.zero? || object.nan?
-    else
-      false
-    end
+    !is_truthy(object)
   end
   
   def self.is_truthy(object)
-    !is_falsy(object)
+    to_boolean(object).boolean
   end
   
   def self.eq(a, b)

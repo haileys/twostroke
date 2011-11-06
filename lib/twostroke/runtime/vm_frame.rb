@@ -356,6 +356,12 @@ module Twostroke::Runtime
       end
     end
     
+    def instanceof(arg)
+      r = stack.pop
+      l = stack.pop
+      stack.push Types::Boolean.new(r.has_instance l)
+    end
+    
     def close(arg)
       arguments = vm.bytecode[arg].take_while { |ins,arg| ins == :".arg" }.map(&:last).map(&:to_s)
       scope = @scope

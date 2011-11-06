@@ -25,7 +25,7 @@ module Twostroke::Runtime
       
       def get(prop, this = self)
         if prop =~ /\A\d+\z/
-          items[prop.to_i]
+          items[prop.to_i] || Undefined.new
         else
           super prop, this
         end
@@ -42,7 +42,7 @@ module Twostroke::Runtime
       def has_property(prop)
         if prop =~ /\A\d+\z/
           i = prop.to_i
-          i >= 0 && i < items.size
+          i >= 0 && i < items.size && !items[i].nil?
         else
           super prop
         end
@@ -51,10 +51,21 @@ module Twostroke::Runtime
       def has_own_property(prop)
         if prop =~ /\A\d+\z/
           i = prop.to_i
-          i >= 0 && i < items.size
+          i >= 0 && i < items.size && !items[i].nil?
         else
           super prop
         end
+      end
+      
+      def delete(prop)
+        if prop =~ /\A\d+\z/
+          i = prop.to_i
+          if i >= 0 && i < items.size && !items[i].nil?
+            items[i] = nil
+            return true
+          end
+        end
+        super prop
       end
       
       def each_enumerable_property(&bk)

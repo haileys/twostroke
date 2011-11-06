@@ -50,7 +50,7 @@ module Twostroke::Runtime
     end
     
     def get_var(var)
-      if @root_object.has_own_property var.to_s
+      if @root_object.has_property var.to_s
         @root_object.get var.to_s
       else
         Lib.throw_reference_error "undefined variable #{var}"
@@ -58,7 +58,7 @@ module Twostroke::Runtime
     end
     
     def has_var(var)
-      @root_object.has_own_property var.to_s
+      @root_object.has_property var.to_s
     end
     
     def declare(var)

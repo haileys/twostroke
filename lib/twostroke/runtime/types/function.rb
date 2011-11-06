@@ -27,6 +27,17 @@ module Twostroke::Runtime::Types
       @prototype ||= Function.constructor_function.get("prototype")
     end
     
+    def has_instance(obj)
+      return false unless obj.is_a? Object
+      o = get "prototype"
+      Twostroke::Runtime::Lib.throw_type_error "Function prototype not an object" unless o.is_a? Object
+      loop do
+        obj = obj.prototype
+        return false unless obj.is_a?(Object)
+        return true if obj == o
+      end
+    end
+    
     def typeof
       "function"
     end
