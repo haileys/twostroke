@@ -307,6 +307,24 @@ module Twostroke::Runtime
       stack.push Types::Number.new(left % right)
     end
     
+    def and(arg)
+      right = Types.to_int32 stack.pop
+      left = Types.to_int32 stack.pop
+      stack.push Types::Number.new(left & right)
+    end
+    
+    def or(arg)
+      right = Types.to_int32 stack.pop
+      left = Types.to_int32 stack.pop
+      stack.push Types::Number.new(left | right)
+    end
+    
+    def xor(arg)
+      right = Types.to_int32 stack.pop
+      left = Types.to_int32 stack.pop
+      stack.push Types::Number.new(left ^ right)
+    end
+    
     def setindex(arg)
       val = stack.pop
       index = Types.to_string(stack.pop).string

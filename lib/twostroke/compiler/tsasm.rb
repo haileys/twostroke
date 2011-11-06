@@ -325,6 +325,20 @@ private
     output :ret
   end
   
+  def Delete(node)
+    if node.is_a?(Twostroke::AST::Variable)
+      output :deleteg, node.name
+    elsif node.is_a?(Twostroke::AST::MemberAccess)
+      compile node.object
+      output :delete, node.member
+    elsif node.is_a?(Twostroke::AST::Index)
+      compile node.object
+      output :delete, node.index
+    else
+      output :true
+    end
+  end
+  
   def Throw(node)
     compile node.expression
     output :_throw
