@@ -3,7 +3,8 @@ module Twostroke::Runtime
     proto = Types::Object.new
   
     obj = Types::Function.new(->(scope, this, args) { args.length.zero? ? Types::Object.new : Types.to_object(args[0]) }, nil, "Object", [])
-    obj.prototype = proto
+    #obj.prototype is Function, lets set its prototype to proto
+    obj.prototype.prototype = proto
     obj.put "prototype", proto
     scope.set_var "Object", obj
     
@@ -42,5 +43,7 @@ module Twostroke::Runtime
     }, nil, "propertyIsEnumerable", [])
     
     Types::Object.set_global_prototype proto
+    Types::Object.define_singleton_method(:constructor_function) { obj }
+    scope.global_scope.root_object.prototype = proto
   end
 end

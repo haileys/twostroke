@@ -2,7 +2,9 @@ module Twostroke::Runtime::Types
   class Function < Object
     def self.constructor_function
       unless defined?(@@constructor_function)
+        @@constructor_function = nil # lock the Function constructor out from here...
         @@constructor_function = Function.new(->(scope, this, args) { raise "@TODO" }, nil, "Function", [])
+        @@constructor_function.put "constructor", @@constructor_function
         @@constructor_function._class = @@constructor_function
       end
       @@constructor_function

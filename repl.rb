@@ -8,7 +8,7 @@ bytecode = {}
 vm = Twostroke::Runtime::VM.new bytecode
 Twostroke::Runtime::Lib.setup_environment vm
 
-ARGV.each do |inc|
+ARGV.reject { |inc| inc =~ /^--/ }.each do |inc|
   parser = Twostroke::Parser.new(Twostroke::Lexer.new(File.read inc))
   parser.parse
 

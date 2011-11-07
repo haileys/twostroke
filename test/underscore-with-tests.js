@@ -1213,11 +1213,14 @@
     var doubled = _([1, 2, 3]).map(function(num){ return num * 2; });
     equals(doubled.join(', '), '2, 4, 6', 'OO-style doubled numbers');
 
+// DOM-specific, not including
+/*
     var ids = _.map($('div.underscore-test').children(), function(n){ return n.id; });
     ok(_.include(ids, 'qunit-header'), 'can use collection methods on NodeLists');
 
     var ids = _.map(document.images, function(n){ return n.id; });
     ok(ids[0] == 'chart_image', 'can use collection methods on HTMLCollections');
+*/
 
     var ifnull = _.map(null, function(){});
     ok(_.isArray(ifnull) && ifnull.length === 0, 'handles a null properly');
@@ -1239,6 +1242,7 @@
 
     var sum = _.reduce([1, 2, 3], function(sum, num){ return sum + num; });
     equals(sum, 6, 'default initial value');
+
 
     var ifnull;
     try {
