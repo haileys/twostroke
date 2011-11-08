@@ -81,7 +81,7 @@ loop do
   
     bytecode[:"repl_#{sect}_main"][-2] = [:ret] # hacky way to make main return the last evaluated value
     obj = nil
-    exception = catch(:exception) { obj = vm.execute :"repl_#{sect}_main", vm.global_scope; nil }
+    exception = catch(:exception) { obj = vm.execute(:"repl_#{sect}_main", vm.global_scope) || Twostroke::Runtime::Types::Undefined.new; nil }
     if exception
       obj = exception
     end
