@@ -377,7 +377,7 @@ module Twostroke
     def new
       assert_type next_token, :NEW
       node = AST::New.new
-      node.callee = expression_after_unary(false, true)
+      node.callee = expression_after_unary(true, true)
       if try_peek_token && peek_token.type == :OPEN_PAREN
         call = call(node.callee)
         node.arguments = call.arguments
