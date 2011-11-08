@@ -8,7 +8,7 @@ module Twostroke::Runtime
         this.primitive_value
       }, nil, "toString", [])
     proto.define_own_property "global", get: ->(this) {
-        Types::Boolean.new this.regexp.global
+        Types::Boolean.new this.global
       }, writable: false, enumerable: false, configurable: false
     proto.define_own_property "ignoreCase", get: ->(this) {
         Types::Boolean.new((this.regexp.options & Regexp::IGNORECASE) != 0)

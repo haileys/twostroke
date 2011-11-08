@@ -51,6 +51,11 @@ module Twostroke::Runtime
       stack.last
     end
     
+    define_method ".name" do |arg|
+      scope.declare arg.intern
+      scope.set_var arg.intern, @callee
+    end
+    
     define_method ".local" do |arg|
       scope.declare arg.intern
     end
@@ -371,9 +376,10 @@ module Twostroke::Runtime
     end
     
     def close(arg)
-      arguments = vm.bytecode[arg].take_while { |ins,arg| ins == :".arg" }.map(&:last).map(&:to_s)
+      name = vm.bytecode[arg].select { |ins,arg| ins == :".name" }.map { |ins,arg| arg }.first
+      arguments = vm.bytecode[arg].select { |ins,arg| ins == :".arg" }.map(&:last).map(&:to_s)
       scope = @scope
-      fun = Types::Function.new(->(outer_scope, this, args) { VM::Frame.new(vm, arg, fun).execute(scope.close, this, args) }, "...", "", arguments)
+      fun = Types::Function.new(->(outer_scope, this, args) { VM::Frame.new(vm, arg, fun).execute(scope.close, this, args) }, "...", name || "", arguments)
       stack.push fun
     end
     

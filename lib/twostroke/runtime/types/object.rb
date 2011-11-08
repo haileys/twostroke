@@ -1,7 +1,7 @@
 module Twostroke::Runtime::Types
   class Object < Value
-    attr_accessor :_class
-    attr_reader :accessors, :properties, :prototype, :extensible
+    attr_accessor :_class, :prototype
+    attr_reader :accessors, :properties, :extensible, :data
     private :accessors, :properties
 
     def initialize
@@ -10,11 +10,12 @@ module Twostroke::Runtime::Types
       @accessors = {}
       @prototype ||= defined?(@@_prototype) ? @@_prototype : Null.new
       @_class = self.class.constructor_function if !defined?(@_class) && self.class.respond_to?(:constructor_function)
+      @data = {} # for abitrary data not safe to store as a property
       proto_put "constructor", @_class
     end
     
     def _class=(c)
-      put "constructor", (@_class = c)
+      proto_put "constructor", (@_class = c)
     end
     
     def self.set_global_prototype(proto)
@@ -23,10 +24,6 @@ module Twostroke::Runtime::Types
     
     def typeof
       "object"
-    end
-    
-    def prototype=(object)
-      @prototype = object
     end
     
     def constructing?

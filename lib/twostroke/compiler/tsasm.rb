@@ -279,6 +279,7 @@ private
     fnid = :"#{@prefix}fn_#{uniqid}"
     
     section fnid
+    output :".name", node.name if node.name
     node.arguments.each do |arg|
       output :".arg", arg.intern
     end
@@ -286,7 +287,7 @@ private
     node.statements.each { |s| hoist s }
     if node.name
       output :callee
-      output :set, node.name.intern 
+      output :set, node.name.intern
     end
     node.statements.each { |s| compile s }
     output :undefined

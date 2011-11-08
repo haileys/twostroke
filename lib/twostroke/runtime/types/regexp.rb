@@ -3,22 +3,29 @@ module Twostroke::Runtime::Types
     def self.constructor_function
       @@constructor_function ||=
         Function.new(->(scope, this, args) {
-          RegExp.new Regexp.new(Twostroke::Runtime::Types.to_string(args[0] || Undefined.new).string, args[1] && Twostroke::Runtime::Types.to_string(args[1]).string)
+          RegExp.new Twostroke::Runtime::Types.to_string(args[0] || Undefined.new).string, args[1] && Twostroke::Runtime::Types.to_string(args[1]).string
         }, nil, "RegExp", [])
     end
     
     attr_reader :regexp
     attr_reader :global
     def initialize(regexp_source, options)
-      options ||= ""
-      @regexp = Regexp.new regexp_source, options.gsub(/[^im]/, "")
+      opts = 0
+      (options ||= "").each_char do |opt|
+        opts |= case opt
+        when "m"; Regexp::MULTILINE
+        when "i"; Regexp::IGNORECASE
+        else; 0
+        end
+      end
+      @regexp = Regexp.new regexp_source, opts
       @global = options.include? "g"
       @prototype = RegExp.constructor_function.get("prototype")
       super()
     end
     
     def primitive_value
-      String.new regexp.inspect
+      String.new(regexp.inspect + (@global ? "g" : ""))
     end
   end
 end
