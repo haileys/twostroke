@@ -4,7 +4,7 @@ module Twostroke::Runtime::Types
       unless defined?(@@constructor_function)
         @@constructor_function = nil # lock the Function constructor out from here...
         @@constructor_function = Function.new(->(scope, this, args) { raise "@TODO" }, nil, "Function", [])
-        @@constructor_function.put "constructor", @@constructor_function
+        @@constructor_function.proto_put "constructor", @@constructor_function
         @@constructor_function._class = @@constructor_function
       end
       @@constructor_function
@@ -22,7 +22,7 @@ module Twostroke::Runtime::Types
       @_class = nil unless defined?(@@constructor_function)
       super()
       @prototype = nil
-      put "prototype", Object.new
+      proto_put "prototype", Object.new
     end
     
     def prototype

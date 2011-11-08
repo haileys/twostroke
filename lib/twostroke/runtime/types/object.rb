@@ -10,7 +10,7 @@ module Twostroke::Runtime::Types
       @accessors = {}
       @prototype ||= defined?(@@_prototype) ? @@_prototype : Null.new
       @_class = self.class.constructor_function if !defined?(@_class) && self.class.respond_to?(:constructor_function)
-      define_own_property "constructor", value: @_class, enumerable: false
+      proto_put "constructor", @_class
     end
     
     def _class=(c)
@@ -100,6 +100,11 @@ module Twostroke::Runtime::Types
       end
     end
     
+    # puts prop as a non-enumerable property
+    def proto_put(prop, value)
+      define_own_property prop, value: value, enumerable: false
+    end
+    
     def can_put(prop)
       extensible && (!accessors.has_key?(prop) || accessors[prop][:configurable])
     end
@@ -120,6 +125,14 @@ module Twostroke::Runtime::Types
       if accessors.has_key? prop
         accessors.delete prop if accessors[prop][:configurable]
       elsif prop != "prototype"
+        properties.delete prop
+      end
+    end
+    
+    def delete!(prop)
+      if accessors.has_key? prop
+        accessors.delete prop if accessors[prop][:configurable]
+      else
         properties.delete prop
       end
     end

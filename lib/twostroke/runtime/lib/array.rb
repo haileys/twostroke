@@ -5,7 +5,7 @@ module Twostroke::Runtime
     
     proto = Types::Object.new
     # Array.prototype.toString
-    proto.put "toString", Types::Function.new(->(scope, this, args) do
+    proto.proto_put "toString", Types::Function.new(->(scope, this, args) do
         Lib.throw_type_error "Array.prototype.toString is not generic" unless this.is_a?(Types::Array)
         Types::String.new this.items.map { |o| 
             if o.nil? || o.is_a?(Types::Undefined) || o.is_a?(Types::Null)
@@ -16,31 +16,31 @@ module Twostroke::Runtime
           }.join(",")
       end, nil, "toString", [])
     # Array.prototype.valueOf
-    proto.put "valueOf", Types::Function.new(->(scope, this, args) { this }, nil, "valueOf", [])
+    proto.proto_put "valueOf", Types::Function.new(->(scope, this, args) { this }, nil, "valueOf", [])
     # Array.prototype.pop
-    proto.put "pop", Types::Function.new(->(scope, this, args) {
+    proto.proto_put "pop", Types::Function.new(->(scope, this, args) {
       Lib.throw_type_error "Array.prototype.pop is not generic" unless this.is_a? Types::Array
       this.items.pop || Types::Undefined.new
     }, nil, "pop", [])
     # Array.prototype.shift
-    proto.put "shift", Types::Function.new(->(scope, this, args) {
+    proto.proto_put "shift", Types::Function.new(->(scope, this, args) {
       Lib.throw_type_error "Array.prototype.shift is not generic" unless this.is_a? Types::Array
       this.items.shift || Types::Undefined.new
     }, nil, "shift", [])
     # Array.prototype.push
-    proto.put "push", Types::Function.new(->(scope, this, args) {
+    proto.proto_put "push", Types::Function.new(->(scope, this, args) {
       Lib.throw_type_error "Array.prototype.push is not generic" unless this.is_a? Types::Array
       args.each { |a| this.items.push a }
       Types::Number.new this.items.size
     }, nil, "push", [])
     # Array.prototype.unshift
-    proto.put "unshift", Types::Function.new(->(scope, this, args) {
+    proto.proto_put "unshift", Types::Function.new(->(scope, this, args) {
       Lib.throw_type_error "Array.prototype.unshift is not generic" unless this.is_a? Types::Array
       args.each { |a| this.items.unshift a }
       Types::Number.new this.items.size
     }, nil, "unshift", [])
     # Array.prototype.slice
-    proto.put "slice", Types::Function.new(->(scope, this, args) {
+    proto.proto_put "slice", Types::Function.new(->(scope, this, args) {
       begin_index = Types.to_number(args[0] || Types::Undefined.new)
       end_index = Types.to_number(args[1] || Types::Undefined.new)
       begin_index = Types::Number.new(0) if begin_index.nan? || begin_index.infinite?
@@ -51,7 +51,7 @@ module Twostroke::Runtime
       end
     }, nil, "slice", [])
     # Array.prototype.sort
-    proto.put "sort", Types::Function.new(->(scope, this, args) {
+    proto.proto_put "sort", Types::Function.new(->(scope, this, args) {
       Lib.throw_type_error "Array.prototype.sort is not generic" unless this.is_a? Types::Array
       sortfn = args[0] || ->(scope, this, args) { Types::Number.new(Types.to_string(args[0]).string <=> Types.to_string(args[1]).string) }
       this.items.reject!(&:nil?)
@@ -66,6 +66,6 @@ module Twostroke::Runtime
         this.items = this.items[0...len.number.to_i]
         len
       end, writable: true
-    ary.put "prototype", proto
+    ary.proto_put "prototype", proto
   end
 end

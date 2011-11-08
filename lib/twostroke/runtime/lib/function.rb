@@ -4,49 +4,42 @@ module Twostroke::Runtime
     scope.set_var "Function", obj
     
     proto = Types::Object.new
-    proto.put "toString", Types::Function.new(->(scope, this, args) {
-      if this.is_a?(Types::Function)
-        this.primitive_value
-      else
-        Lib.throw_type_error "Function.prototype.toString is not generic"
-      end
-    }, nil, "toString", [])
-    proto.put "valueOf", Types::Function.new(->(scope, this, args) { this }, nil, "valueOf", [])
+    proto.proto_put "toString", Types::Function.new(->(scope, this, args) {
+        if this.is_a?(Types::Function)
+          this.primitive_value
+        else
+          Lib.throw_type_error "Function.prototype.toString is not generic"
+        end
+      }, nil, "toString", [])
+    proto.proto_put "valueOf", Types::Function.new(->(scope, this, args) { this }, nil, "valueOf", [])
     proto.define_own_property "arity", get: ->(this) { this.arguments.size }, writable: false
     proto.define_own_property "length", get: ->(this) { this.arguments.size }, writable: false
     proto.define_own_property "name", get: ->(this) { this.name }, writable: false
     # Function.prototype.apply
-    proto.put "apply", Types::Function.new(->(scope, this, args) do
+    proto.proto_put "apply", Types::Function.new(->(scope, this, args) do
         Lib.throw_type_error "cannot call Function.prototype.apply on non-callable object" unless this.respond_to?(:call)
-        call_this = Types.to_object(args[0] || Types::Undefined.new)
-        call_args = []
-        unless args[1].nil? || args[1].is_a?(Types::Null) || args[1].is_a?(Types::Undefined)
-          args[1] = Types.to_object(args[1])
-          len = args[1].get("length")
-          if len.is_a? Types::Number
-            (0...Types.to_number(len).number.to_i).each do |i|
-              call_args.push args[1].get(i.to_s)
-            end
-          end
+        if args[0].nil? || args[0].is_a?(Types::Null) || args[0].is_a?(Types::Undefined)
+          call_this = scope.global_scope.root_object
+        else
+          call_this = Types.to_object(args[0])
         end
+        call_args = args[1].is_a?(Types::Object) ? args[1].generic_items : []
         this.call scope, call_this, call_args
       end, nil, "apply", [])
-    # Function.prototype.bind
-    proto.put "bind", Types::Function.new(->(scope, this, args) do
-        Lib.throw_type_error "cannot call Function.prototype.bind on non-callable object" unless this.respond_to?(:call)
-        Types::Function.new(->(_scope, _this, _args) do
-          this.call(_scope, args.first || Types::Undefined.new, args.drop(1) + _args)
-        end, nil, nil, [])
-      end, nil, "bind", [])
     # Function.prototype.call
-    proto.put "call", Types::Function.new(->(scope, this, args) do
+    proto.proto_put "call", Types::Function.new(->(scope, this, args) do
         Lib.throw_type_error "cannot call Function.prototype.call on non-callable object" unless this.respond_to?(:call)
-        this.call(scope, args.first || Types::Undefined.new, args[1..-1])
+        if args[0].nil? || args[0].is_a?(Types::Null) || args[0].is_a?(Types::Undefined)
+          call_this = scope.global_scope.root_object
+        else
+          call_this = Types.to_object(args[0])
+        end
+        this.call(scope, call_this, args[1..-1])
       end, nil, "call", [])
     # Function.prototype.toString
-    proto.put "toString", Types::Function.new(->(scope, this, args) do
+    proto.proto_put "toString", Types::Function.new(->(scope, this, args) do
         this.primitive_value
       end, nil, "toString", [])
-    obj.put "prototype", proto
+    obj.proto_put "prototype", proto
   end
 end

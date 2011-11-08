@@ -122,6 +122,14 @@ module Twostroke::Runtime
       stack.push Types.to_object(stack.pop).get(arg.to_s)
     end
     
+    def deleteg(arg)
+      scope.global_scope.root_object.delete arg.to_s
+    end
+    
+    def delete(arg)
+      Types.to_object(stack.pop).delete arg.to_s
+    end
+    
     def in(arg)
       obj = Types.to_object stack.pop
       idx = Types.to_string stack.pop
@@ -129,9 +137,9 @@ module Twostroke::Runtime
     end
     
     def enum(arg)
-      obj = Types.to_object stack.pop
       props = []
-      obj.each_enumerable_property { |p| props.push p }
+      obj = stack.pop
+      Types.to_object(obj).each_enumerable_property { |p| props.push p } unless obj.is_a?(Types::Null) || obj.is_a?(Types::Undefined)
       @enum_stack.push [props, 0]
     end
 
@@ -382,7 +390,12 @@ module Twostroke::Runtime
     end
     
     def negate(arg)
-      stack.push Types::Number.new(-Types.to_number(stack.pop).number)
+      n = Types.to_number(stack.pop).number
+      if n.zero?
+        stack.push Types::Number.new(-n.to_f) # to preserve javascript's 0/-0 semantics
+      else
+        stack.push Types::Number.new(-n)
+      end
     end
     
     def pushsp(arg)
