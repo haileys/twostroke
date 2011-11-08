@@ -257,7 +257,7 @@ module Twostroke::Runtime
     end
     
     def regexp(arg)
-      stack.push Types::RegExp.new(Regexp.new *arg)
+      stack.push Types::RegExp.new(*arg)
     end
     
     def sal(arg)

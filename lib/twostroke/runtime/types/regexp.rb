@@ -8,8 +8,11 @@ module Twostroke::Runtime::Types
     end
     
     attr_reader :regexp
-    def initialize(regexp)
-      @regexp = regexp
+    attr_reader :global
+    def initialize(regexp_source, options)
+      options ||= ""
+      @regexp = Regexp.new regexp_source, options.gsub(/[^im]/, "")
+      @global = options.include? "g"
       @prototype = RegExp.constructor_function.get("prototype")
       super()
     end

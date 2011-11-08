@@ -998,7 +998,6 @@
 		}
 		
 		if(actual) {
-			console.log(expected);
 			if(!expected) {
 				ok = true;
 			} else if(expected instanceof RegExp) {
