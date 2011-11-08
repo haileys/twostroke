@@ -25,15 +25,3 @@ test("apply", function() {
 		assert_equal(c, false);
 	}).apply(true, [1, "test", false]);
 });
-
-test("bind", function() {
-	var x = function(a) {
-		a(this);
-	};
-	x.bind(1)(function(T) { assert_equal(Number(T), 1); });
-	x.bind({ a: 1 })(function(T) { assert_equal(T.a, 1); });
-	var obj = {
-		foo: x.bind("not obj")
-	};
-	obj.foo(function(T) { assert_equal(String(T), "not obj"); });
-});
