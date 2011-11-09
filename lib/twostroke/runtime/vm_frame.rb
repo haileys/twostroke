@@ -404,6 +404,14 @@ module Twostroke::Runtime
       end
     end
     
+    def with(arg)
+      @scope = ObjectScope.new stack.pop, @scope
+    end
+    
+    def popscope(arg)
+      @scope = @scope.parent
+    end
+    
     def pushsp(arg)
       sp_stack.push stack.size
     end

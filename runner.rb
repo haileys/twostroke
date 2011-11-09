@@ -15,4 +15,8 @@ if ARGV.include? "--pry"
   pry binding
 end
 
-vm.execute
+ex = catch(:exception) { vm.execute; nil }
+if ex
+  puts "Uncaught exception: #{Twostroke::Runtime::Types.to_string(ex).string}"
+  exit 1
+end

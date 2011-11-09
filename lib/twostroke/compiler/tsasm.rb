@@ -449,6 +449,13 @@ private
     output :this
   end
   
+  def With(node)
+    compile node.object
+    output :with
+    compile node.statement
+    output :popscope
+  end
+  
   def If(node)
     compile node.condition
     else_label = uniqid
@@ -519,7 +526,7 @@ private
     output :".label", start_label
     compile node.condition if node.condition
     output :jif, end_label
-    compile node.body
+    compile node.body if node.body
     compile node.increment if node.increment
     output :jmp, start_label
     output :".label", end_label

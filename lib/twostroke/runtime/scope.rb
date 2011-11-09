@@ -40,13 +40,54 @@ module Twostroke::Runtime
     end
   end
   
-  class GlobalScope
-    attr_reader :root_object, :root_name
+  class ObjectScope
+    attr_reader :object, :parent
     
-    def initialize(root_name = "window", root_object = nil)
+    def initialize(object, parent)
+      @parent, @object = parent, object
+    end
+    
+    def get_var(var)
+      if object.has_property var.to_s
+        object.get var.to_s
+      else
+        parent.get_var var
+      end
+    end
+    
+    def set_var(var, value)
+      if object.has_property var.to_s
+        object.put var.to_s, value
+      else
+        parent.set_var var.to_s, value
+      end
+    end
+    
+    def has_var
+      object.has_property(var.to_s) || parent.has_var(var)
+    end
+    
+    def declare(var)
+      parent.declare var
+    end
+    
+    def close
+      Scope.new self
+    end
+    
+    def global_scope
+      @global_scope ||= parent.global_scope
+    end
+  end
+  
+  class GlobalScope
+    attr_reader :root_object, :root_name, :vm
+    
+    def initialize(vm, root_name = "window", root_object = nil)
       @root_name = root_name
       @root_object = root_object || Types::Object.new
       @root_object.put root_name.to_s, @root_object
+      @vm = vm
     end
     
     def get_var(var)

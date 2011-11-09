@@ -5,7 +5,7 @@ module Twostroke::Runtime
     
     def initialize(bytecode)
       @bytecode = bytecode
-      @global_scope = GlobalScope.new
+      @global_scope = GlobalScope.new self
       @lib = {}
     end
     

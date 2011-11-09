@@ -59,6 +59,7 @@ module Twostroke
       when :CONTINUE;   continue
       when :THROW;      send :throw
       when :VAR;        var
+      when :WITH;       consume_semicolon = false; with
       when :IF;         consume_semicolon = false; send :if
       when :FOR;        consume_semicolon = false; send :for
       when :SWITCH;     consume_semicolon = false; send :switch
@@ -220,6 +221,15 @@ module Twostroke
       assert_type next_token, :COLON
       ternary.if_false = expression(true)
       ternary
+    end
+    
+    def with
+      assert_type next_token, :WITH
+      assert_type next_token, :OPEN_PAREN
+      with = AST::With.new object: expression
+      assert_type next_token, :CLOSE_PAREN
+      with.statement = statement
+      with
     end
     
     def if

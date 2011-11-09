@@ -1,6 +1,9 @@
 module Twostroke
   class Lexer
-    RESERVED = %w(function var if instanceof in else for while do this return throw typeof try catch finally void null new delete switch case break continue default true false)
+    RESERVED = %w(
+      function var if instanceof in else for while do this return
+        throw typeof try catch finally void null new delete switch
+        case break continue default true false with)
     TOKENS = [
 
       [ :MULTI_COMMENT, %r{/\*.*?\*/} ],
@@ -22,20 +25,21 @@ module Twostroke
       end,
       [ :BAREWORD, /[a-zA-Z_\$][\$a-zA-Z_0-9]*/, ->m { m[0] } ],
 
-      [ :STRING, /(["'])((\\.|[^\1])*?[^\1\\]?)\1/, ->m do
-        m[2].gsub(/\\([bfnrt])/) { |m|
+      [ :STRING, /(["'])((\\\n|\\.|[^\1])*?[^\1\\]?)\1/, ->m do
+        m[2]
+        .gsub(/\\([0-6]{1,3})/) { |m| m[1].to_i(7).chr }
+        .gsub(/\\x([a-f0-9]{2})/i) { |m| m[1].to_i(16).chr }
+        .gsub(/\\u([a-f0-9]{4})/i) { |m| m[1].to_i(16).chr }
+        .gsub(/\\(.)/m) { |m|
           case m[1]
           when "b"; "\b"
           when "n"; "\n"
           when "f"; "\f"
           when "r"; "\r"
           when "t"; "\t"
+          else; m[1]
           end
         }
-        .gsub(/\\([0-6]{1,3})/) { |m| m[1].to_i(7).chr }
-        .gsub(/\\x([a-f0-9]{2})/i) { |m| m[1].to_i(16).chr }
-        .gsub(/\\u([a-f0-9]{4})/i) { |m| m[1].to_i(16).chr }
-        .gsub(/\\(.)/) { |m| m[1] }
       end ],
       
       [ :REGEXP, %r{/(?<src>(\\.|[^\1])*?[^\1\\]?)/(?<opts>[gim]+)?}, ->m { [m[:src], m[:opts]] } ],
