@@ -1,12 +1,24 @@
 # Twostroke
 
-*who needs a v8 when you've got a twostroke*
+Twostroke is a Javascript implementation written in **pure Ruby**. It currently consists of:
 
-### Twostroke is cool:
+* A parser (which works, but is in need of an overhaul)
+* Two compilers:
+  * One that targets Javascript, perfect for obfuscation
+  * And another that targets TSASM - Twostroke's internal bytecode format
+* A VM that runs TSASM bytecode
+* A minimal Javascript standard library implementation (also in need of some love)
+* A test suite containing:
+  * Some tests written for Twostroke
+  * Underscore.js's complete test suite (minus the cases relying on the DOM)
+  
+# Why use Twostroke?
+
+### It's cool:
 
 ![repl](http://i.imgur.com/HsFB0.gif)
 
-### Twostroke actually works:
+### It actually works:
 
 yep, that's **unmodified** underscore.js:
 
