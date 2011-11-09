@@ -6,6 +6,8 @@
 
 ![repl](http://i.imgur.com/HsFB0.gif)
 
-### Twostroke actually kinda works:
+### Twostroke actually works:
 
-![tests lol](http://i.imgur.com/GG88T.png)
+yep, that's **unmodified** underscore.js:
+
+![tests lol](http://i.imgur.com/L4aUQ.png)
