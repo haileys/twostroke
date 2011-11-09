@@ -959,7 +959,7 @@
     return this._wrapped;
   };
 
-}).call(this);
+}).call(window);
 
 // Mock QUnit and run tests
 (function() {
