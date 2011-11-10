@@ -1,3 +1,5 @@
+#coding: utf-8
+
 module Twostroke
   class Lexer
     RESERVED = %w(
@@ -9,7 +11,7 @@ module Twostroke
       [ :MULTI_COMMENT, %r{/\*.*?\*/} ],
       [ :SINGLE_COMMENT, /\/\/.*?$/ ],
 
-      [ :WHITESPACE, /\s+/ ],
+      [ :WHITESPACE, /[[:space:]]+/ ],
       [ :NUMBER, /((?<oct>0[0-7]+)|(?<hex>0x[A-Fa-f0-9]+)|(?<to_f>(\d+(\.?\d*([eE][+-]?\d+)?)?|\.\d+([eE][+-]?\d+)?)))/, ->m do
         method, number = m.names.zip(m.captures).select { |k,v| v }.first
         n = number.send method
@@ -27,14 +29,15 @@ module Twostroke
 
       [ :STRING, /(["'])((\\\n|\\.|[^\1])*?[^\1\\]?)\1/, ->m do
         m[2]
-        .gsub(/\\([0-6]{1,3})/) { |m| m[1].to_i(7).chr }
-        .gsub(/\\x([a-f0-9]{2})/i) { |m| m[1].to_i(16).chr }
-        .gsub(/\\u([a-f0-9]{4})/i) { |m| m[1].to_i(16).chr }
+        .gsub(/\\([0-6]{1,3})/) { |m| m[1..-1].to_i(7).chr "utf-8" }
+        .gsub(/\\u([a-f0-9]{4})/i) { |m| m[2..-1].to_i(16).chr "utf-8" }
+        .gsub(/\\x([a-f0-9]{2})/i) { |m| m[2..-1].to_i(16).chr "utf-8" }
         .gsub(/\\(.)/m) { |m|
           case m[1]
           when "b"; "\b"
           when "n"; "\n"
           when "f"; "\f"
+          when "v"; "\v"
           when "r"; "\r"
           when "t"; "\t"
           else; m[1]
