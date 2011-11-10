@@ -12,7 +12,7 @@ module Twostroke::AST
     
     def walk(&bk)
       if yield self
-        expression.walk &bk
+        expression.walk &bk if expression
         statements.each { |s| s.walk &bk }
       end
     end

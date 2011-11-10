@@ -82,6 +82,25 @@ test("finally still executes if catch throws an exception", function() {
 	assert(x);
 });
 
+test("finally still executes if catch throws an exception and the exception keeps bubbling up", function() {
+  var x = false, y = false, z = false;
+  try {
+    try {
+      throw 1;
+    } catch(e) {
+      x = (e == 1);
+      throw 2;
+    } finally {
+      console.log("finally");
+      y = true;
+    }
+  } catch(e) { 
+    console.log("hi! -> ", e == 2);
+    z = (e == 2);
+  }
+  assert(x && y && z);
+});
+
 test("finally's throw overrides catch's", function() {
 	function foo() {
 		try {

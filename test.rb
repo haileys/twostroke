@@ -64,7 +64,9 @@ end
 tests.each do |test|
   puts Paint[test, :bright, :white]
   
-  parser = Twostroke::Parser.new(Twostroke::Lexer.new(File.read test))
+  src = File.read test
+  
+  parser = Twostroke::Parser.new(Twostroke::Lexer.new(src))
   parser.parse
   
   compiler = Twostroke::Compiler::TSASM.new parser.statements, "test_#{test}_"

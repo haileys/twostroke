@@ -11,6 +11,7 @@ module Twostroke::AST
     
     def walk(&bk)
       if yield self
+        
         expression.walk &bk
         cases.each { |c| c.walk &bk }
       end
