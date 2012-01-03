@@ -6,6 +6,10 @@ module Twostroke::Runtime
     scope.set_var "Infinity", Types::Number.new(Float::INFINITY)
     scope.set_var "NaN", Types::Number.new(Float::NAN)
     
+    scope.set_var "isNaN", Types::Function.new(->(scope, this, args) {
+      Types::Boolean.new(args[0].is_a?(Types::Number) && args[0].nan?)
+    }, nil, "isNaN", [])
+    
     # one argument functions
     %w(sqrt sin cos tan).each do |method|
       obj.proto_put method, Types::Function.new(->(scope, this, args) {

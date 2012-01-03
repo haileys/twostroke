@@ -69,10 +69,11 @@ module Twostroke
       when :OPEN_BRACE; consume_semicolon = false; body
       when :FUNCTION;   consume_semicolon = false; function
       when :SEMICOLON;  nil
+      when :LINE_TERMINATOR;  nil
       else; expression
       end
       if consume_semicolon
-        next_token if try_peek_token && peek_token.type == :SEMICOLON
+        next_token if try_peek_token and peek_token.type == :SEMICOLON || peek_token.type == :LINE_TERMINATOR
         #assert_type next_token, :SEMICOLON
       end
       st

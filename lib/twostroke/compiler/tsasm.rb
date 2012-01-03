@@ -358,7 +358,6 @@ private
     compile node.try_statements
     # no exceptions? clean up
     output :popcatch if node.catch_variable
-    output :popfinally if node.catch_variable
     output :jmp, finally_label
     
     if node.catch_variable
@@ -371,6 +370,7 @@ private
     if node.finally_statements
       output :popfinally
       compile node.finally_statements
+      output :endfinally
     end
   end
   
