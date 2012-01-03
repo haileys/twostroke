@@ -103,6 +103,7 @@ module Twostroke::Runtime
     end
     
     def declare(var)
+      @root_object.put var.to_s, Types::Undefined.new
     end
     
     def close
