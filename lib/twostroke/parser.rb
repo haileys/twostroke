@@ -94,7 +94,7 @@ module Twostroke
     
     def assignment_expression
       nodes = {
-        :PLUS_EQUALS        => AST::Addition,
+        :ADD_EQUALS         => AST::Addition,
         :MINUS_EQUALS       => AST::Subtraction,
         :TIMES_EQUALS       => AST::Multiplication,
         :DIVIDE_EQUALS      => AST::Division,
@@ -109,7 +109,7 @@ module Twostroke
       expr = conditional_expression
       if try_peek_token and peek_token.type == :EQUALS
         next_token
-        expr = AST::Assignment.new left: expr, right: condition_expression
+        expr = AST::Assignment.new left: expr, right: assignment_expression
       elsif try_peek_token and nodes.keys.include? peek_token.type
         expr = nodes[next_token.type].new left: expr, assign_result_left: true, right: assignment_expression
       end
@@ -121,9 +121,9 @@ module Twostroke
       if try_peek_token and peek_token.type == :QUESTION
         next_token
         cond = AST::Ternary.new condition: cond
-        cond.if_true = conditional_expression
+        cond.if_true = assignment_expression
         assert_type next_token, :COLON
-        cond.if_false = conditional_expression
+        cond.if_false = assignment_expression
       end
       cond
     end
@@ -169,7 +169,7 @@ module Twostroke
         :DOUBLE_EQUALS        => AST::Equality,
         :NOT_EQUALS           => AST::Inequality,
         :TRIPLE_EQUALS        => AST::StrictEquality,
-        :NOT_TRIPLE_EQUALS    => AST::StrictInequality
+        :NOT_DOUBLE_EQUALS    => AST::StrictInequality
       }
       expr = relational_in_instanceof_expression
       while try_peek_token and nodes.keys.include? peek_token.type
@@ -183,11 +183,13 @@ module Twostroke
         :LT           => AST::LessThan,
         :LTE          => AST::LessThanEqual,
         :GT           => AST::GreaterThan,
-        :GTE          => AST::GreaterThanEqual
+        :GTE          => AST::GreaterThanEqual,
+        :IN           => AST::In,
+        :INSTANCEOF   => AST::InstanceOf
       }
       expr = shift_expression
-      while try_peek_token and nodes.keys.include? peek_token.type
-        expr = nodes[next_token.type].new left: expr, right: shift_expression
+      while try_peek_token(true) and nodes.keys.include? peek_token(true).type
+        expr = nodes[next_token(true).type].new left: expr, right: shift_expression
       end
       expr
     end
@@ -238,7 +240,7 @@ module Twostroke
       when :MINUS;  next_token; AST::Negation.new value: unary_expression
       when :TYPEOF; next_token; AST::TypeOf.new value: unary_expression
       when :VOID;   next_token; AST::Void.new value: unary_expression
-      when :DELETE; next_token; AST::Delete.new value: unary_expression
+      when :DELETE; next_token; AST::Delete.new expression: unary_expression
       else
         increment_expression
       end
@@ -269,20 +271,14 @@ module Twostroke
     end
     
     def call_expression
-      expr = member_access_expression
-      while try_peek_token and peek_token.type == :OPEN_PAREN
-        expr = call(expr)
-      end
-      expr
-    end
-    
-    def member_access_expression
       expr = value_expression
-      while try_peek_token and [:MEMBER_ACCESS, :OPEN_BRACKET].include? peek_token.type
+      while try_peek_token and [:MEMBER_ACCESS, :OPEN_BRACKET, :OPEN_PAREN].include? peek_token.type
         if peek_token.type == :MEMBER_ACCESS
           expr = member_access expr
         elsif peek_token.type == :OPEN_BRACKET
           expr = index expr
+        elsif peek_token.type == :OPEN_PAREN
+          expr = call expr
         end
       end
       expr
@@ -296,8 +292,8 @@ module Twostroke
       when :REGEXP;       regexp
       when :THIS;         this
       when :NULL;         null
-      when :TRUE;         self.true
-      when :FALSE;        self.false
+      when :TRUE;         send :true
+      when :FALSE;        send :false
       when :NEW;          new
       when :BAREWORD;     bareword
       when :OPEN_BRACKET; array
@@ -305,6 +301,29 @@ module Twostroke
       when :OPEN_PAREN;   parens
       else error! "Unexpected #{peek_token.type}"
       end
+    end
+
+    def new
+      assert_type next_token, :NEW
+      node = AST::New.new
+      node.callee = new_call_expression
+      if try_peek_token && peek_token.type == :OPEN_PAREN
+        call = call node.callee
+        node.arguments = call.arguments
+      end
+      node
+    end
+    
+    def new_call_expression
+      expr = value_expression
+      while try_peek_token and [:MEMBER_ACCESS, :OPEN_BRACKET].include? peek_token.type
+        if peek_token.type == :MEMBER_ACCESS
+          expr = member_access expr
+        elsif peek_token.type == :OPEN_BRACKET
+          expr = index expr
+        end
+      end
+      expr
     end
     
     def body
@@ -386,7 +405,7 @@ module Twostroke
           assert_type next_token, :BAREWORD
           lval = AST::Declaration.new name: token.val
         else
-          lval = shift_expression
+          lval = shift_expression # shift_expression is the precedence level right below in's
         end
         assert_type next_token, :IN
         obj = expression
@@ -450,7 +469,7 @@ module Twostroke
       node = AST::DoWhile.new body: body
       assert_type next_token, :WHILE
       assert_type next_token, :OPEN_PAREN
-      node.condition = expression(false)
+      node.condition = expression
       assert_type next_token, :CLOSE_PAREN
       node
     end
@@ -491,34 +510,14 @@ module Twostroke
     def member_access(obj)
       assert_type next_token, :MEMBER_ACCESS
       assert_type next_token, :BAREWORD
-      access = AST::MemberAccess.new object: obj, member: token.val
-      if peek_token(false).type == :MEMBER_ACCESS
-        member_access access
-      elsif peek_token(false).type == :OPEN_PAREN
-        call access
-      elsif peek_token(false).type == :EQUALS
-        assignment access
-      else
-        access
-      end
-    end
-    
-    def new
-      assert_type next_token, :NEW
-      node = AST::New.new
-      node.callee = expression_after_unary(true, true)
-      if try_peek_token && peek_token.type == :OPEN_PAREN
-        call = call(node.callee)
-        node.arguments = call.arguments
-      end
-      node
+      AST::MemberAccess.new object: obj, member: token.val
     end
     
     def call(callee)
       assert_type next_token, :OPEN_PAREN
       c = AST::Call.new callee: callee
-      while peek_token.type != :CLOSE_PAREN
-        c.arguments.push expression(true)
+      while peek_token(true).type != :CLOSE_PAREN
+        c.arguments.push assignment_expression # one level below multi_expression which can separate by comma
         if peek_token.type == :COMMA
           next_token
           redo
@@ -576,7 +575,7 @@ module Twostroke
       if token.type == :COMMA
         AST::MultiExpression.new left: decl, right: var_rest
       else
-        assignment = AST::Assignment.new left: decl, right: expression(true)
+        assignment = AST::Assignment.new left: decl, right: assignment_expression
         if peek_token.type == :SEMICOLON || peek_token.type == :CLOSE_BRACE
           assignment
         elsif peek_token.type == :COMMA
@@ -620,7 +619,7 @@ module Twostroke
         assert_type next_token, :BAREWORD, :STRING, :NUMBER
         key = token
         assert_type next_token, :COLON
-        obj.items.push [key, expression(true)]
+        obj.items.push [key, assignment_expression]
         if peek_token.type == :COMMA
           next_token
           redo
@@ -633,8 +632,8 @@ module Twostroke
     def array
       assert_type next_token, :OPEN_BRACKET
       ary = AST::Array.new
-      while peek_token.type != :CLOSE_BRACKET
-        ary.items.push expression(true)
+      while peek_token(true).type != :CLOSE_BRACKET
+        ary.items.push assignment_expression
         if peek_token.type == :COMMA
           next_token
           redo
