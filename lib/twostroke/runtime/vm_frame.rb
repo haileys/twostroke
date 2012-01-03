@@ -18,7 +18,7 @@ module Twostroke::Runtime
     end
     
     def execute(scope, this = nil, args = [])
-      @scope = scope || Scope.new(vm.global_scope)
+      @scope = scope || vm.global_scope
       @stack = []
       @sp_stack = []
       @catch_stack = []
@@ -40,8 +40,12 @@ module Twostroke::Runtime
         @ip += 1
         if respond_to? ins
           if @exception = catch(:exception) { public_send ins, arg; nil }
-            throw :exception, @exception if catch_stack.empty?
-            @ip = catch_stack.last
+            throw :exception, @exception if catch_stack.empty? && finally_stack.empty?
+            if catch_stack.any?
+              @ip = catch_stack.last
+            else
+              @ip = finally_stack.last
+            end
           end
         else
           error! "unknown instruction #{ins}"
@@ -68,6 +72,7 @@ module Twostroke::Runtime
     define_method ".catch" do |arg|
       scope.declare arg.intern
       scope.set_var arg.intern, @exception
+      @exception = nil
     end
     
     ## instructions
@@ -434,6 +439,10 @@ module Twostroke::Runtime
     
     def popfinally(arg)
       finally_stack.pop
+    end
+    
+    def endfinally(arg)
+      throw :exception, @exception if @exception
     end
     
     def this(arg)
