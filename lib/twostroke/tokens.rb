@@ -58,6 +58,18 @@ module Twostroke
 
       [ :MEMBER_ACCESS, /\./ ],
 
+      [ :ADD_EQUALS, /\+=/ ],
+      [ :MINUS_EQUALS, /-=/ ],
+      [ :TIMES_EQUALS, /\*=/ ], # textmate barfs it's syntax highlighting on this one lol
+      [ :DIVIDE_EQUALS, /\/=/ ],
+      [ :MOD_EQUALS, /%=/ ],
+      [ :LEFT_SHIFT_EQUALS, /<<=/ ],
+      [ :RIGHT_TRIPLE_SHIFT_EQUALS, />>>=/ ],
+      [ :RIGHT_SHIFT_EQUALS, />>=/ ],
+      [ :BITWISE_AND_EQUALS, /&=/ ],
+      [ :BITWISE_XOR_EQUALS, /\^=/ ],
+      [ :BITWISE_OR_EQUALS, /\|=/ ],
+
       [ :INCREMENT, /\+\+/ ],
       [ :DECREMENT, /--/ ],
       [ :PLUS, /\+/ ],

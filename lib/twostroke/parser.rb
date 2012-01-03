@@ -38,15 +38,15 @@ module Twostroke
     def token
       @cur_token or raise ParseError, "unexpected end of input"
     end
-    def next_token(allow_regexp = true)
+    def next_token(allow_regexp = false)
       @cur_token = @peek_token || @lexer.read_token(allow_regexp)
       @peek_token = nil
       token
     end
-    def try_peek_token(allow_regexp = true)
+    def try_peek_token(allow_regexp = false)
       @peek_token ||= @lexer.read_token(allow_regexp)
     end
-    def peek_token(allow_regexp = true)
+    def peek_token(allow_regexp = false)
       @peek_token ||= @lexer.read_token(allow_regexp) or raise ParseError, "unexpected end of input"
     end
     
@@ -77,7 +77,201 @@ module Twostroke
       end
       st
     end
-   
+
+    def expression
+      multi_expression
+    end
+    
+    def multi_expression
+      expr = assignment_expression
+      while try_peek_token and peek_token.type == :COMMA
+        next_token
+        expr = AST::MultiExpression.new left: expr, right: assignment_expression
+      end
+      expr
+    end
+    
+    def assignment_expression
+      nodes = {
+        :PLUS_EQUALS        => AST::Addition,
+        :MINUS_EQUALS       => AST::Subtraction,
+        :TIMES_EQUALS       => AST::Multiplication,
+        :DIVIDE_EQUALS      => AST::Division,
+        :MOD_EQUALS         => AST::Modulus,
+        :LEFT_SHIFT         => AST::LeftShift,
+        :RIGHT_SHIFT_EQUALS => AST::RightArithmeticShift,
+        :RIGHT_TRIPLE_SHIFT_EQUALS => AST::RightLogicalShift,
+        :BITWISE_AND_EQUALS => AST::BitwiseAnd,
+        :BITWISE_XOR_EQUALS => AST::BitwiseXor,
+        :BITWISE_OR_EQUALS  => AST::BitwiseOr
+      }
+      expr = conditional_expression
+      if try_peek_token and peek_token.type == :EQUALS
+        next_token
+        expr = AST::Assignment.new left: expr, right: condition_expression
+      elsif try_peek_token and nodes.keys.include? peek_token.type
+        expr = nodes[next_token.type].new left: expr, assign_result_left: true, right: assignment_expression
+      end
+      expr
+    end
+    
+    def conditional_expression
+      cond = logical_or_expression
+      if try_peek_token and peek_token.type == :QUESTION
+        next_token
+        cond = AST::Ternary.new condition: cond
+        cond.if_true = conditional_expression
+        assert_type next_token, :COLON
+        cond.if_false = conditional_expression
+      end
+      cond
+    end
+    
+    def logical_or_expression
+      expr = logical_and_expression
+      while try_peek_token and peek_token.type == :OR
+        next_token
+        expr = AST::Or.new left: expr, right: logical_and_expression
+      end
+      expr
+    end
+    
+    def logical_and_expression
+      expr = bitwise_or_expression
+      while try_peek_token and peek_token.type == :AND
+        next_token
+        expr = AST::And.new left: expr, right: bitwise_or_expression
+      end
+      expr
+    end
+    
+    def bitwise_or_expression
+      expr = bitwise_and_expression
+      while try_peek_token and peek_token.type == :PIPE
+        next_token
+        expr = AST::BitwiseOr.new left: expr, right: bitwise_and_expression
+      end
+      expr
+    end
+    
+    def bitwise_and_expression
+      expr = equality_expression
+      while try_peek_token and peek_token.type == :AMPERSAND
+        next_token
+        expr = AST::BitwiseAnd.new left: expr, right: equality_expression
+      end
+      expr
+    end
+    
+    def equality_expression
+      nodes = {
+        :DOUBLE_EQUALS        => AST::Equality,
+        :NOT_EQUALS           => AST::Inequality,
+        :TRIPLE_EQUALS        => AST::StrictEquality,
+        :NOT_TRIPLE_EQUALS    => AST::StrictInequality
+      }
+      expr = relational_in_instanceof_expression
+      while try_peek_token and nodes.keys.include? peek_token.type
+        expr = nodes[next_token.type].new left: expr, right: relational_in_instanceof_expression
+      end
+      expr
+    end
+    
+    def relational_in_instanceof_expression
+      nodes = {
+        :LT           => AST::LessThan,
+        :LTE          => AST::LessThanEqual,
+        :GT           => AST::GreaterThan,
+        :GTE          => AST::GreaterThanEqual
+      }
+      expr = shift_expression
+      while try_peek_token and nodes.keys.include? peek_token.type
+        expr = nodes[next_token.type].new left: expr, right: shift_expression
+      end
+      expr
+    end
+    
+    def shift_expression
+      nodes = {
+        :LEFT_SHIFT         => AST::LeftShift,
+        :RIGHT_TRIPLE_SHIFT => AST::RightArithmeticShift,
+        :RIGHT_SHIFT        => AST::RightLogicalShift
+      }
+      expr = additive_expression
+      while try_peek_token and nodes.keys.include? peek_token.type
+        expr = nodes[next_token.type].new left: expr, right: additive_expression
+      end
+      expr
+    end
+
+    def additive_expression
+      nodes = {
+        :PLUS         => AST::Addition,
+        :MINUS        => AST::Subtraction
+      }
+      expr = multiplicative_expression
+      while try_peek_token and nodes.keys.include? peek_token.type
+        expr = nodes[next_token.type].new left: expr, right: multiplicative_expression
+      end
+      expr
+    end
+    
+    def multiplicative_expression
+      nodes = {
+        :ASTERISK     => AST::Multiplication,
+        :SLASH        => AST::Division,
+        :MOD          => AST::Modulus
+      }
+      expr = unary_expression
+      while try_peek_token and nodes.keys.include? peek_token.type
+        expr = nodes[next_token.type].new left: expr, right: unary_expression
+      end
+      expr
+    end
+    
+    def unary_expression
+      case peek_token(true).type
+      when :NOT;    next_token; AST::Not.new value: unary_expression
+      when :TILDE;  next_token; AST::BinaryNot.new value: unary_expression
+      when :PLUS;   next_token; AST::UnaryPlus.new value: unary_expression
+      when :MINUS;  next_token; AST::Negation.new value: unary_expression
+      when :TYPEOF; next_token; AST::TypeOf.new value: unary_expression
+      when :VOID;   next_token; AST::Void.new value: unary_expression
+      when :DELETE; next_token; AST::Delete.new value: unary_expression
+      else
+        increment_expression
+      end
+    end
+    
+    def increment_expression
+      if peek_token(true).type == :INCREMENT
+        next_token
+        return AST::PreIncrement.new value: increment_expression
+      end
+      if peek_token(true).type == :DECREMENT
+        next_token
+        return AST::PreDecrement.new value: increment_expression
+      end
+      
+      expr = call_expression
+      
+      if peek_token.type == :INCREMENT
+        next_token
+        return AST::PostIncrement.new value: expr
+      end
+      if peek_token.type == :DECREMENT
+        next_token
+        return AST::PostDecrement.new value: expr
+      end
+      
+      expr
+    end
+    
+    # @TODO call_expression
+    
+    # @TODO member_new_expression
+    
+=begin   
     def expression(no_comma = false, no_in = false, no_ternary = false)
       expr = expression_after_unary no_comma
       expr = if [:PLUS, :MINUS, :ASTERISK, :SLASH, :MOD,
@@ -178,6 +372,7 @@ module Twostroke
       op = next_token.type
       AST::UnsortedBinop.new left: left, op: op, right: expression(true, false, true)
     end
+=end
     
     def body
       assert_type next_token, :OPEN_BRACE
@@ -212,15 +407,6 @@ module Twostroke
     def bareword
       assert_type next_token, :BAREWORD
       AST::Variable.new name: token.val
-    end
-    
-    def ternary(cond)
-      assert_type next_token, :QUESTION
-      ternary = AST::Ternary.new condition: cond
-      ternary.if_true = expression(true)
-      assert_type next_token, :COLON
-      ternary.if_false = expression(true)
-      ternary
     end
     
     def with
