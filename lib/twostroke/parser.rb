@@ -1,5 +1,5 @@
 module Twostroke
-  class ParseError < Error
+  class ParseError < SyntaxError
   end
   
   class Parser

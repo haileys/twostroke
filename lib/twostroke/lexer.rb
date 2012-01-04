@@ -1,5 +1,5 @@
 module Twostroke
-  class LexError < Twostroke::Error
+  class LexError < SyntaxError
   end
   
   class Token
