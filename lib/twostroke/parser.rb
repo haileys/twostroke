@@ -240,7 +240,7 @@ module Twostroke
       when :MINUS;  next_token; AST::Negation.new value: unary_expression
       when :TYPEOF; next_token; AST::TypeOf.new value: unary_expression
       when :VOID;   next_token; AST::Void.new value: unary_expression
-      when :DELETE; next_token; AST::Delete.new expression: unary_expression
+      when :DELETE; next_token; AST::Delete.new value: unary_expression
       else
         increment_expression
       end

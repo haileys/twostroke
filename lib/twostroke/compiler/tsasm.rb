@@ -327,14 +327,14 @@ private
   end
   
   def Delete(node)
-    if node.expression.is_a?(Twostroke::AST::Variable)
-      output :deleteg, node.expression.name
-    elsif node.expression.is_a?(Twostroke::AST::MemberAccess)
-      compile node.expression.object
-      output :delete, node.expression.member
-    elsif node.expression.is_a?(Twostroke::AST::Index)
-      compile node.expression.object
-      output :delete, node.expression.index
+    if node.value.is_a?(Twostroke::AST::Variable)
+      output :deleteg, node.value.name
+    elsif node.value.is_a?(Twostroke::AST::MemberAccess)
+      compile node.value.object
+      output :delete, node.value.member
+    elsif node.value.is_a?(Twostroke::AST::Index)
+      compile node.value.object
+      output :delete, node.value.index
     else
       output :true
     end
