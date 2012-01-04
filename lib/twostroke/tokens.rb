@@ -1,5 +1,3 @@
-#coding: utf-8
-
 module Twostroke
   class Lexer
     RESERVED = %w(
@@ -11,6 +9,7 @@ module Twostroke
       [ :MULTI_COMMENT, %r{/\*.*?\*/} ],
       [ :SINGLE_COMMENT, /\/\/.*?($|\r|\u2029|\u2028)/ ],
 
+#      [ :LINE_TERMINATOR, /[\n\r\u2028\u2029]/ ],
       [ :WHITESPACE, /[[:space:]]+/ ],
       [ :NUMBER, /((?<oct>0[0-7]+)|(?<hex>0x[A-Fa-f0-9]+)|(?<to_f>(\d+(\.?\d*([eE][+-]?\d+)?)?|\.\d+([eE][+-]?\d+)?)))/, ->m do
         method, number = m.names.zip(m.captures).select { |k,v| v }.first
