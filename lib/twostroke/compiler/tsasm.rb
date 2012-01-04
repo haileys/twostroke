@@ -17,7 +17,9 @@ class Twostroke::Compiler::TSASM
         send node
       else
         if @methods[type(node)]
+          @node_stack.push node
           send type(node), node if node
+          @node_stack.pop
         else
           error! "#{type node} not implemented"
         end
@@ -30,6 +32,7 @@ class Twostroke::Compiler::TSASM
       @sections = [:"#{prefix}main"]
       @break_stack = []
       @continue_stack = []
+      @node_stack = []
             
       ast.each { |node| hoist node }
       ast.each { |node| compile node }

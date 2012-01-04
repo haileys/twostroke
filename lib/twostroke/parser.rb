@@ -14,7 +14,7 @@ module Twostroke
     def parse
       while try_peek_token
         st = statement
-        statements.push st.collapse if st
+        statements.push st.collapse if st # don't collapse
       end
     end
   
@@ -70,15 +70,30 @@ module Twostroke
       when :FUNCTION;   consume_semicolon = false; function
       when :SEMICOLON;  nil
       when :LINE_TERMINATOR;  nil
+      when :BAREWORD;   label
       else; expression
       end
       if consume_semicolon
-        next_token if try_peek_token and peek_token.type == :SEMICOLON || peek_token.type == :LINE_TERMINATOR
-        #assert_type next_token, :SEMICOLON
+        if try_peek_token and peek_token.type == :SEMICOLON
+          next_token
+        end
       end
       st
     end
 
+    def label
+      state = save_state
+      assert_type next_token, :BAREWORD
+      name = token.val
+      if try_peek_token and peek_token.type == :COLON
+        next_token
+        return AST::Label.new name: name, statement: statement(false)
+      else
+        load_state state
+        expression
+      end
+    end
+    
     def expression
       multi_expression
     end
