@@ -35,11 +35,12 @@ module Twostroke::Runtime
       end
       
       until @return
-        ins, arg = *insns[ip]
+        ins, arg = insns[ip]
         st = @stack.size
         @ip += 1
         if respond_to? ins
           if @exception = catch(:exception) { public_send ins, arg; nil }
+            puts "--> #{Types.to_string(@exception).string} - #{@section}+#{@ip}"
             throw :exception, @exception if catch_stack.empty? && finally_stack.empty?
             if catch_stack.any?
               @ip = catch_stack.last
@@ -174,7 +175,7 @@ module Twostroke::Runtime
     
     def setprop(arg)
       val = stack.pop
-      obj = stack.pop
+      obj = Types.to_object(stack.pop)
       obj.put arg.to_s, val
       stack.push val
     end

@@ -1,5 +1,5 @@
 module Twostroke::Compiler
-  class CompileError < Twostroke::Error
+  class CompileError < SyntaxError
   end
   
   Dir.glob File.expand_path("../compiler/*", __FILE__) do |f|

@@ -3,7 +3,7 @@ module Twostroke::Runtime::Types
     def self.constructor_function
       @@constructor_function ||=
         Function.new(->(scope, this, args) {
-          RegExp.new Twostroke::Runtime::Types.to_string(args[0] || Undefined.new).string, args[1] && Twostroke::Runtime::Types.to_string(args[1]).string
+          RegExp.new((args[0] && !args[0].is_a?(Undefined)) ? Twostroke::Runtime::Types.to_string(args[0]).string : "", args[1] && Twostroke::Runtime::Types.to_string(args[1]).string)
         }, nil, "RegExp", [])
     end
     
