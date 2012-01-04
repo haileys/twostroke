@@ -11,7 +11,6 @@ module Twostroke::Runtime
 
         evaled += 1
         compiler = Twostroke::Compiler::TSASM.new parser.statements, "evaled_#{evaled}_"
-        puts "HI"
         compiler.compile
         
         vm = scope.global_scope.vm
