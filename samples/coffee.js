@@ -1050,7 +1050,7 @@
 
   JSTOKEN = /^`[^\\`]*(?:\\.[^\\`]*)*`/;
 
-  REGEX = /\/(?<src>(\\.|[^\1])*?[^\1\\]?)\/(?<opts>[gim]+)?/; // HACK BY CHARLIE: /^(\/(?![\s=])[^[\/\n\\]*(?:(?:\\[\s\S]|\[[^\]\n\\]*(?:\\[\s\S][^\]\n\\]*)*])[^[\/\n\\]*)*\/)([imgy]{0,4})(?!\w)/;
+  REGEX = /\/((\\.|[^\1])*?[^\1\\]?)\/([gim]+)?/; // HACK BY CHARLIE: /^(\/(?![\s=])[^[\/\n\\]*(?:(?:\\[\s\S]|\[[^\]\n\\]*(?:\\[\s\S][^\]\n\\]*)*])[^[\/\n\\]*)*\/)([imgy]{0,4})(?!\w)/;
 
   HEREGEX = /^\/{3}([\s\S]+?)\/{3}([imgy]{0,4})(?!\w)/;
 
@@ -1098,7 +1098,7 @@
   var exports = this;
   /* Jison generated parser */
 var parser = (function(){
-undefined
+undefined;
 var parser = {trace: function trace() { },
 yy: {},
 symbols_: {"error":2,"Root":3,"Body":4,"Block":5,"TERMINATOR":6,"Line":7,"Expression":8,"Statement":9,"Return":10,"Comment":11,"STATEMENT":12,"Value":13,"Invocation":14,"Code":15,"Operation":16,"Assign":17,"If":18,"Try":19,"While":20,"For":21,"Switch":22,"Class":23,"Throw":24,"INDENT":25,"OUTDENT":26,"Identifier":27,"IDENTIFIER":28,"AlphaNumeric":29,"NUMBER":30,"STRING":31,"Literal":32,"JS":33,"REGEX":34,"DEBUGGER":35,"BOOL":36,"Assignable":37,"=":38,"AssignObj":39,"ObjAssignable":40,":":41,"ThisProperty":42,"RETURN":43,"HERECOMMENT":44,"PARAM_START":45,"ParamList":46,"PARAM_END":47,"FuncGlyph":48,"->":49,"=>":50,"OptComma":51,",":52,"Param":53,"ParamVar":54,"...":55,"Array":56,"Object":57,"Splat":58,"SimpleAssignable":59,"Accessor":60,"Parenthetical":61,"Range":62,"This":63,".":64,"?.":65,"::":66,"Index":67,"INDEX_START":68,"IndexValue":69,"INDEX_END":70,"INDEX_SOAK":71,"Slice":72,"{":73,"AssignList":74,"}":75,"CLASS":76,"EXTENDS":77,"OptFuncExist":78,"Arguments":79,"SUPER":80,"FUNC_EXIST":81,"CALL_START":82,"CALL_END":83,"ArgList":84,"THIS":85,"@":86,"[":87,"]":88,"RangeDots":89,"..":90,"Arg":91,"SimpleArgs":92,"TRY":93,"Catch":94,"FINALLY":95,"CATCH":96,"THROW":97,"(":98,")":99,"WhileSource":100,"WHILE":101,"WHEN":102,"UNTIL":103,"Loop":104,"LOOP":105,"ForBody":106,"FOR":107,"ForStart":108,"ForSource":109,"ForVariables":110,"OWN":111,"ForValue":112,"FORIN":113,"FOROF":114,"BY":115,"SWITCH":116,"Whens":117,"ELSE":118,"When":119,"LEADING_WHEN":120,"IfBlock":121,"IF":122,"POST_IF":123,"UNARY":124,"-":125,"+":126,"--":127,"++":128,"?":129,"MATH":130,"SHIFT":131,"COMPARE":132,"LOGIC":133,"RELATION":134,"COMPOUND_ASSIGN":135,"$accept":0,"$end":1},
@@ -1600,8 +1600,8 @@ parse: function parse(input) {
         if (this.defaultActions[state]) {
             action = this.defaultActions[state];
         } else {
-            if (symbol == null)
-                symbol = lex();
+            if (symbol == null){
+                symbol = lex();console.log(this.lexer.yytext); }
             action = table[state] && table[state][symbol];
         }
         if (typeof action === "undefined" || !action.length || !action[0]) {
@@ -1672,7 +1672,7 @@ return parser;
 })();
 if (typeof require !== 'undefined' && typeof exports !== 'undefined') {
 exports.parser = parser;
-exports.parse = function () { return parser.parse.apply(parser, arguments); }
+exports.parse = function () { return parser.parse.apply(parser, arguments); };
 exports.main = function commonjsMain(args) {
     if (!args[1])
         throw new Error('Usage: '+args[0]+' FILE');
@@ -1683,7 +1683,7 @@ exports.main = function commonjsMain(args) {
         var source = cwd.join(args[1]).read({charset: "utf-8"});
     }
     return exports.parser.parse(source);
-}
+};
 if (typeof module !== 'undefined' && require.main === module) {
   exports.main(typeof process !== 'undefined' ? process.argv.slice(1) : require("system").args);
 }
@@ -4562,7 +4562,9 @@ if (typeof module !== 'undefined' && require.main === module) {
   parser.lexer = {
     lex: function() {
       var tag, _ref2;
-      _ref2 = this.tokens[this.pos++] || [''], tag = _ref2[0], this.yytext = _ref2[1], this.yylineno = _ref2[2];
+//      console.log(JSON.stringify(this.tokens));
+      $PASSTHRU(_ref2 = this.tokens[this.pos++] || ['']), tag = _ref2[0], this.yytext = _ref2[1], this.yylineno = _ref2[2];
+      console.log(this.yytext, _ref2[1]);
       return tag;
     },
     setInput: function(tokens) {
@@ -4579,6 +4581,11 @@ if (typeof module !== 'undefined' && require.main === module) {
 }).call(this);
 
 };
+
+function $PASSTHRU(o) {
+  console.log(JSON.stringify(o));
+  return o;
+}
 
 /*require['./browser'] = new function() {
   var exports = this;
@@ -4668,4 +4675,4 @@ if (typeof module !== 'undefined' && require.main === module) {
   }
 }(this));
 
-console.log(CoffeeScript.compile("hello = -> console.log 'hello world!'"));
+console.log(this.CoffeeScript.compile("hello = -> console.log 'hello world!'"));
