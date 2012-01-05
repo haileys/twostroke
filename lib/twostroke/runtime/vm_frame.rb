@@ -41,7 +41,6 @@ module Twostroke::Runtime
         @ip += 1
         if respond_to? ins
           if @exception = catch(:exception) { public_send ins, arg; nil }
-            puts "--> #{Types.to_string(@exception).string} - #{@section}+#{@ip}"
             throw :exception, @exception if catch_stack.empty? && finally_stack.empty?
             if catch_stack.any?
               @ip = catch_stack.last

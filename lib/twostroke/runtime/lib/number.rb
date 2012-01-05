@@ -8,7 +8,11 @@ module Twostroke::Runtime
       if this.is_a?(Types::NumberObject)
         base = args[0] ? Types.to_uint32(args[0]) : 10
         Lib.throw_range_error "toString() radix argument must be between 2 and 36" if base < 2 or base > 36
-        Types::String.new(this.number.to_s(base))
+        if this.number.is_a? Fixnum or this.number.is_a? Bignum
+          Types::String.new this.number.to_s base
+        else
+          Types::String.new this.number.to_s
+        end
       else
         Lib.throw_type_error "Number.prototype.toString is not generic"
       end
