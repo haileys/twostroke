@@ -70,7 +70,8 @@ module Twostroke::Runtime
       }, nil, "slice", [])
     # String.prototype.indexOf
     proto.proto_put "indexOf", Types::Function.new(->(scope, this, args) {
-        Types::Number.new(Types.to_string(this).string.index(Types.to_string(args[0] || Types::Undefined.new).string) || -1)
+        idx = args[1] ? Types.to_int32(args[1]) : 0
+        Types::Number.new(Types.to_string(this).string.index(Types.to_string(args[0] || Types::Undefined.new).string, idx) || -1)
       }, nil, "indexOf", [])
     # String.prototype.charAt
     proto.proto_put "charAt", Types::Function.new(->(scope, this, args) {
@@ -102,6 +103,14 @@ module Twostroke::Runtime
           re.all_matches(nil, re, [this])
         end
       }, nil, "match", [])
+    # String.prototype.toUpperCase
+    proto.proto_put "toUpperCase", Types::Function.new(->(scope, this, args) {
+        Types::String.new Types.to_string(this).string.upcase
+      }, nil, "toUpperCase", [])
+    # String.prototype.toUpperCase
+    proto.proto_put "toLowerCase", Types::Function.new(->(scope, this, args) {
+        Types::String.new Types.to_string(this).string.downcase
+      }, nil, "toLowerCase", [])
     obj.proto_put "prototype", proto
     
     obj.proto_put "fromCharCode", Types::Function.new(->(scope, this, args) {
