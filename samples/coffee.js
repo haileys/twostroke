@@ -310,7 +310,9 @@
           starter = tag;
           _ref2 = this.indentation(token, true), indent = _ref2[0], outdent = _ref2[1];
           if (starter === 'THEN') indent.fromThen = true;
+          console.log(JSON.stringify(tokens));
           tokens.splice(i + 1, 0, indent);
+          console.log(JSON.stringify(tokens));
           this.detectEnd(i + 2, condition, action);
           if (tag === 'THEN') tokens.splice(i, 1);
           return 1;
@@ -1600,8 +1602,8 @@ parse: function parse(input) {
         if (this.defaultActions[state]) {
             action = this.defaultActions[state];
         } else {
-            if (symbol == null){
-                symbol = lex();console.log(this.lexer.yytext); }
+            if (symbol == null)
+                symbol = lex();
             action = table[state] && table[state][symbol];
         }
         if (typeof action === "undefined" || !action.length || !action[0]) {
@@ -4562,9 +4564,7 @@ if (typeof module !== 'undefined' && require.main === module) {
   parser.lexer = {
     lex: function() {
       var tag, _ref2;
-//      console.log(JSON.stringify(this.tokens));
-      $PASSTHRU(_ref2 = this.tokens[this.pos++] || ['']), tag = _ref2[0], this.yytext = _ref2[1], this.yylineno = _ref2[2];
-      console.log(this.yytext, _ref2[1]);
+      _ref2 = this.tokens[this.pos++] || [''], tag = _ref2[0], this.yytext = _ref2[1], this.yylineno = _ref2[2];
       return tag;
     },
     setInput: function(tokens) {
@@ -4581,11 +4581,6 @@ if (typeof module !== 'undefined' && require.main === module) {
 }).call(this);
 
 };
-
-function $PASSTHRU(o) {
-  console.log(JSON.stringify(o));
-  return o;
-}
 
 /*require['./browser'] = new function() {
   var exports = this;

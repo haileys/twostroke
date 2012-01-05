@@ -55,12 +55,12 @@ module Twostroke::Runtime
         Lib.throw_type_error "Array.prototype.splice is not generic" unless this.is_a? Types::Array
         idx = Types.to_uint32(args[0] || Types::Undefined.new)
         count = args[1] && Types.to_uint32(args[1])
-        if count
+        if count and count >= 0
           retn = this.items[idx...(idx + count)]
-          this.items[idx...(idx + count)] = []
+          this.items[idx...(idx + count)] = Types::Array.new args.drop(2)
         else
           retn = this.items[idx..-1]
-          this.items[idx..-1] = []
+          this.items[idx..-1] = Types::Array.new args.drop(2)
         end
         Types::Array.new retn
       }, nil, "splice", [])
