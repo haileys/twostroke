@@ -241,7 +241,7 @@ private
     elsif type(node.callee) == :Index
       compile node.callee.object
       output :dup
-      output node.callee.index
+      compile node.callee.index
       output :index
       node.arguments.each { |n| compile n }
       output :thiscall, node.arguments.size
