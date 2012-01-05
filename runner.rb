@@ -16,6 +16,8 @@ end
 vm = Twostroke::Runtime::VM.new bytecode
 Twostroke::Runtime::Lib.setup_environment vm
 
+trap("SIGINT") { Twostroke::Runtime::Lib.throw__interrupt_error "SIGINT" }
+
 if ARGV.include? "--pry"
   require "pry"
   pry binding

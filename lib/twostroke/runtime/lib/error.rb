@@ -12,7 +12,7 @@ module Twostroke::Runtime
     }, nil, "toString", [])
     error.proto_put "prototype", error.prototype
     
-    ["Eval", "Range", "Reference", "Syntax", "Type", "URI"].each do |e|
+    ["Eval", "Range", "Reference", "Syntax", "Type", "URI", "_Interrupt"].each do |e|
       obj = Types::Function.new(->(scope, this, args) {
         this.proto_put "name", Types::String.new("#{e}Error")
         this.proto_put "message", (args[0] || Types::Undefined.new)
