@@ -1,6 +1,7 @@
 module Twostroke
   module AST
     class Base
+      attr_accessor :line
       def initialize(hash = {})
         hash.each do |k,v|
           send "#{k}=", v

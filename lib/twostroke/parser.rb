@@ -87,7 +87,7 @@ module Twostroke
       name = token.val
       if try_peek_token and peek_token.type == :COLON
         next_token
-        return AST::Label.new name: name, statement: statement(false)
+        return AST::Label.new name: name, line: token.line, statement: statement(false)
       else
         load_state state
         expression
@@ -102,7 +102,7 @@ module Twostroke
       expr = assignment_expression
       while try_peek_token and peek_token.type == :COMMA
         next_token
-        expr = AST::MultiExpression.new left: expr, right: assignment_expression
+        expr = AST::MultiExpression.new left: expr, line: token.line, right: assignment_expression
       end
       expr
     end
@@ -124,9 +124,9 @@ module Twostroke
       expr = conditional_expression
       if try_peek_token and peek_token.type == :EQUALS
         next_token
-        expr = AST::Assignment.new left: expr, right: assignment_expression
+        expr = AST::Assignment.new left: expr, line: token.line, right: assignment_expression
       elsif try_peek_token and nodes.keys.include? peek_token.type
-        expr = nodes[next_token.type].new left: expr, assign_result_left: true, right: assignment_expression
+        expr = nodes[next_token.type].new left: expr, line: token.line, assign_result_left: true, right: assignment_expression
       end
       expr
     end
@@ -135,7 +135,7 @@ module Twostroke
       cond = logical_or_expression
       if try_peek_token and peek_token.type == :QUESTION
         next_token
-        cond = AST::Ternary.new condition: cond
+        cond = AST::Ternary.new line: token.line, condition: cond
         cond.if_true = assignment_expression
         assert_type next_token, :COLON
         cond.if_false = assignment_expression
@@ -147,7 +147,7 @@ module Twostroke
       expr = logical_and_expression
       while try_peek_token and peek_token.type == :OR
         next_token
-        expr = AST::Or.new left: expr, right: logical_and_expression
+        expr = AST::Or.new left: expr, line: token.line, right: logical_and_expression
       end
       expr
     end
@@ -156,7 +156,7 @@ module Twostroke
       expr = bitwise_or_expression
       while try_peek_token and peek_token.type == :AND
         next_token
-        expr = AST::And.new left: expr, right: bitwise_or_expression
+        expr = AST::And.new left: expr, line: token.line, right: bitwise_or_expression
       end
       expr
     end
@@ -165,7 +165,7 @@ module Twostroke
       expr = bitwise_and_expression
       while try_peek_token and peek_token.type == :PIPE
         next_token
-        expr = AST::BitwiseOr.new left: expr, right: bitwise_and_expression
+        expr = AST::BitwiseOr.new left: expr, line: token.line, right: bitwise_and_expression
       end
       expr
     end
@@ -174,7 +174,7 @@ module Twostroke
       expr = equality_expression
       while try_peek_token and peek_token.type == :AMPERSAND
         next_token
-        expr = AST::BitwiseAnd.new left: expr, right: equality_expression
+        expr = AST::BitwiseAnd.new left: expr, line: token.line, right: equality_expression
       end
       expr
     end
@@ -188,7 +188,7 @@ module Twostroke
       }
       expr = relational_in_instanceof_expression
       while try_peek_token and nodes.keys.include? peek_token.type
-        expr = nodes[next_token.type].new left: expr, right: relational_in_instanceof_expression
+        expr = nodes[next_token.type].new left: expr, line: token.line, right: relational_in_instanceof_expression
       end
       expr
     end
@@ -204,7 +204,7 @@ module Twostroke
       }
       expr = shift_expression
       while try_peek_token(true) and nodes.keys.include? peek_token(true).type
-        expr = nodes[next_token(true).type].new left: expr, right: shift_expression
+        expr = nodes[next_token(true).type].new left: expr, line: token.line, right: shift_expression
       end
       expr
     end
@@ -217,7 +217,7 @@ module Twostroke
       }
       expr = additive_expression
       while try_peek_token and nodes.keys.include? peek_token.type
-        expr = nodes[next_token.type].new left: expr, right: additive_expression
+        expr = nodes[next_token.type].new left: expr, line: token.line, right: additive_expression
       end
       expr
     end
@@ -229,7 +229,7 @@ module Twostroke
       }
       expr = multiplicative_expression
       while try_peek_token and nodes.keys.include? peek_token.type
-        expr = nodes[next_token.type].new left: expr, right: multiplicative_expression
+        expr = nodes[next_token.type].new left: expr, line: token.line, right: multiplicative_expression
       end
       expr
     end
@@ -242,20 +242,20 @@ module Twostroke
       }
       expr = unary_expression
       while try_peek_token and nodes.keys.include? peek_token.type
-        expr = nodes[next_token.type].new left: expr, right: unary_expression
+        expr = nodes[next_token.type].new left: expr, line: token.line, right: unary_expression
       end
       expr
     end
     
     def unary_expression
       case peek_token(true).type
-      when :NOT;    next_token; AST::Not.new value: unary_expression
-      when :TILDE;  next_token; AST::BinaryNot.new value: unary_expression
-      when :PLUS;   next_token; AST::UnaryPlus.new value: unary_expression
-      when :MINUS;  next_token; AST::Negation.new value: unary_expression
-      when :TYPEOF; next_token; AST::TypeOf.new value: unary_expression
-      when :VOID;   next_token; AST::Void.new value: unary_expression
-      when :DELETE; next_token; AST::Delete.new value: unary_expression
+      when :NOT;    next_token; AST::Not.new line: token.line, value: unary_expression
+      when :TILDE;  next_token; AST::BinaryNot.new line: token.line, value: unary_expression
+      when :PLUS;   next_token; AST::UnaryPlus.new line: token.line, value: unary_expression
+      when :MINUS;  next_token; AST::Negation.new line: token.line, value: unary_expression
+      when :TYPEOF; next_token; AST::TypeOf.new line: token.line, value: unary_expression
+      when :VOID;   next_token; AST::Void.new line: token.line, value: unary_expression
+      when :DELETE; next_token; AST::Delete.new line: token.line, value: unary_expression
       else
         increment_expression
       end
@@ -264,22 +264,22 @@ module Twostroke
     def increment_expression
       if peek_token(true).type == :INCREMENT
         next_token(true)
-        return AST::PreIncrement.new value: increment_expression
+        return AST::PreIncrement.new line: token.line, value: increment_expression
       end
       if peek_token(true).type == :DECREMENT
         next_token(true)
-        return AST::PreDecrement.new value: increment_expression
+        return AST::PreDecrement.new line: token.line, value: increment_expression
       end
       
       expr = call_expression
       
       if peek_token.type == :INCREMENT
         next_token
-        return AST::PostIncrement.new value: expr
+        return AST::PostIncrement.new line: token.line, value: expr
       end
       if peek_token.type == :DECREMENT
         next_token
-        return AST::PostDecrement.new value: expr
+        return AST::PostDecrement.new line: token.line, value: expr
       end
       
       expr
@@ -320,7 +320,7 @@ module Twostroke
 
     def new
       assert_type next_token, :NEW
-      node = AST::New.new
+      node = AST::New.new line: token.line
       node.callee = new_call_expression
       if try_peek_token && peek_token.type == :OPEN_PAREN
         call = call node.callee
@@ -343,7 +343,7 @@ module Twostroke
     
     def body
       assert_type next_token, :OPEN_BRACE
-      body = AST::Body.new
+      body = AST::Body.new line: token.line
       while peek_token.type != :CLOSE_BRACE
         body.statements.push statement
       end
@@ -353,33 +353,33 @@ module Twostroke
     
     def this
       assert_type next_token, :THIS
-      AST::This.new
+      AST::This.new line: token.line
     end
     
     def null
       assert_type next_token, :NULL
-      AST::Null.new
+      AST::Null.new line: token.line
     end
     
     def true
       assert_type next_token, :TRUE
-      AST::True.new
+      AST::True.new line: token.line
     end
     
     def false
       assert_type next_token, :FALSE
-      AST::False.new
+      AST::False.new line: token.line
     end
     
     def bareword
       assert_type next_token, :BAREWORD
-      AST::Variable.new name: token.val
+      AST::Variable.new line: token.line, name: token.val
     end
     
     def with
       assert_type next_token, :WITH
       assert_type next_token, :OPEN_PAREN
-      with = AST::With.new object: expression
+      with = AST::With.new line: token.line, object: expression
       assert_type next_token, :CLOSE_PAREN
       with.statement = statement
       with
@@ -388,7 +388,7 @@ module Twostroke
     def if
       assert_type next_token, :IF
       assert_type next_token, :OPEN_PAREN
-      node = AST::If.new condition: expression
+      node = AST::If.new line: token.line, condition: expression
       assert_type next_token, :CLOSE_PAREN
       node.then = statement
       if try_peek_token && peek_token.type == :ELSE
@@ -418,14 +418,14 @@ module Twostroke
         if peek_token.type == :VAR
           next_token
           assert_type next_token, :BAREWORD
-          lval = AST::Declaration.new name: token.val
+          lval = AST::Declaration.new line: token.line, name: token.val
         else
           lval = shift_expression # shift_expression is the precedence level right below in's
         end
         assert_type next_token, :IN
         obj = expression
         assert_type next_token, :CLOSE_PAREN
-        AST::ForIn.new lval: lval, object: obj, body: statement
+        AST::ForIn.new line: token.line, lval: lval, object: obj, body: statement
       else
         initializer = statement(false) unless peek_token.type == :SEMICOLON
         assert_type next_token, :SEMICOLON
@@ -433,14 +433,14 @@ module Twostroke
         assert_type next_token, :SEMICOLON
         increment = statement(false) unless peek_token.type == :CLOSE_PAREN
         assert_type next_token, :CLOSE_PAREN
-        AST::ForLoop.new initializer: initializer, condition: condition, increment: increment, body: statement
+        AST::ForLoop.new line: token.line, initializer: initializer, condition: condition, increment: increment, body: statement
       end
     end
     
     def switch
       assert_type next_token, :SWITCH
       assert_type next_token, :OPEN_PAREN
-      sw = AST::Switch.new expression: expression
+      sw = AST::Switch.new line: token.line, expression: expression
       assert_type next_token, :CLOSE_PAREN
       assert_type next_token, :OPEN_BRACE
       current_case = nil
@@ -449,7 +449,7 @@ module Twostroke
         if peek_token.type == :CASE
           assert_type next_token, :CASE
           expr = expression
-          node = AST::Case.new expression: expr
+          node = AST::Case.new line: token.line, expression: expr
           assert_type next_token, :COLON
           sw.cases << node
           current_case = node.statements
@@ -457,7 +457,7 @@ module Twostroke
           assert_type next_token, :DEFAULT
           error! "only one default case allowed" if default
           default = true
-          node = AST::Case.new
+          node = AST::Case.new line: token.line
           assert_type next_token, :COLON
           sw.cases << node
           current_case = node.statements
@@ -473,7 +473,7 @@ module Twostroke
     def while
       assert_type next_token, :WHILE
       assert_type next_token, :OPEN_PAREN
-      node = AST::While.new condition: expression
+      node = AST::While.new line: token.line, condition: expression
       assert_type next_token, :CLOSE_PAREN
       node.body = statement
       node
@@ -481,7 +481,7 @@ module Twostroke
     
     def do
       assert_type next_token, :DO
-      node = AST::DoWhile.new body: body
+      node = AST::DoWhile.new line: token.line, body: body
       assert_type next_token, :WHILE
       assert_type next_token, :OPEN_PAREN
       node.condition = expression
@@ -490,7 +490,7 @@ module Twostroke
     end
     
     def try
-      try = AST::Try.new try_statements: []
+      try = AST::Try.new line: token.line, try_statements: []
       assert_type next_token, :TRY
       assert_type next_token, :OPEN_BRACE
       while peek_token.type != :CLOSE_BRACE
@@ -525,12 +525,12 @@ module Twostroke
     def member_access(obj)
       assert_type next_token, :MEMBER_ACCESS
       assert_type next_token, :BAREWORD
-      AST::MemberAccess.new object: obj, member: token.val
+      AST::MemberAccess.new line: token.line, object: obj, member: token.val
     end
     
     def call(callee)
       assert_type next_token, :OPEN_PAREN
-      c = AST::Call.new callee: callee
+      c = AST::Call.new line: token.line, callee: callee
       while peek_token(true).type != :CLOSE_PAREN
         c.arguments.push assignment_expression # one level below multi_expression which can separate by comma
         if peek_token.type == :COMMA
@@ -546,33 +546,33 @@ module Twostroke
       assert_type next_token, :OPEN_BRACKET
       ind = expression
       assert_type next_token, :CLOSE_BRACKET
-      AST::Index.new object: obj, index: ind
+      AST::Index.new line: token.line, object: obj, index: ind
     end
     
     def return
       assert_type next_token, :RETURN
       expr = expression unless peek_token.type == :SEMICOLON || peek_token.type == :CLOSE_BRACE
-      AST::Return.new expression: expr
+      AST::Return.new line: token.line, expression: expr
     end
     
     def break
       assert_type next_token, :BREAK
-      AST::Break.new
+      AST::Break.new line: token.line
     end
     
     def continue
       assert_type next_token, :CONTINUE
-      AST::Continue.new
+      AST::Continue.new line: token.line
     end
     
     def throw
       assert_type next_token, :THROW
-      AST::Throw.new expression: expression
+      AST::Throw.new line: token.line, expression: expression
     end
     
     def delete
       assert_type next_token, :DELETE
-      AST::Delete.new expression: expression
+      AST::Delete.new line: token.line, expression: expression
     end
     
     def var
@@ -582,20 +582,20 @@ module Twostroke
     
     def var_rest
       assert_type next_token, :BAREWORD
-      decl = AST::Declaration.new(name: token.val)
+      decl = AST::Declaration.new line: token.line, name: token.val
       return decl if peek_token.type == :SEMICOLON || peek_token.type == :CLOSE_BRACE
       
       assert_type next_token, :COMMA, :EQUALS
       
       if token.type == :COMMA
-        AST::MultiExpression.new left: decl, right: var_rest
+        AST::MultiExpression.new line: token.line, left: decl, right: var_rest
       else
-        assignment = AST::Assignment.new left: decl, right: assignment_expression
+        assignment = AST::Assignment.new line: token.line, left: decl, right: assignment_expression
         if peek_token.type == :SEMICOLON || peek_token.type == :CLOSE_BRACE
           assignment
         elsif peek_token.type == :COMMA
           next_token
-          AST::MultiExpression.new left: assignment, right: var_rest
+          AST::MultiExpression.new line: token.line, left: assignment, right: var_rest
         else
           error! "Unexpected #{peek_token.type}"
         end
@@ -604,22 +604,22 @@ module Twostroke
     
     def number
       assert_type next_token, :NUMBER
-      AST::Number.new number: token.val
+      AST::Number.new line: token.line, number: token.val
     end
     
     def string
       assert_type next_token, :STRING
-      AST::String.new string: token.val
+      AST::String.new line: token.line, string: token.val
     end
     
     def regexp
       assert_type next_token, :REGEXP
-      AST::Regexp.new regexp: token.val
+      AST::Regexp.new line: token.line, regexp: token.val
     end
     
     def object_literal
       assert_type next_token, :OPEN_BRACE
-      obj = AST::ObjectLiteral.new
+      obj = AST::ObjectLiteral.new line: token.line
       while peek_token.type != :CLOSE_BRACE
         assert_type next_token, :BAREWORD, :STRING, :NUMBER
         key = token
@@ -636,7 +636,7 @@ module Twostroke
     
     def array
       assert_type next_token, :OPEN_BRACKET
-      ary = AST::Array.new
+      ary = AST::Array.new line: token.line
       while peek_token(true).type != :CLOSE_BRACKET
         ary.items.push assignment_expression
         if peek_token.type == :COMMA
@@ -650,14 +650,14 @@ module Twostroke
     
     def parens
       assert_type next_token, :OPEN_PAREN
-      expr = AST::BracketedExpression.new value: expression
+      expr = AST::BracketedExpression.new line: token.line, value: expression
       assert_type next_token, :CLOSE_PAREN
       expr
     end
     
     def function
       assert_type next_token, :FUNCTION
-      fn = AST::Function.new arguments: [], statements: []
+      fn = AST::Function.new line: token.line, arguments: [], statements: []
       error! unless [:BAREWORD, :OPEN_PAREN].include? next_token.type
       if token.type == :BAREWORD
         fn.name = token.val

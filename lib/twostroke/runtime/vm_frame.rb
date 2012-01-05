@@ -41,6 +41,7 @@ module Twostroke::Runtime
         @ip += 1
         if respond_to? ins
           if @exception = catch(:exception) { public_send ins, arg; nil }
+            puts "--> #{Types.to_string(exception).string}  #{@name || "(anonymous function)"}:#{@line}  <#{@section}+#{@ip}>"
             throw :exception, @exception if catch_stack.empty? && finally_stack.empty?
             if catch_stack.any?
               @ip = catch_stack.last
@@ -56,7 +57,12 @@ module Twostroke::Runtime
       stack.last
     end
     
+    define_method ".line" do |arg|
+      @line = arg
+    end
+    
     define_method ".name" do |arg|
+      @name = arg
       scope.declare arg.intern
       scope.set_var arg.intern, @callee
     end

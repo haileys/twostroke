@@ -17,6 +17,7 @@ class Twostroke::Compiler::TSASM
         send node
       else
         if @methods[type(node)]
+          output :".line", @current_line = node.line if node.line and node.line > @current_line
           @node_stack.push node
           send type(node), node if node
           @node_stack.pop
@@ -33,6 +34,7 @@ class Twostroke::Compiler::TSASM
       @break_stack = []
       @continue_stack = []
       @node_stack = []
+      @current_line = 0
             
       ast.each { |node| hoist node }
       ast.each { |node| compile node }
