@@ -530,6 +530,20 @@ private
     node.statements.each { |s| compile s }
   end
   
+  def DoWhile(node)
+    start_label = uniqid
+    next_label = uniqid
+    end_label = uniqid
+    @continue_stack.push next_label
+    @break_stack.push end_label
+    output :".label", start_label
+    compile node.body
+    output :".label", next_label
+    compile node.condition
+    output :jit, start_label
+    output :".label", end_label
+  end
+  
   def ForLoop(node)
     compile node.initializer if node.initializer
     start_label = uniqid
