@@ -50,6 +50,20 @@ module Twostroke::Runtime
         Types::Array.new this.generic_items[begin_index.number.to_i...end_index.number.to_i]
       end
     }, nil, "slice", [])
+    # Array.prototype.splice
+    proto.proto_put "splice", Types::Function.new(->(scope, this, args) {
+        Lib.throw_type_error "Array.prototype.splice is not generic" unless this.is_a? Types::Array
+        idx = Types.to_uint32(args[0] || Types::Undefined.new)
+        count = args[1] && Types.to_uint32(args[1])
+        if count
+          retn = this.items[idx...(idx + count)]
+          this.items[idx...(idx + count)] = []
+        else
+          retn = this.items[idx..-1]
+          this.items[idx..-1] = []
+        end
+        Types::Array.new retn
+      }, nil, "splice", [])
     # Array.prototype.sort
     proto.proto_put "sort", Types::Function.new(->(scope, this, args) {
       Lib.throw_type_error "Array.prototype.sort is not generic" unless this.is_a? Types::Array
