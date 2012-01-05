@@ -1,13 +1,19 @@
 $LOAD_PATH << File.expand_path("../lib", __FILE__)
 require "twostroke"
 
-parser = Twostroke::Parser.new(Twostroke::Lexer.new(File.read ARGV.first))
-parser.parse
+src = File.read ARGV.first
+begin
+  bytecode = Marshal.load src
+rescue
+  parser = Twostroke::Parser.new Twostroke::Lexer.new src
+  parser.parse
 
-compiler = Twostroke::Compiler::TSASM.new parser.statements
-compiler.compile
+  compiler = Twostroke::Compiler::TSASM.new parser.statements
+  compiler.compile
+  bytecode = compiler.bytecode
+end
 
-vm = Twostroke::Runtime::VM.new compiler.bytecode
+vm = Twostroke::Runtime::VM.new bytecode
 Twostroke::Runtime::Lib.setup_environment vm
 
 if ARGV.include? "--pry"

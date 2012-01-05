@@ -6,7 +6,9 @@ module Twostroke::Runtime
     proto = Types::Object.new
     proto.proto_put "toString", Types::Function.new(->(scope, this, args) {
       if this.is_a?(Types::NumberObject)
-        Types::String.new(this.number.to_s)
+        base = args[0] ? Types.to_uint32(args[0]) : 10
+        Lib.throw_range_error "toString() radix argument must be between 2 and 36" if base < 2 or base > 36
+        Types::String.new(this.number.to_s(base))
       else
         Lib.throw_type_error "Number.prototype.toString is not generic"
       end

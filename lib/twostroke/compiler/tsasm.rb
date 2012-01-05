@@ -69,8 +69,11 @@ private
     node.walk do |node|
       if node.is_a? Twostroke::AST::Declaration
         output :".local", node.name.intern
+        false
       elsif node.is_a? Twostroke::AST::Function
         output :".local", node.name.intern if node.name
+        # because javascript is odd, entire function bodies need to be hoisted, not just their declarations
+        Function(node, true)
         false
       else
         true
@@ -183,8 +186,12 @@ private
       compile left.object
       output :dup
       output :member, left.member.intern
+      output :dup
+      output :tst
       output op
       output :setprop, left.member.intern
+      output :pop
+      output :tld
     elsif type(left) == :Index  
       compile left.object
       compile left.index
@@ -241,7 +248,7 @@ private
     elsif type(node.callee) == :Index
       compile node.callee.object
       output :dup
-      output node.callee.index
+      compile node.callee.index
       output :index
       node.arguments.each { |n| compile n }
       output :thiscall, node.arguments.size
@@ -278,27 +285,30 @@ private
     output :regexp, node.regexp
   end
   
-  def Function(node)
-    fnid = :"#{@prefix}fn_#{uniqid}"
+  def Function(node, in_hoist_stage = false)
+    fnid = node.fnid ||= :"#{@prefix}fn_#{uniqid}"
     
-    section fnid
-    output :".name", node.name if node.name
-    node.arguments.each do |arg|
-      output :".arg", arg.intern
+    if !node.name or in_hoist_stage
+      section fnid
+      output :".name", node.name if node.name
+      node.arguments.each do |arg|
+        output :".arg", arg.intern
+      end
+      output :".local", node.name.intern if node.name
+      node.statements.each { |s| hoist s }
+      if node.name
+        output :callee
+        output :set, node.name.intern
+      end
+      node.statements.each { |s| compile s }
+      output :undefined
+      output :ret
+      pop_section
+      output :close, fnid
+      output :set, node.name.intern if node.name
+    else  
+      output :close, fnid
     end
-    output :".local", node.name.intern if node.name
-    node.statements.each { |s| hoist s }
-    if node.name
-      output :callee
-      output :set, node.name.intern
-    end
-    node.statements.each { |s| compile s }
-    output :undefined
-    output :ret
-    pop_section
-    
-    output :close, fnid
-    output :set, node.name.intern if node.name
   end
   
   def Declaration(node)
@@ -565,10 +575,12 @@ private
   end
   
   def Break(node)
+    raise Twostroke::Compiler::CompileError, "Break not allowed outside of loop" unless @break_stack.any?
     output :jmp, @break_stack.last
   end
   
   def Continue(node)
+    raise Twostroke::Compiler::CompileError, "Continue not allowed outside of loop" unless @continue_stack.any?
     output :jmp, @continue_stack.last
   end
   

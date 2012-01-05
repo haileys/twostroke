@@ -1,6 +1,6 @@
 module Twostroke::AST
   class Function < Base
-    attr_accessor :name, :arguments, :statements
+    attr_accessor :name, :arguments, :statements, :fnid
     
     def initialize(*args)
       @arguments = []
@@ -9,7 +9,7 @@ module Twostroke::AST
     end
     
     def collapse
-      self.class.new name: name, arguments: arguments, statements: statements.reject(&:nil?).map(&:collapse)
+      self.class.new name: name, arguments: arguments, statements: statements.reject(&:nil?).map(&:collapse), fnid: fnid
     end
     
     def walk(&bk)

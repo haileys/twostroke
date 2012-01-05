@@ -24,6 +24,7 @@ module Twostroke::Runtime
       @catch_stack = []
       @finally_stack = []
       @enum_stack = []
+      @temp_slot = nil
       @ip = 0
       @return = false
       @this = this || @scope.global_scope.root_object
@@ -35,11 +36,12 @@ module Twostroke::Runtime
       end
       
       until @return
-        ins, arg = *insns[ip]
+        ins, arg = insns[ip]
         st = @stack.size
         @ip += 1
         if respond_to? ins
           if @exception = catch(:exception) { public_send ins, arg; nil }
+            puts "--> #{Types.to_string(@exception).string} - #{@section}+#{@ip}"
             throw :exception, @exception if catch_stack.empty? && finally_stack.empty?
             if catch_stack.any?
               @ip = catch_stack.last
@@ -96,7 +98,7 @@ module Twostroke::Runtime
       arg.times { args.unshift @stack.pop }
       fun = stack.pop
       Lib.throw_type_error "called non callable" unless fun.respond_to?(:call)
-      stack.push fun.call(scope, scope.global_scope.root_object, args)
+      stack.push fun.call(scope, fun.inherits_caller_this ? @this : scope.global_scope.root_object, args)
     end
     
     def thiscall(arg)
@@ -104,7 +106,8 @@ module Twostroke::Runtime
       arg.times { args.unshift stack.pop }
       fun = stack.pop
       Lib.throw_type_error "called non callable" unless fun.respond_to?(:call)
-      stack.push fun.call(scope, Types.to_object(stack.pop), args)
+      this_arg = Types.to_object stack.pop
+      stack.push fun.call(scope, fun.inherits_caller_this ? @this : this_arg, args)
     end
     
     def newcall(arg)
@@ -126,6 +129,14 @@ module Twostroke::Runtime
     def dup(arg)
       n = arg || 1
       stack.push *stack[-n..-1]
+    end
+    
+    def tst(arg)
+      @temp_slot = stack.pop
+    end
+    
+    def tld(arg)
+      stack.push @temp_slot
     end
     
     def member(arg)
@@ -174,7 +185,7 @@ module Twostroke::Runtime
     
     def setprop(arg)
       val = stack.pop
-      obj = stack.pop
+      obj = Types.to_object(stack.pop)
       obj.put arg.to_s, val
       stack.push val
     end

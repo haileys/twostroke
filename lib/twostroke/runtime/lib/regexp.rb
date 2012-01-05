@@ -23,6 +23,7 @@ module Twostroke::Runtime
         Lib.throw_type_error "RegExp.prototype.test is not generic" unless this.is_a?(Types::RegExp)
         Types::Boolean.new((Types.to_string(args[0] || Undefined.new).string =~ this.regexp) != nil)
       }, nil, "test", [])
+    proto.proto_put "exec", Types::Function.new(Types::RegExp.method(:exec), nil, "exec", [])
     regexp.proto_put "prototype", proto
   end
 end

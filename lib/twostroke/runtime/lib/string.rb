@@ -52,31 +52,56 @@ module Twostroke::Runtime
 
         Types::String.new retn
       }, nil, "replace", [])
-=begin
-        find = args[0] || Types::Undefined.new
-        find = Types.to_string(find).string unless find.is_a?(Types::RegExp)
-        replace = args[1] || Types::Undefined.new
-        replace = Types.to_string(replace).string unless replace.respond_to? :call        
-        Types::String.new(if find.is_a?(String)
-          if replace.is_a?(String)
-            s.sub find, replace
-          else
-            s.sub(find) { |m| Types.to_string(replace.call(scope, nil, [Types::String.new(m), Types::Number.new(s.index m), sobj])).string }
-          end
+    # String.prototype.slice
+    proto.proto_put "slice", Types::Function.new(->(scope, this, args) {
+        sobj = Types.to_string(this)
+        s = sobj.string
+        if args[0].nil?
+          sobj
         else
-          m = s.method(find.global ? :gsub : :sub)
-          if replace.is_a?(String)
-            m.(find.regexp, replace)
+          start = Types.to_int32 args[0]
+          if args[1]
+            fin = Types.to_int32 args[1]
+            Types::String.new s[start...fin]
           else
-            offset = 0
-            m.(find.regexp) do |m|
-              idx = s.index m, offset
-              offset = idx + m.size
-              Types.to_string(replace.call(scope, nil, [Types::String.new(m), Types::Number.new(idx), sobj])).string
-            end
+            Types::String.new s[start..-1]
           end
-        end)
-=end
+        end
+      }, nil, "slice", [])
+    # String.prototype.indexOf
+    proto.proto_put "indexOf", Types::Function.new(->(scope, this, args) {
+        Types::Number.new(Types.to_string(this).string.index(Types.to_string(args[0] || Types::Undefined.new).string) || -1)
+      }, nil, "indexOf", [])
+    # String.prototype.charAt
+    proto.proto_put "charAt", Types::Function.new(->(scope, this, args) {
+        idx = args[0] ? Types.to_int32(args[0]) : 0
+        if idx < 0
+          Types::String.new ""
+        else
+          Types::String.new Types.to_string(this).string[idx]
+        end
+      }, nil, "charAt", [])
+    # String.prototype.charAt
+    proto.proto_put "charCodeAt", Types::Function.new(->(scope, this, args) {
+        idx = args[0] ? Types.to_int32(args[0]) : 0
+        str = Types.to_string(this).string
+        if idx < 0 or idx >= str.length
+          Types::Number.new Float::NAN
+        else
+          Types::Number.new str[idx].ord
+        end
+      }, nil, "charCodeAt", [])
+    # String.prototype.match
+    proto.proto_put "match", Types::Function.new(->(scope, this, args) {
+        re = args[0] || Types::Undefined.new
+        re = Types::RegExp.constructor_function.(nil, nil, re) unless re.is_a?(Types::RegExp)
+        unless re.global
+          # same as re.exec(str) in this case
+          Types::RegExp.exec(nil, re, [this])
+        else
+          re.all_matches(nil, re, [this])
+        end
+      }, nil, "match", [])
     obj.proto_put "prototype", proto
     
     obj.proto_put "fromCharCode", Types::Function.new(->(scope, this, args) {
