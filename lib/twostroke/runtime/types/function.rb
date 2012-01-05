@@ -45,7 +45,9 @@ module Twostroke::Runtime::Types
       @_class = nil unless defined?(@@constructor_function)
       super()
       @prototype = nil
-      proto_put "prototype", Object.new
+      proto = Object.new
+      proto.construct _class: self
+      put "prototype", proto
     end
     
     def prototype
