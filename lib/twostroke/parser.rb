@@ -12,7 +12,7 @@ module Twostroke
     end
     
     def parse
-      while try_peek_token
+      while try_peek_token(true)
         st = statement
         statements.push st.collapse if st # don't collapse
       end
