@@ -33,6 +33,7 @@ module Twostroke::Runtime::Types
     end
     
     attr_reader :arguments, :name, :source, :function
+    attr_accessor :inherits_caller_this
     def initialize(function, source, name, arguments)
       @function = function
       @source = source

@@ -97,7 +97,7 @@ module Twostroke::Runtime
       arg.times { args.unshift @stack.pop }
       fun = stack.pop
       Lib.throw_type_error "called non callable" unless fun.respond_to?(:call)
-      stack.push fun.call(scope, scope.global_scope.root_object, args)
+      stack.push fun.call(scope, fun.inherits_caller_this ? @this : scope.global_scope.root_object, args)
     end
     
     def thiscall(arg)
@@ -105,7 +105,8 @@ module Twostroke::Runtime
       arg.times { args.unshift stack.pop }
       fun = stack.pop
       Lib.throw_type_error "called non callable" unless fun.respond_to?(:call)
-      stack.push fun.call(scope, Types.to_object(stack.pop), args)
+      this_arg = Types.to_object stack.pop
+      stack.push fun.call(scope, fun.inherits_caller_this ? @this : this_arg, args)
     end
     
     def newcall(arg)
