@@ -59,11 +59,11 @@ module Twostroke::Runtime
       if object.has_property var.to_s
         object.put var.to_s, value
       else
-        parent.set_var var.to_s, value
+        parent.set_var var, value
       end
     end
     
-    def has_var
+    def has_var(var)
       object.has_property(var.to_s) || parent.has_var(var)
     end
     

@@ -27,7 +27,7 @@ test("captures same this value", function() {
 
 test("syntax error throws SyntaxError", function() {
 	try {
-		eval("!");
+		eval("@");
 	} catch(e) {
 		assert(e instanceof SyntaxError);
 		return;
