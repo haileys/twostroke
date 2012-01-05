@@ -142,7 +142,7 @@ private
           output :set, node.left.name.intern
         elsif type(node.left) == :MemberAccess
           compile node.left.object
-          dup
+          output :dup
           output :member, node.left.member.intern
           compile node.right
           output op
@@ -533,13 +533,15 @@ private
   def ForLoop(node)
     compile node.initializer if node.initializer
     start_label = uniqid
+    next_label = uniqid
     end_label = uniqid
-    @continue_stack.push start_label
+    @continue_stack.push next_label
     @break_stack.push end_label
     output :".label", start_label
     compile node.condition if node.condition
     output :jif, end_label
     compile node.body if node.body
+    output :".label", next_label
     compile node.increment if node.increment
     output :jmp, start_label
     output :".label", end_label
