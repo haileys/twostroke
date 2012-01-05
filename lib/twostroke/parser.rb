@@ -73,7 +73,7 @@ module Twostroke
       else; expression
       end
       if consume_semicolon
-        next_token if try_peek_token and peek_token.type == :SEMICOLON || peek_token.type == :LINE_TERMINATOR
+        assert_type next_token, :SEMICOLON if try_peek_token #and peek_token.type == :SEMICOLON || peek_token.type == :LINE_TERMINATOR
         #assert_type next_token, :SEMICOLON
       end
       st
