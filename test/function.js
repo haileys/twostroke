@@ -29,3 +29,27 @@ test("apply", function() {
 test("toString", function() {
 	assert(/function foo/.test((function foo() { }).toString()));
 });
+
+test("new with member access", function() {
+	var x = {
+		y: {
+			z: function() {
+				assert(true);
+				return true;
+			}
+		}
+	};
+	(new x.y.z()) || assert(false);
+});
+
+test("new with array index", function() {
+	var x = {
+		y: {
+			z: function() {
+				assert(true);
+				return true;
+			}
+		}
+	};
+	(new x["y"]["z"]()) || assert(false);
+});

@@ -31,3 +31,30 @@ test("typeof", function() {
 	assert_equal(typeof new Number(1), "object");
 	assert_equal(typeof new Number(1.0), "object");
 });
+
+test("Number", function() {
+	assert(isNaN(Number(undefined)));
+	assert_equal(0, Number(null));
+	assert_equal(0, Number(false));
+	assert_equal(1, Number(true));
+	assert_equal(123, Number("123"));
+	assert_equal(123.456, Number("123.456"));
+	assert_equal(5, Number({ toString: function() { return "5"; } }));
+});
+
+test("int32", function() {
+	assert_equal(5, 5 >> NaN);
+	assert_equal(5, 5 << NaN);
+	assert_equal(5, 5 | NaN);
+	
+	assert_equal(4, 5 & 4);
+	assert_equal(4, 5.5 & 4.7816516);
+	
+	assert_equal(-8, ~7);
+	assert_equal(-9, ~8.9923456789123456789123456789);
+});
+
+test("==", function() {
+	assert("5" == 5);
+	assert(5 == "5");
+});

@@ -353,6 +353,11 @@ module Twostroke::Runtime
       stack.push Types::Number.new(left ^ right)
     end
     
+    def bnot(arg)
+      val = Types.to_int32 stack.pop
+      stack.push Types::Number.new ~val
+    end
+    
     def setindex(arg)
       val = stack.pop
       index = Types.to_string(stack.pop).string

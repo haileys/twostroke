@@ -33,3 +33,10 @@ test("unshift", function() {
 	assert_equal(x[1], "foo");
 	assert_equal(x[2], 1);
 });
+
+test("delete", function() {	
+	var y = { a:1, b:2, c:3 };
+	assert_equal("number", typeof y.b);
+	delete y.b;
+	assert_equal("undefined", typeof y.b);
+});

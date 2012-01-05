@@ -585,6 +585,11 @@ private
     @continue_stack.pop
   end
   
+  def BinaryNot(node)
+    compile node.value
+    output :bnot
+  end
+  
   def Not(node)
     compile node.value
     output :not

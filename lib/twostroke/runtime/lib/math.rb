@@ -17,6 +17,8 @@ module Twostroke::Runtime
         }, nil, method, [])
     end
 
+    obj.proto_put "PI", Types::Number.new(Math::PI)
+
     obj.proto_put "random", Types::Function.new(->(scope, this, args) {
       Types::Number.new rand
     }, nil, "random", [])
@@ -28,6 +30,10 @@ module Twostroke::Runtime
     obj.proto_put "ceil", Types::Function.new(->(scope, this, args) {
         Types::Number.new Types.to_number(args[0] || Undefined.new).number.ceil
       }, nil, "ceil", [])
+      
+    obj.proto_put "abs", Types::Function.new(->(scope, this, args) {
+        Types::Number.new Types.to_number(args[0] || Undefined.new).number.abs
+      }, nil, "floor", [])
     
     obj.proto_put "max", Types::Function.new(->(scope, this, args) {
         Types::Number.new [-Float::INFINITY, *args.map { |a| Types.to_number(a).number }].max

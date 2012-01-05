@@ -602,16 +602,6 @@ module Twostroke
       end
     end
     
-    def assignment(lval)
-      assert_type next_token, :EQUALS
-      AST::Assignment.new left: lval, right: expression
-    end
-    
-    def comma(left)
-      assert_type next_token, :COMMA
-      AST::MultiExpression.new left: left, right: expression
-    end
-    
     def number
       assert_type next_token, :NUMBER
       AST::Number.new number: token.val
@@ -684,56 +674,6 @@ module Twostroke
       end
       assert_type next_token, :CLOSE_BRACE
       fn
-    end
-    
-    def not
-      assert_type next_token, :NOT
-      AST::Not.new value: expression_after_unary
-    end
-    
-    def tilde
-      assert_type next_token, :TILDE
-      AST::BinaryNot.new value: expression_after_unary
-    end
-    
-    def void
-      assert_type next_token, :VOID
-      AST::Void.new value: expression_after_unary
-    end
-    
-    def unary_plus
-      assert_type next_token, :PLUS
-      AST::UnaryPlus.new value: expression_after_unary
-    end
-    
-    def unary_minus
-      assert_type next_token, :MINUS
-      AST::Negation.new value: expression_after_unary
-    end
-    
-    def post_increment(obj)
-      assert_type next_token, :INCREMENT
-      AST::PostIncrement.new value: obj
-    end
-    
-    def post_decrement(obj)
-      assert_type next_token, :DECREMENT
-      AST::PostDecrement.new value: obj
-    end
-    
-    def pre_increment
-      assert_type next_token, :INCREMENT
-      AST::PreIncrement.new value: expression_after_unary
-    end
-    
-    def pre_decrement
-      assert_type next_token, :DECREMENT
-      AST::PreDecrement.new value: expression_after_unary
-    end
-    
-    def typeof
-      assert_type next_token, :TYPEOF
-      AST::TypeOf.new value: expression_after_unary
     end
   end
 end
