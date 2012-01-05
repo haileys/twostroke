@@ -25,3 +25,7 @@ test("apply", function() {
 		assert_equal(c, false);
 	}).apply(true, [1, "test", false]);
 });
+
+test("toString", function() {
+	assert(/function foo/.test((function foo() { }).toString()));
+});
