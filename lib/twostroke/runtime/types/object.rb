@@ -49,7 +49,7 @@ module Twostroke::Runtime::Types
           instance_variable_set "@#{k}", v
         end
       end
-      yield
+      yield if block_given?
       @constructing = false
     end
     
