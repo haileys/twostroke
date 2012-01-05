@@ -14,7 +14,7 @@ module Twostroke
     def parse
       while try_peek_token
         st = statement
-        statements.push st.collapse if st
+        statements.push st.collapse if st # don't collapse
       end
     end
   
@@ -38,15 +38,15 @@ module Twostroke
     def token
       @cur_token or raise ParseError, "unexpected end of input"
     end
-    def next_token(allow_regexp = true)
+    def next_token(allow_regexp = false)
       @cur_token = @peek_token || @lexer.read_token(allow_regexp)
       @peek_token = nil
       token
     end
-    def try_peek_token(allow_regexp = true)
+    def try_peek_token(allow_regexp = false)
       @peek_token ||= @lexer.read_token(allow_regexp)
     end
-    def peek_token(allow_regexp = true)
+    def peek_token(allow_regexp = false)
       @peek_token ||= @lexer.read_token(allow_regexp) or raise ParseError, "unexpected end of input"
     end
     
@@ -70,114 +70,275 @@ module Twostroke
       when :FUNCTION;   consume_semicolon = false; function
       when :SEMICOLON;  nil
       when :LINE_TERMINATOR;  nil
+      when :BAREWORD;   label
       else; expression
       end
       if consume_semicolon
-        assert_type next_token, :SEMICOLON if try_peek_token #and peek_token.type == :SEMICOLON || peek_token.type == :LINE_TERMINATOR
-        #assert_type next_token, :SEMICOLON
+        if try_peek_token and peek_token.type == :SEMICOLON
+          next_token
+        end
       end
       st
     end
-   
-    def expression(no_comma = false, no_in = false, no_ternary = false)
-      expr = expression_after_unary no_comma
-      expr = if [:PLUS, :MINUS, :ASTERISK, :SLASH, :MOD,
-          :LEFT_SHIFT, :RIGHT_SHIFT, :RIGHT_TRIPLE_SHIFT,
-          :AMPERSAND, :CARET, :PIPE ].include? peek_token(false).type
-          state = save_state
-          next_token
-          combined = (peek_token(false).type == :EQUALS)
-          load_state state
-          if combined
-            # combination assignment
-            op = next_token(false).type
-            assert_type next_token(false), :EQUALS
-            AST::UnsortedBinop.operator_class[op].new left: expr, assign_result_left: true, right: expression(true, false, true)
-          else
-            binop expr
-          end
-      elsif [ :GT, :LT, :GTE, :LTE, :DOUBLE_EQUALS,
-              :TRIPLE_EQUALS, :NOT_EQUALS, :NOT_DOUBLE_EQUALS,
-              :AND, :OR, :LEFT_SHIFT, :RIGHT_SHIFT,
-              :RIGHT_TRIPLE_SHIFT, :INSTANCEOF,
-              *(no_in ? [] : [:IN]) ].include? peek_token(false).type
-        expr = binop expr
-        # this has a higher precedence than the ternary
-        # so we'll hackily check for a ternary after this
-        if !no_ternary && try_peek_token && peek_token(false).type == :QUESTION
-          ternary(expr)
-        else
-          expr
-        end
-      else
-        expr
-      end
-      expr = if peek_token(false).type == :EQUALS
+
+    def label
+      state = save_state
+      assert_type next_token, :BAREWORD
+      name = token.val
+      if try_peek_token and peek_token.type == :COLON
         next_token
-        AST::Assignment.new left: expr, right: expression(true)
-      elsif !no_ternary && peek_token(false).type == :QUESTION
-        ternary(expr)
+        return AST::Label.new name: name, statement: statement(false)
       else
-        expr
-      end
-      
-      if !no_comma && peek_token(false).type == :COMMA
-        next_token
-        AST::MultiExpression.new left: expr, right: expression
-      else
-        expr
+        load_state state
+        expression
       end
     end
     
-    def expression_after_unary(no_comma = true, no_call = false)
-      expr = case peek_token.type
-      when :FUNCTION; function
-      when :STRING; string
-      when :NUMBER; number
-      when :REGEXP; regexp
-      when :THIS; this
-      when :NULL; null
-      when :TRUE; send :true
-      when :FALSE; send :false
-      when :NEW; send :new
-      when :DELETE; delete
-      when :BAREWORD; bareword
-      when :OPEN_PAREN; parens
-      when :OPEN_BRACE; object_literal
-      when :OPEN_BRACKET; array
-      when :NOT; send :not
-      when :TILDE; tilde
-      when :INCREMENT; pre_increment
-      when :DECREMENT; pre_decrement
-      when :VOID; void
-      when :PLUS; unary_plus
-      when :MINUS; unary_minus
-      when :TYPEOF; typeof
-      else error! "Unexpected #{peek_token.type}"
+    def expression
+      multi_expression
+    end
+    
+    def multi_expression
+      expr = assignment_expression
+      while try_peek_token and peek_token.type == :COMMA
+        next_token
+        expr = AST::MultiExpression.new left: expr, right: assignment_expression
       end
-      loop do
-        if !no_call && peek_token(false).type == :OPEN_PAREN
-          expr = call expr
-        elsif peek_token(false).type == :OPEN_BRACKET
-          expr = index expr
-        elsif peek_token(false).type == :MEMBER_ACCESS
+      expr
+    end
+    
+    def assignment_expression
+      nodes = {
+        :ADD_EQUALS         => AST::Addition,
+        :MINUS_EQUALS       => AST::Subtraction,
+        :TIMES_EQUALS       => AST::Multiplication,
+        :DIVIDE_EQUALS      => AST::Division,
+        :MOD_EQUALS         => AST::Modulus,
+        :LEFT_SHIFT         => AST::LeftShift,
+        :RIGHT_SHIFT_EQUALS => AST::RightArithmeticShift,
+        :RIGHT_TRIPLE_SHIFT_EQUALS => AST::RightLogicalShift,
+        :BITWISE_AND_EQUALS => AST::BitwiseAnd,
+        :BITWISE_XOR_EQUALS => AST::BitwiseXor,
+        :BITWISE_OR_EQUALS  => AST::BitwiseOr
+      }
+      expr = conditional_expression
+      if try_peek_token and peek_token.type == :EQUALS
+        next_token
+        expr = AST::Assignment.new left: expr, right: assignment_expression
+      elsif try_peek_token and nodes.keys.include? peek_token.type
+        expr = nodes[next_token.type].new left: expr, assign_result_left: true, right: assignment_expression
+      end
+      expr
+    end
+    
+    def conditional_expression
+      cond = logical_or_expression
+      if try_peek_token and peek_token.type == :QUESTION
+        next_token
+        cond = AST::Ternary.new condition: cond
+        cond.if_true = assignment_expression
+        assert_type next_token, :COLON
+        cond.if_false = assignment_expression
+      end
+      cond
+    end
+    
+    def logical_or_expression
+      expr = logical_and_expression
+      while try_peek_token and peek_token.type == :OR
+        next_token
+        expr = AST::Or.new left: expr, right: logical_and_expression
+      end
+      expr
+    end
+    
+    def logical_and_expression
+      expr = bitwise_or_expression
+      while try_peek_token and peek_token.type == :AND
+        next_token
+        expr = AST::And.new left: expr, right: bitwise_or_expression
+      end
+      expr
+    end
+    
+    def bitwise_or_expression
+      expr = bitwise_and_expression
+      while try_peek_token and peek_token.type == :PIPE
+        next_token
+        expr = AST::BitwiseOr.new left: expr, right: bitwise_and_expression
+      end
+      expr
+    end
+    
+    def bitwise_and_expression
+      expr = equality_expression
+      while try_peek_token and peek_token.type == :AMPERSAND
+        next_token
+        expr = AST::BitwiseAnd.new left: expr, right: equality_expression
+      end
+      expr
+    end
+    
+    def equality_expression
+      nodes = {
+        :DOUBLE_EQUALS        => AST::Equality,
+        :NOT_EQUALS           => AST::Inequality,
+        :TRIPLE_EQUALS        => AST::StrictEquality,
+        :NOT_DOUBLE_EQUALS    => AST::StrictInequality
+      }
+      expr = relational_in_instanceof_expression
+      while try_peek_token and nodes.keys.include? peek_token.type
+        expr = nodes[next_token.type].new left: expr, right: relational_in_instanceof_expression
+      end
+      expr
+    end
+    
+    def relational_in_instanceof_expression
+      nodes = {
+        :LT           => AST::LessThan,
+        :LTE          => AST::LessThanEqual,
+        :GT           => AST::GreaterThan,
+        :GTE          => AST::GreaterThanEqual,
+        :IN           => AST::In,
+        :INSTANCEOF   => AST::InstanceOf
+      }
+      expr = shift_expression
+      while try_peek_token(true) and nodes.keys.include? peek_token(true).type
+        expr = nodes[next_token(true).type].new left: expr, right: shift_expression
+      end
+      expr
+    end
+    
+    def shift_expression
+      nodes = {
+        :LEFT_SHIFT         => AST::LeftShift,
+        :RIGHT_TRIPLE_SHIFT => AST::RightArithmeticShift,
+        :RIGHT_SHIFT        => AST::RightLogicalShift
+      }
+      expr = additive_expression
+      while try_peek_token and nodes.keys.include? peek_token.type
+        expr = nodes[next_token.type].new left: expr, right: additive_expression
+      end
+      expr
+    end
+
+    def additive_expression
+      nodes = {
+        :PLUS         => AST::Addition,
+        :MINUS        => AST::Subtraction
+      }
+      expr = multiplicative_expression
+      while try_peek_token and nodes.keys.include? peek_token.type
+        expr = nodes[next_token.type].new left: expr, right: multiplicative_expression
+      end
+      expr
+    end
+    
+    def multiplicative_expression
+      nodes = {
+        :ASTERISK     => AST::Multiplication,
+        :SLASH        => AST::Division,
+        :MOD          => AST::Modulus
+      }
+      expr = unary_expression
+      while try_peek_token and nodes.keys.include? peek_token.type
+        expr = nodes[next_token.type].new left: expr, right: unary_expression
+      end
+      expr
+    end
+    
+    def unary_expression
+      case peek_token(true).type
+      when :NOT;    next_token; AST::Not.new value: unary_expression
+      when :TILDE;  next_token; AST::BinaryNot.new value: unary_expression
+      when :PLUS;   next_token; AST::UnaryPlus.new value: unary_expression
+      when :MINUS;  next_token; AST::Negation.new value: unary_expression
+      when :TYPEOF; next_token; AST::TypeOf.new value: unary_expression
+      when :VOID;   next_token; AST::Void.new value: unary_expression
+      when :DELETE; next_token; AST::Delete.new value: unary_expression
+      else
+        increment_expression
+      end
+    end
+    
+    def increment_expression
+      if peek_token(true).type == :INCREMENT
+        next_token(true)
+        return AST::PreIncrement.new value: increment_expression
+      end
+      if peek_token(true).type == :DECREMENT
+        next_token(true)
+        return AST::PreDecrement.new value: increment_expression
+      end
+      
+      expr = call_expression
+      
+      if peek_token.type == :INCREMENT
+        next_token
+        return AST::PostIncrement.new value: expr
+      end
+      if peek_token.type == :DECREMENT
+        next_token
+        return AST::PostDecrement.new value: expr
+      end
+      
+      expr
+    end
+    
+    def call_expression
+      expr = value_expression
+      while try_peek_token and [:MEMBER_ACCESS, :OPEN_BRACKET, :OPEN_PAREN].include? peek_token.type
+        if peek_token.type == :MEMBER_ACCESS
           expr = member_access expr
-        elsif !no_comma && peek_token(false).type == :COMMA
-          expr = comma(expr)
-        elsif peek_token(false).type == :INCREMENT
-          expr = post_increment expr
-        elsif peek_token(false).type == :DECREMENT
-          expr = post_decrement expr
-        else
-          return expr
+        elsif peek_token.type == :OPEN_BRACKET
+          expr = index expr
+        elsif peek_token.type == :OPEN_PAREN
+          expr = call expr
         end
       end
       expr
     end
     
-    def binop(left)
-      op = next_token.type
-      AST::UnsortedBinop.new left: left, op: op, right: expression(true, false, true)
+    def value_expression
+      case peek_token(true).type
+      when :FUNCTION;     function
+      when :STRING;       string
+      when :NUMBER;       number
+      when :REGEXP;       regexp
+      when :THIS;         this
+      when :NULL;         null
+      when :TRUE;         send :true
+      when :FALSE;        send :false
+      when :NEW;          new
+      when :BAREWORD;     bareword
+      when :OPEN_BRACKET; array
+      when :OPEN_BRACE;   object_literal
+      when :OPEN_PAREN;   parens
+      else error! "Unexpected #{peek_token.type}"
+      end
+    end
+
+    def new
+      assert_type next_token, :NEW
+      node = AST::New.new
+      node.callee = new_call_expression
+      if try_peek_token && peek_token.type == :OPEN_PAREN
+        call = call node.callee
+        node.arguments = call.arguments
+      end
+      node
+    end
+    
+    def new_call_expression
+      expr = value_expression
+      while try_peek_token and [:MEMBER_ACCESS, :OPEN_BRACKET].include? peek_token.type
+        if peek_token.type == :MEMBER_ACCESS
+          expr = member_access expr
+        elsif peek_token.type == :OPEN_BRACKET
+          expr = index expr
+        end
+      end
+      expr
     end
     
     def body
@@ -213,15 +374,6 @@ module Twostroke
     def bareword
       assert_type next_token, :BAREWORD
       AST::Variable.new name: token.val
-    end
-    
-    def ternary(cond)
-      assert_type next_token, :QUESTION
-      ternary = AST::Ternary.new condition: cond
-      ternary.if_true = expression(true)
-      assert_type next_token, :COLON
-      ternary.if_false = expression(true)
-      ternary
     end
     
     def with
@@ -262,13 +414,13 @@ module Twostroke
       end
       load_state saved_state
       if for_in
-        # no luck parsing for(;;), reparse as for(..in..)        
+        # no luck parsing for(;;), reparse as for(..in..)
         if peek_token.type == :VAR
           next_token
           assert_type next_token, :BAREWORD
           lval = AST::Declaration.new name: token.val
         else
-          lval = expression(false, true)
+          lval = shift_expression # shift_expression is the precedence level right below in's
         end
         assert_type next_token, :IN
         obj = expression
@@ -332,7 +484,7 @@ module Twostroke
       node = AST::DoWhile.new body: body
       assert_type next_token, :WHILE
       assert_type next_token, :OPEN_PAREN
-      node.condition = expression(false)
+      node.condition = expression
       assert_type next_token, :CLOSE_PAREN
       node
     end
@@ -373,34 +525,14 @@ module Twostroke
     def member_access(obj)
       assert_type next_token, :MEMBER_ACCESS
       assert_type next_token, :BAREWORD
-      access = AST::MemberAccess.new object: obj, member: token.val
-      if peek_token(false).type == :MEMBER_ACCESS
-        member_access access
-      elsif peek_token(false).type == :OPEN_PAREN
-        call access
-      elsif peek_token(false).type == :EQUALS
-        assignment access
-      else
-        access
-      end
-    end
-    
-    def new
-      assert_type next_token, :NEW
-      node = AST::New.new
-      node.callee = expression_after_unary(true, true)
-      if try_peek_token && peek_token.type == :OPEN_PAREN
-        call = call(node.callee)
-        node.arguments = call.arguments
-      end
-      node
+      AST::MemberAccess.new object: obj, member: token.val
     end
     
     def call(callee)
       assert_type next_token, :OPEN_PAREN
       c = AST::Call.new callee: callee
-      while peek_token.type != :CLOSE_PAREN
-        c.arguments.push expression(true)
+      while peek_token(true).type != :CLOSE_PAREN
+        c.arguments.push assignment_expression # one level below multi_expression which can separate by comma
         if peek_token.type == :COMMA
           next_token
           redo
@@ -458,7 +590,7 @@ module Twostroke
       if token.type == :COMMA
         AST::MultiExpression.new left: decl, right: var_rest
       else
-        assignment = AST::Assignment.new left: decl, right: expression(true)
+        assignment = AST::Assignment.new left: decl, right: assignment_expression
         if peek_token.type == :SEMICOLON || peek_token.type == :CLOSE_BRACE
           assignment
         elsif peek_token.type == :COMMA
@@ -502,7 +634,7 @@ module Twostroke
         assert_type next_token, :BAREWORD, :STRING, :NUMBER
         key = token
         assert_type next_token, :COLON
-        obj.items.push [key, expression(true)]
+        obj.items.push [key, assignment_expression]
         if peek_token.type == :COMMA
           next_token
           redo
@@ -515,8 +647,8 @@ module Twostroke
     def array
       assert_type next_token, :OPEN_BRACKET
       ary = AST::Array.new
-      while peek_token.type != :CLOSE_BRACKET
-        ary.items.push expression(true)
+      while peek_token(true).type != :CLOSE_BRACKET
+        ary.items.push assignment_expression
         if peek_token.type == :COMMA
           next_token
           redo

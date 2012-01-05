@@ -1,5 +1,5 @@
 module Twostroke::AST
-  [ :PostIncrement, :PreIncrement, :PostDecrement, :PreDecrement,
+  [ :PostIncrement, :PreIncrement, :PostDecrement, :PreDecrement, :Delete,
     :BinaryNot, :UnaryPlus, :Negation, :TypeOf, :Not, :Void, :BracketedExpression ].each do |op|
       klass = Class.new Base do
         attr_accessor :value

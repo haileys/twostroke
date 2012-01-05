@@ -27,6 +27,7 @@ module Twostroke
       @str = str
       @col = 1
       @line = 1
+      @line_terminator = false
     end
     
     def read_token(allow_regexp = true)
@@ -39,7 +40,7 @@ module Twostroke
           @col = 1 if !newlines.zero?
           @line += newlines
           @col += m[0].length - (m[0].rindex("\n") || 0)
-          if [:WHITESPACE, :MULTI_COMMENT, :SINGLE_COMMENT].include? token[0]
+          if token[0] == :LINE_TERMINATOR or [:WHITESPACE, :MULTI_COMMENT, :SINGLE_COMMENT].include? token[0]
             return read_token(allow_regexp)
           else
             return tok
