@@ -9,8 +9,8 @@ module Twostroke::Runtime
       @lib = {}
     end
     
-    def execute(section = :main, scope = nil)
-      Frame.new(self, section).execute scope      
+    def execute(section = :main, scope = nil, this = nil)
+      Frame.new(self, section).execute scope, this
     end
     
     def throw_error(type, message)
