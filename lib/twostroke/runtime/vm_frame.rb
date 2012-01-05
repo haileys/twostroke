@@ -24,6 +24,7 @@ module Twostroke::Runtime
       @catch_stack = []
       @finally_stack = []
       @enum_stack = []
+      @temp_slot = nil
       @ip = 0
       @return = false
       @this = this || @scope.global_scope.root_object
@@ -128,6 +129,14 @@ module Twostroke::Runtime
     def dup(arg)
       n = arg || 1
       stack.push *stack[-n..-1]
+    end
+    
+    def tst(arg)
+      @temp_slot = stack.pop
+    end
+    
+    def tld(arg)
+      stack.push @temp_slot
     end
     
     def member(arg)

@@ -183,8 +183,12 @@ private
       compile left.object
       output :dup
       output :member, left.member.intern
+      output :dup
+      output :tst
       output op
       output :setprop, left.member.intern
+      output :pop
+      output :tld
     elsif type(left) == :Index  
       compile left.object
       compile left.index
