@@ -1,4 +1,8 @@
 source :rubygems
 
 gem "paint"
-gem "simplecov"
+gem "coderay"
+group :development do
+  gem "pry"
+  gem "simplecov"
+end
