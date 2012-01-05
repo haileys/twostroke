@@ -310,9 +310,7 @@
           starter = tag;
           _ref2 = this.indentation(token, true), indent = _ref2[0], outdent = _ref2[1];
           if (starter === 'THEN') indent.fromThen = true;
-          console.log(JSON.stringify(tokens));
           tokens.splice(i + 1, 0, indent);
-          console.log(JSON.stringify(tokens));
           this.detectEnd(i + 2, condition, action);
           if (tag === 'THEN') tokens.splice(i, 1);
           return 1;
