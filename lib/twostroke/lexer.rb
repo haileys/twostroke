@@ -13,7 +13,7 @@ module Twostroke
   
   class Lexer
     attr_accessor :str, :col, :line
-    
+
     def state
       { str: str, col: col, line: line }
     end
@@ -22,15 +22,14 @@ module Twostroke
       @col = state[:col]
       @line = state[:line]
     end
-    
+
     def initialize(str)
       @str = str
       @col = 1
       @line = 1
-      @line_terminator = false
     end
-    
-    def read_token(allow_regexp = true)
+
+    def read_token(allow_regexp, allow_line_terminator)
       TOKENS.select { |t| allow_regexp || t[0] != :REGEXP }.each do |token|
         m = token[1].match @str
         if m
@@ -40,8 +39,8 @@ module Twostroke
           @col = 1 if !newlines.zero?
           @line += newlines
           @col += m[0].length - (m[0].rindex("\n") || 0)
-          if token[0] == :LINE_TERMINATOR or [:WHITESPACE, :MULTI_COMMENT, :SINGLE_COMMENT].include? token[0]
-            return read_token(allow_regexp)
+          if (!allow_line_terminator && token[0] == :LINE_TERMINATOR) or [:WHITESPACE, :MULTI_COMMENT, :SINGLE_COMMENT].include? token[0]
+            return read_token(allow_regexp, allow_line_terminator)
           else
             return tok
           end
