@@ -16,3 +16,25 @@ test("isPrototypeOf", function() {
 	assert_equal(String.prototype.isPrototypeOf(new String("hi")), true);
 	assert_equal(String.prototype.isPrototypeOf("hi"), false);
 });
+
+test("propertyIsEnumerable", function() {
+  assert_equal(false, propertyIsEnumerable("blah"));
+  assert_equal(true, ({a:1}).propertyIsEnumerable("a"));
+  assert_equal(false, ({b:1}).propertyIsEnumerable("a"));
+  assert_equal(false, Object.prototype.propertyIsEnumerable("propertyIsEnumerable"));
+});
+
+test("toString", function() {
+  var to_s = Object.prototype.toString;
+  assert_equal("[object Object]", to_s.call({}));
+  assert_equal("[object Number]", to_s.call(123));
+  assert_equal("[object Boolean]", to_s.call(true));
+  assert_equal("[object String]", to_s.call("hi"));
+  assert_equal("[object String]", to_s.call(new String("hi")));
+});
+
+test("typeof", function() {
+  assert_equal("object", typeof null);
+  assert_equal("object", typeof {});
+  assert_equal("object", typeof new String("hi"));
+});

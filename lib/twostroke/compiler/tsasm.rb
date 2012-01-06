@@ -84,7 +84,7 @@ private
   end
   
   def error!(msg)
-    raise Twostroke::Compiler::CompileError, msg
+    raise Twostroke::Compiler::CompileError, "#{msg} at line #{@current_line}"
   end
   
   def type(node)
@@ -116,7 +116,7 @@ private
       compile left.object
       compile right
       output :setprop, left.member.intern
-    elsif type(left) == :Index  
+    elsif type(left) == :Index
       compile left.object
       compile left.index
       compile right
@@ -199,8 +199,12 @@ private
       compile left.index
       output :dup, 2
       output :index
+      output :dup
+      output :tst
       output op
       output :setindex
+      output :pop
+      output :tld
     else
       error! "Bad lval in post-mutation"
     end
@@ -226,7 +230,12 @@ private
       output op
       output :setprop, left.member.intern
     elsif type(left) == :Index
-      error! "pre-mutatation of array index not supported yet" # @TODO
+      compile left.object
+      compile left.index
+      output :dup, 2
+      output :index
+      output op
+      output :setindex
     else
       error! "Bad lval in post-mutation"
     end
@@ -343,14 +352,17 @@ private
   
   def Delete(node)
     if node.value.is_a?(Twostroke::AST::Variable)
-      output :deleteg, node.value.name
+      output :deleteg, node.value.name.intern
     elsif node.value.is_a?(Twostroke::AST::MemberAccess)
       compile node.value.object
       output :delete, node.value.member
-    elsif node.value.is_a?(Twostroke::AST::Index)
+    elsif node.value.is_a?(Twostroke::AST::Index)  
+      compile node.value.index
       compile node.value.object
-      output :delete, node.value.index
+      output :deleteindex
     else
+      compile node.value
+      output :pop
       output :true
     end
   end

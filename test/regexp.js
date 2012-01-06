@@ -16,3 +16,13 @@ test("exec additional attributes", function() {
 	assert_equal("hello", /l/.exec("hello").input);
 	assert_equal(2, /l/.exec("hello").index);
 });
+
+test("toString", function() {
+  assert_equal("/abc/i", /abc/i.toString());
+  try {
+    RegExp.prototype.toString.call("test");
+    assert(false, "did not throw!");
+  } catch(e) {
+    assert(true);
+  }
+});

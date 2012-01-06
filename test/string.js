@@ -30,3 +30,32 @@ test("slice", function() {
 	assert_equal("el", "hello".slice(1,3));
 	assert_equal("ell", "hello".slice(1,-1));
 });
+
+test("match", function() {
+  assert("fo,ob,ar" == "foobar".match(/../g));
+  assert("fo" == "foobar".match(/../));
+  
+  assert("fo,ob,ar" == "foobar".match(/.(.)/g));
+  assert("fo,o" == "foobar".match(/.(.)/));
+});
+
+test("indexOf", function() {
+  assert_equal(3, "foobar".indexOf("bar"));
+  assert_equal(2, "bbaaaaa".indexOf("a"));
+});
+
+test("lastIndexOf", function() {
+  assert_equal(3, "foobar".lastIndexOf("bar"));
+  assert_equal(6, "bbaaaaa".lastIndexOf("a"));
+});
+
+test("enumerable properties", function() {
+  var i = 0;
+  var s = "hello";
+  for(var x in s) {
+    if(s.hasOwnProperty(x)) {
+      i++;
+    }
+  }
+  assert_equal(5, i);
+});

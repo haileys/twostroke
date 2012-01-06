@@ -41,7 +41,7 @@ module Twostroke::Runtime
         @ip += 1
         if respond_to? ins
           if @exception = catch(:exception) { public_send ins, arg; nil }
-            puts "--> #{Types.to_string(exception).string}  #{@name || "(anonymous function)"}:#{@line}  <#{@section}+#{@ip}>"
+#            puts "--> #{Types.to_string(exception).string}  #{@name || "(anonymous function)"}:#{@line}  <#{@section}+#{@ip}>"
             throw :exception, @exception if catch_stack.empty? && finally_stack.empty?
             if catch_stack.any?
               @ip = catch_stack.last
@@ -149,11 +149,20 @@ module Twostroke::Runtime
     end
     
     def deleteg(arg)
-      scope.global_scope.root_object.delete arg.to_s
+      scope.delete arg
+      stack.push Types::Boolean.true
     end
     
     def delete(arg)
       Types.to_object(stack.pop).delete arg.to_s
+      stack.push Types::Boolean.true
+    end
+    
+    def deleteindex(arg)
+      obj = Types.to_object stack.pop
+      idx = Types.to_string stack.pop
+      obj.delete idx.string
+      stack.push Types::Boolean.true
     end
     
     def in(arg)

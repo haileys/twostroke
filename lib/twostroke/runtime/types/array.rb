@@ -19,6 +19,11 @@ module Twostroke::Runtime
         @prototype = Array.constructor_function.get("prototype")
         super()
         @items = items
+        define_own_property "length", get: ->(this) { Types::Number.new this.items.size }, set: ->(this,val) do
+            Lib.throw_type_error "Array.prototype.length is not generic" unless this.is_a? Types::Array
+            len = Types.to_uint32(val)
+            this.items = this.items[0...len]
+          end, writable: true, enumerable: false
       end
       
       def length

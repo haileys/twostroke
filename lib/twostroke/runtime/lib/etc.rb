@@ -7,13 +7,13 @@ module Twostroke::Runtime
         begin
           parser = Twostroke::Parser.new Twostroke::Lexer.new src
           parser.parse
+
+          evaled += 1
+          compiler = Twostroke::Compiler::TSASM.new parser.statements, "evaled_#{evaled}_"
+          compiler.compile
         rescue Twostroke::SyntaxError => e
           Lib.throw_syntax_error e.to_s
         end
-
-        evaled += 1
-        compiler = Twostroke::Compiler::TSASM.new parser.statements, "evaled_#{evaled}_"
-        compiler.compile
         
         vm = scope.global_scope.vm
         compiler.bytecode.each do |k,v|

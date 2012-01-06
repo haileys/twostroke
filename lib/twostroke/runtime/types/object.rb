@@ -2,7 +2,6 @@ module Twostroke::Runtime::Types
   class Object < Value
     attr_accessor :_class, :prototype
     attr_reader :accessors, :properties, :extensible, :data
-    private :accessors, :properties
 
     def initialize
       @extensible = true
@@ -90,8 +89,8 @@ module Twostroke::Runtime::Types
         accessors[prop][:set].(this, value) if accessors[prop][:set] && accessors[prop][:writable]
       elsif properties.has_key? prop
         properties[prop] = value
-      #elsif prototype && prototype.is_a?(Object) && prototype.has_accessor(prop)
-      #  prototype.put prop, value, this
+#      elsif prototype && prototype.is_a?(Object) && prototype.has_accessor(prop)
+#        prototype.put prop, value, this
       else
         properties[prop] = value
       end

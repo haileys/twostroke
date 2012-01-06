@@ -31,6 +31,14 @@ module Twostroke::Runtime
       @locals[var] = Types::Undefined.new
     end
     
+    def delete(var)
+      if has_var var
+        @locals.delete var
+      else
+        parent.delete var
+      end
+    end
+    
     def close
       Scope.new self
     end
@@ -71,6 +79,14 @@ module Twostroke::Runtime
       parent.declare var
     end
     
+    def delete(var)
+      if has_var var
+        object.delete var.to_s
+      else
+        parent.delete var
+      end
+    end
+    
     def close
       Scope.new self
     end
@@ -104,6 +120,10 @@ module Twostroke::Runtime
     
     def declare(var)
       @root_object.put var.to_s, Types::Undefined.new
+    end
+    
+    def delete(var)
+      @root_object.delete var.to_s
     end
     
     def close

@@ -34,9 +34,22 @@ test("unshift", function() {
 	assert_equal(x[2], 1);
 });
 
-test("delete", function() {	
-	var y = { a:1, b:2, c:3 };
-	assert_equal("number", typeof y.b);
-	delete y.b;
-	assert_equal("undefined", typeof y.b);
+test("constructor", function() {
+  assert("1,2,3,4" == new Array(1,2,3,4));
+  assert("1,2,3,4" == Array(1,2,3,4));
+  assert("" == new Array());
+});
+
+test("splice", function() {
+  var a = [1,2,3,4,5];
+  assert("2,3" == a.splice(1, 2, 7));
+  assert("1,7,4,5" == a);
+  assert("4,5" == a.splice(2));
+  assert("1,7" == a);
+});
+
+test("length=", function() {
+  var a = [1,2,3,4,5,6,7];
+  a.length = 4;
+  assert("1,2,3,4" == a);
 });

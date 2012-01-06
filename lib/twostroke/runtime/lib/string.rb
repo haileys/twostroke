@@ -73,6 +73,11 @@ module Twostroke::Runtime
         idx = args[1] ? Types.to_int32(args[1]) : 0
         Types::Number.new(Types.to_string(this).string.index(Types.to_string(args[0] || Types::Undefined.new).string, idx) || -1)
       }, nil, "indexOf", [])
+    # String.prototype.lastIndexOf
+    proto.proto_put "lastIndexOf", Types::Function.new(->(scope, this, args) {
+        idx = args[1] ? Types.to_int32(args[1]) : -1
+        Types::Number.new(Types.to_string(this).string.rindex(Types.to_string(args[0] || Types::Undefined.new).string, idx) || -1)
+      }, nil, "lastIndexOf", [])
     # String.prototype.charAt
     proto.proto_put "charAt", Types::Function.new(->(scope, this, args) {
         idx = args[0] ? Types.to_int32(args[0]) : 0
@@ -100,7 +105,7 @@ module Twostroke::Runtime
           # same as re.exec(str) in this case
           Types::RegExp.exec(nil, re, [this])
         else
-          re.all_matches(nil, re, [this])
+          Types::RegExp.all_matches(nil, re, [this])
         end
       }, nil, "match", [])
     # String.prototype.toUpperCase

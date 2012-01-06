@@ -41,7 +41,7 @@ module Twostroke::Runtime
       prop = Types.to_string(args[0] || Types::Undefined.new).string
       if this.has_accessor(prop)
         Types::Boolean.new this.accessors[prop][:enumerable]
-      elsif this.has_property
+      elsif this.has_property(prop)
         Types::Boolean.new true
       else
         Types::Boolean.new false

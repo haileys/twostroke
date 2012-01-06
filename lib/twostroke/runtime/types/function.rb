@@ -51,7 +51,7 @@ module Twostroke::Runtime::Types
     end
     
     def prototype
-      @prototype ||= Function.constructor_function.get("prototype")
+      @prototype ||= Function.constructor_function.get("prototype") if Function.constructor_function
     end
     
     def has_instance(obj)

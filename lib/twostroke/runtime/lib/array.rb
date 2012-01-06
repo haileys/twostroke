@@ -73,13 +73,7 @@ module Twostroke::Runtime
       this
     }, nil, "sort", [])
     # Array.prototype.length
-    proto.define_own_property "length", get: ->(this) { Types::Number.new this.items.size }, set: ->(this,val) do
-        Lib.throw_type_error "Array.prototype.length is not generic" unless this.is_a? Types::Array
-        len = Types.to_number(val)
-        Lib.throw_range_error "invalid array length" if len.nan? || len.number < 0 || (len.number % 1) != 0
-        this.items = this.items[0...len.number.to_i]
-        len
-      end, writable: true
+    proto.define_own_property "length", get: ->(this) { Types::Number.new this.items.size }
     ary.proto_put "prototype", proto
   end
 end
