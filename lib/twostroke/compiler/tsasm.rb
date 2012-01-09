@@ -464,7 +464,7 @@ private
   end
   
   def Number(node)
-    output :push, node.number
+    output :push, node.number.to_f
   end
   
   def UnaryPlus(node)
