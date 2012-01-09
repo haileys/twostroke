@@ -162,10 +162,19 @@ module Twostroke
     end
     
     def bitwise_or_expression
-      expr = bitwise_and_expression
+      expr = bitwise_xor_expression
       while try_peek_token and peek_token.type == :PIPE
         next_token
-        expr = AST::BitwiseOr.new left: expr, line: token.line, right: bitwise_and_expression
+        expr = AST::BitwiseOr.new left: expr, line: token.line, right: bitwise_xor_expression
+      end
+      expr
+    end
+    
+    def bitwise_xor_expression
+      expr = bitwise_and_expression
+      while try_peek_token and peek_token.type == :CARET
+        next_token
+        expr = AST::BitwiseXor.new left: expr, line: token.line, right: bitwise_and_expression
       end
       expr
     end
