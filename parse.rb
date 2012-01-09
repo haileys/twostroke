@@ -1,5 +1,6 @@
 $LOAD_PATH << File.expand_path("../lib", __FILE__)
 require "twostroke"
+require "bundler/setup"
 require "pp"
 require "coderay"
 require "pry"
