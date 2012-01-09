@@ -18,7 +18,7 @@ module Twostroke::Runtime::Types
         else; 0
         end
       end
-      @regexp = Regexp.new regexp_source, opts
+      @regexp = Regexp.new RegExp.to_ruby_regexp(regexp_source), opts
       @global = options.include? "g"
       @prototype = RegExp.constructor_function.get("prototype")
       super()
@@ -26,6 +26,17 @@ module Twostroke::Runtime::Types
     
     def primitive_value
       String.new(regexp.inspect + (@global ? "g" : ""))
+    end
+    
+    def self.to_ruby_regexp(src)
+      src.
+      
+      # javascript's ^$ match the start and end of the entire string
+      # ruby's ^$ are line-based, so convert to \A and \z
+        gsub("^","\\A").gsub("$","\\z").
+      
+      # javascript supports \cA through \cZ for control characters
+        gsub(/\\c[a-z]/i) { |m| (m.last.downcase.ord - 'a'.ord).chr }
     end
     
     def self.exec(scope, this, args)
