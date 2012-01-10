@@ -40,8 +40,8 @@ module Twostroke::Runtime
         st = @stack.size
         @ip += 1
         if respond_to? ins
-          if @exception = catch(:exception) { public_send ins, arg; nil }
-#            puts "--> #{Types.to_string(exception).string}  #{@name || "(anonymous function)"}:#{@line}  <#{@section}+#{@ip}>"
+          if @exception = catch(:exception) { send ins, arg; nil }
+            puts "--> #{Types.to_string(exception).string}  #{@name || "(anonymous function)"}:#{@line}  <#{@section}+#{@ip}>"
             throw :exception, @exception if catch_stack.empty? && finally_stack.empty?
             if catch_stack.any?
               @ip = catch_stack.last
@@ -411,8 +411,7 @@ module Twostroke::Runtime
     end
     
     def close(arg)
-      name = vm.bytecode[arg].select { |ins,arg| ins == :".name" }.map { |ins,arg| arg }.first
-      arguments = vm.bytecode[arg].select { |ins,arg| ins == :".arg" }.map(&:last).map(&:to_s)
+      name, arguments = vm.section_name_args arg
       scope = @scope
       fun = Types::Function.new(->(outer_scope, this, args) { VM::Frame.new(vm, arg, fun).execute(scope.close, this, args) }, "...", name || "", arguments)
       stack.push fun

@@ -7,6 +7,7 @@ module Twostroke::Runtime
       @bytecode = bytecode
       @global_scope = GlobalScope.new self
       @lib = {}
+      @name_args = {}
     end
     
     def execute(section = :main, scope = nil, this = nil)
@@ -15,6 +16,18 @@ module Twostroke::Runtime
     
     def throw_error(type, message)
       throw :exception, lib[type].(nil, global_scope.root_object, [Types::String.new(message)])
+    end
+    
+    def section_name_args(section)
+      unless @name_args[section]
+        ops = bytecode[section].take_while { |ins,arg| [:".name", :".arg"].include? ins }
+        @name_args[section] = [
+          ops.select { |ins,arg| :".name" == ins }.map { |ins,arg| arg }.first,
+          ops.select { |ins,arg| :".arg" == ins }.map { |ins,arg| arg.to_s }
+        ]
+      else
+        @name_args[section]
+      end
     end
   
   private
