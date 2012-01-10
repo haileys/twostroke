@@ -42,10 +42,12 @@ module Twostroke::Runtime::Types
     def self.exec(scope, this, args)
       re = this.is_a?(RegExp) ? this : constructor_function.(nil, nil, this)
       str = Twostroke::Runtime::Types.to_string(args[0] || Twostroke::Runtime::Types::Undefined.new).string
-      if md = re.regexp.match(str)
+      idx = re.global ? Twostroke::Runtime::Types.to_uint32(re.get("lastIndex")) : 0
+      if md = re.regexp.match(str, idx)
         result = Twostroke::Runtime::Types::Array.new md.to_a.map { |s| s ? Twostroke::Runtime::Types::String.new(s) : Twostroke::Runtime::Types::Undefined.new }
         result.put "index", Twostroke::Runtime::Types::Number.new(md.offset(0).first)
         result.put "input", Twostroke::Runtime::Types::String.new(str)
+        re.put "lastIndex", Twostroke::Runtime::Types::Number.new(md.offset(0).last)
         result
       else
         Twostroke::Runtime::Types::Null.new
