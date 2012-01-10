@@ -4668,4 +4668,11 @@ if (typeof module !== 'undefined' && require.main === module) {
   }
 }(this));
 
-console.log(this.CoffeeScript.compile("hello = -> console.log 'hello world!'"));
+
+if(typeof process !== "undefined") {
+  var fs = require('fs');
+  var src = fs.readFileSync('/dev/stdin').toString();
+} else {
+  var src = console._readAll();
+}
+console.log(this.CoffeeScript.compile(src));
