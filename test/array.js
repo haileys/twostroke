@@ -53,3 +53,19 @@ test("length=", function() {
   a.length = 4;
   assert("1,2,3,4" == a);
 });
+
+test("concat", function() {
+  var a = [];
+  
+  assert(a.concat(1,2,3) == "1,2,3");
+  assert(a == "", "concat mutated array");
+  
+  assert(a.concat([1,2,3],4,[5]) == "1,2,3,4,5");
+  assert(a == "", "concat mutated array");
+  
+  var b = [1,2,3];
+  assert(b.concat() == "1,2,3");
+  assert(b.concat() !== b);
+  
+  assert(Array.prototype.concat.call({ length: 2, 0: 1, 1: 2 }, [3, 4]) == "1,2,3,4");
+});
