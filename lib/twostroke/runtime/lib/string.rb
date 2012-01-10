@@ -81,10 +81,11 @@ module Twostroke::Runtime
     # String.prototype.charAt
     proto.proto_put "charAt", Types::Function.new(->(scope, this, args) {
         idx = args[0] ? Types.to_int32(args[0]) : 0
-        if idx < 0
+        str = Types.to_string(this).string
+        if idx < 0 or idx >= str.length
           Types::String.new ""
         else
-          Types::String.new Types.to_string(this).string[idx]
+          Types::String.new str[idx]
         end
       }, nil, "charAt", [])
     # String.prototype.charAt
