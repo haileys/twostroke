@@ -10,6 +10,27 @@ module Twostroke::Runtime
       Types::Boolean.new(args[0].is_a?(Types::Number) && args[0].nan?)
     }, nil, "isNaN", [])
     
+    scope.set_var "parseInt", Types::Function.new(->(scope, this, args) {
+      str = Types.to_string(args[0] || Undefined.new).string.gsub(/\A\s+/,"")
+      unless args[1] and (radix = Types.to_uint32(args[1])) != 0
+        case str
+        when /\A0x/i; radix = 16
+        when /\A0/i;  radix = 8
+        else;         radix = 10
+        end
+      end
+      if radix < 2 or radix > 36
+        Types::Number.new(Float::NAN)
+      else
+        begin
+          Integer(str[0], radix) # ensure the first character can be converted
+          Types::Number.new str.to_i radix
+        rescue
+          Types::Number.new(Float::NAN)
+        end
+      end
+    }, nil, "parseInt", [])
+    
     # one argument functions
     %w(sqrt sin cos tan).each do |method|
       obj.proto_put method, Types::Function.new(->(scope, this, args) {
