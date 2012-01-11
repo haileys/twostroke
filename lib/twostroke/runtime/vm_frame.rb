@@ -37,7 +37,6 @@ module Twostroke::Runtime
       
       until @return
         ins, arg = insns[ip]
-        st = @stack.size
         @ip += 1
         if respond_to? ins
           if @exception = catch(:exception) { send ins, arg; nil }
