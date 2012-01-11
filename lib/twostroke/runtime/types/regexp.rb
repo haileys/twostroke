@@ -33,7 +33,7 @@ module Twostroke::Runtime::Types
       
       # javascript's ^$ match the start and end of the entire string
       # ruby's ^$ are line-based, so convert to \A and \z
-        gsub(/([^\[]|\A)\^/,"\\1\\A").gsub("$","\\z").
+        gsub(/([^\[]|\A)\^/,"\\1\\A").gsub(/((\]|\A)([^\[]*))\$/,"\\1\\z").
       
       # javascript supports \cA through \cZ for control characters
         gsub(/\\c[a-z]/i) { |m| (m.last.downcase.ord - 'a'.ord).chr }
