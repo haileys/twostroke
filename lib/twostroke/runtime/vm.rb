@@ -8,6 +8,7 @@ module Twostroke::Runtime
       @global_scope = GlobalScope.new self
       @lib = {}
       @name_args = {}
+      @vm_eval_counter = 0
     end
     
     def execute(section = :main, scope = nil, this = nil)
@@ -28,6 +29,17 @@ module Twostroke::Runtime
       else
         @name_args[section]
       end
+    end
+    
+    def eval(source)
+      parser = Twostroke::Parser.new Twostroke::Lexer.new source
+      parser.parse
+      prefix = "#{@vm_eval_counter += 1}_"
+      compiler = Twostroke::Compiler::TSASM.new parser.statements, prefix
+      compiler.compile
+      compiler.bytecode[:"#{prefix}main"][-2] = [:ret]
+      bytecode.merge! compiler.bytecode
+      execute :"#{prefix}main"
     end
   
   private
