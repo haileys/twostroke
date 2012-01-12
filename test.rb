@@ -1,4 +1,4 @@
-if ARGV.include? "--travis"
+if ENV["NO_SIMPLECOV"]
   require "simplecov"
   SimpleCov.start
 end
