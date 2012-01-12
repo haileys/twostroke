@@ -25,11 +25,6 @@ test("date prefers to be coerced to a number", function() {
   assert(new Date(9876543211) > new Date(0), "implicit (to number) coercion goes the other way");
 });
 
-test("parse", function() {
-  assert_equal(773625600000, Date.parse("Jul 8, 1994 GMT"));
-  assert_equal(773711100000, Date.parse("Jul 8, 1994 23:45 GMT"));
-});
-
 test("getDate", function() {
   assert_equal(25, new Date(9876543210).getDate());
   assert_equal(12, new Date(1350000000000).getDate());
