@@ -53,3 +53,18 @@ test("new with array index", function() {
 	};
 	(new x["y"]["z"]()) || assert(false);
 });
+
+test("instanceof", function() {
+  assert(!("hi" instanceof String));
+  assert(new String("hi") instanceof String);
+  var x = String;
+  assert(new x("hi") instanceof String);
+  assert(new String("hi") instanceof x);
+  assert(Function instanceof Function);
+  try {
+    String instanceof new String("hi");
+    assert(false, "did not throw");
+  } catch(e) {
+    assert(/instanceof/.test(e.toString()));
+  }
+});

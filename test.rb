@@ -10,6 +10,7 @@ Twostroke::Runtime::Lib.setup_environment vm
 
 asserts = 0
 
+$cur_test = nil
 T = Twostroke::Runtime::Types
 vm.global_scope.set_var "assert", T::Function.new(->(scope, this, args) {
   throw :test_failure, (args[1] ? T.to_string(args[1]).string : "") unless T.is_truthy(args[0])
@@ -39,19 +40,26 @@ vm.global_scope.set_var "test", T::Function.new(->(scope, this, args) {
   rescue => error
   end
   if failure
+    puts
+    puts "#{Paint[$cur_test, :bright, :white]}"
     puts "   #{Paint[" FAIL", :red]}  #{test_name}"
     puts "      Assertion failed after #{asserts} assertions: #{failure || "(no message)"}"
   elsif exception
+    puts
+    puts "#{Paint[$cur_test, :bright, :white]}"
     puts "   #{Paint["ERROR", :yellow]}  #{test_name}"
     puts "      Uncaught exception after #{asserts} assertions: #{T.to_string(exception).string}"
   elsif error
+    puts
+    puts "#{Paint[$cur_test, :bright, :white]}"
     puts "   #{Paint["ERROR", :yellow]}  #{test_name}"
     puts "      Internal error after #{asserts} assertions: #{error} at:"
     error.backtrace.each do |bt|
       puts "        #{bt}"
     end
   else
-    puts "   #{Paint[" PASS", :green]}  #{test_name}"
+    print "."
+#    puts "   #{Paint[" PASS", :green]}  #{test_name}"
   end
 }, nil, nil, [])
 
@@ -62,8 +70,8 @@ else
 end
 
 tests.each do |test|
-  puts Paint[test, :bright, :white]
-  
+#  puts Paint[test, :bright, :white]
+  $cur_test = test
   src = File.read test
   
   parser = Twostroke::Parser.new(Twostroke::Lexer.new(src))
