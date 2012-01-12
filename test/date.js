@@ -26,8 +26,7 @@ test("date prefers to be coerced to a number", function() {
 });
 
 test("parse", function() {
-  assert_equal(773589600000, Date.parse("Jul 8, 1994"));
-  assert_equal(773675100000, Date.parse("Jul 8, 1994 23:45"));
+  assert_equal(773625600000, Date.parse("Jul 8, 1994 GMT"));
   assert_equal(773711100000, Date.parse("Jul 8, 1994 23:45 GMT"));
 });
 
