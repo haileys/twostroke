@@ -1,3 +1,5 @@
+require "time"
+
 module Twostroke::Runtime
   Lib.register do |scope|
     obj = Types::Function.new(->(scope, this, args) {
