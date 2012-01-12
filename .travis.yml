@@ -3,4 +3,4 @@ rvm:
     - 1.9.2
     - 1.9.3
     - rbx-19mode
-script: "NO_SIMPLECOV=true bundle exec ruby test.rb"
+script: "bundle exec ruby test.rb"

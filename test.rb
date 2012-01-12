@@ -1,7 +1,5 @@
-if ENV["NO_SIMPLECOV"]
-  require "simplecov"
-  SimpleCov.start
-end
+require "simplecov"
+SimpleCov.start
 
 $LOAD_PATH << File.expand_path("../lib", __FILE__)
 require "twostroke"
