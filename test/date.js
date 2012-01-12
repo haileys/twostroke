@@ -3,7 +3,7 @@ test("new Date", function() {
 });
 
 test("string coercion", function() {
-  assert(/^Sat Apr 25 1970 17:29:03/.test(String(new Date(9876543210))), "string did not start with what was expected, it is: " + String(new Date(9876543210)));
+  assert(/^Sat Apr 25 1970 /.test(String(new Date(9876543210))), "string did not start with what was expected, it is: " + String(new Date(9876543210)));
 });
 
 test("number coercion", function() {
