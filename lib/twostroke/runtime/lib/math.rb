@@ -63,5 +63,11 @@ module Twostroke::Runtime
     obj.proto_put "min", Types::Function.new(->(scope, this, args) {
         Types::Number.new [Float::INFINITY, *args.map { |a| Types.to_number(a).number }].min
       }, nil, "min", [])
+      
+    obj.proto_put "pow", Types::Function.new(->(scope, this, args) {
+        a = Types.to_number(args[0] || Types::Undefined.new).number
+        b = Types.to_number(args[1] || Types::Undefined.new).number
+        Types::Number.new(a ** b)
+      }, nil, "random", [])
   end
 end
