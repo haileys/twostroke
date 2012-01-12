@@ -31,7 +31,7 @@ module Twostroke::Runtime
       end
     end
     
-    def eval(source)
+    def eval(source, scope = nil, this = nil)
       parser = Twostroke::Parser.new Twostroke::Lexer.new source
       parser.parse
       prefix = "#{@vm_eval_counter += 1}_"
@@ -39,7 +39,7 @@ module Twostroke::Runtime
       compiler.compile
       compiler.bytecode[:"#{prefix}main"][-2] = [:ret]
       bytecode.merge! compiler.bytecode
-      execute :"#{prefix}main"
+      execute :"#{prefix}main", scope, this
     end
   
   private

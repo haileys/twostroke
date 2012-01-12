@@ -1,6 +1,6 @@
 module Twostroke::Runtime
   Lib.register do |scope|    
-    log = Types::Function.new(->(scope, this, args) { print args.map { |o| Types.to_string(o).string }.join(" ") + "\n" }, nil, "log", ["string"])
+    log = Types::Function.new(->(scope, this, args) { puts args.map { |o| Types.to_string(o).string }.join(" ") }, nil, "log", ["string"])
   
     console = Types::Object.new
     ["log", "info", "warn", "error"].each do |m|

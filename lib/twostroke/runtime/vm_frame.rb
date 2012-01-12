@@ -232,11 +232,11 @@ module Twostroke::Runtime
     end
     
     def true(arg)
-      stack.push Types::Boolean.new(true)
+      stack.push Types::Boolean.true
     end
     
     def false(arg)
-      stack.push Types::Boolean.new(false)
+      stack.push Types::Boolean.false
     end
     
     def jmp(arg)

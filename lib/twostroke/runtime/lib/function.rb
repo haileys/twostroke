@@ -4,13 +4,6 @@ module Twostroke::Runtime
     scope.set_var "Function", obj
     
     proto = Types::Object.new
-    proto.proto_put "toString", Types::Function.new(->(scope, this, args) {
-        if this.is_a?(Types::Function)
-          this.primitive_value
-        else
-          Lib.throw_type_error "Function.prototype.toString is not generic"
-        end
-      }, nil, "toString", [])
     proto.proto_put "valueOf", Types::Function.new(->(scope, this, args) { this }, nil, "valueOf", [])
     proto.define_own_property "arity", get: ->(this) { this.arguments.size }, writable: false
     proto.define_own_property "length", get: ->(this) { this.arguments.size }, writable: false

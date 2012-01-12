@@ -29,7 +29,7 @@ module Twostroke
       [ :STRING, /(["'])((\\\n|\\.|[^\n\r\u2028\u2029\1])*?[^\1\\]?)\1/, ->m do
         m[2].gsub(/\\(([0-6]{1,3})|u([a-f0-9]{4})|x([a-f0-9]{2})|\n|.)/i) do |m|
           case m
-          when /\\([0-6]{1,3})/; m[1..-1].to_i(7).chr "utf-8" 
+          when /\\([0-6]{1,3})/; m[1..-1].to_i(8).chr "utf-8" 
           when /\\u([a-f0-9]{4})/i; m[2..-1].to_i(16).chr "utf-8"
           when /\\x([a-f0-9]{2})/i; m[2..-1].to_i(16).chr "utf-8"
           else case m[1]

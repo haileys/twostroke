@@ -34,7 +34,12 @@ module Twostroke::Runtime
     # one argument functions
     %w(sqrt sin cos tan).each do |method|
       obj.proto_put method, Types::Function.new(->(scope, this, args) {
-          Types::Number.new(Math.send method, Types.to_number(args[0] || Undefined.new).number)
+          ans = begin
+                  Math.send method, Types.to_number(args[0] || Undefined.new).number
+                rescue Math::DomainError
+                  Float::NAN
+                end
+          Types::Number.new(ans)
         }, nil, method, [])
     end
 
@@ -67,7 +72,8 @@ module Twostroke::Runtime
     obj.proto_put "pow", Types::Function.new(->(scope, this, args) {
         a = Types.to_number(args[0] || Types::Undefined.new).number
         b = Types.to_number(args[1] || Types::Undefined.new).number
-        Types::Number.new(a ** b)
+        ans = a ** b
+        Types::Number.new(ans.is_a?(Complex) ? Float::NAN : ans)
       }, nil, "random", [])
   end
 end

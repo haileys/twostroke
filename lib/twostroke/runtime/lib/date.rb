@@ -9,7 +9,7 @@ module Twostroke::Runtime
           if args[0].is_a?(Types::Number)
             this.data[:time] = Time.at *(args[0].number*1000).divmod(1000_000)
           else
-            this.data[:time] = Time.parse Types.to_string(args[0]).string rescue this.data[:time] = :invalid
+            this.data[:time] = Time.parse(Types.to_string(args[0]).string) rescue this.data[:time] = :invalid
           end
         else
           args = args.take(7)
@@ -26,10 +26,13 @@ module Twostroke::Runtime
     obj.proto_put "parse", Types::Function.new(->(scope, this, args) {
         Types::Number.new (Time.parse(Types.to_string(args[0]).string).to_f * 1000).floor
       }, nil, "parse", [])
-    obj.proto_put "UTC", Types::Function.new(->(scope, this, args) {
+    obj.proto_put "UTC", Types::Function.new(->(scope, this, args) {  
+        return Types::Number.new Float::NAN if args.size < 2
         args = args.take(7)
           .map { |a| Types.to_uint32(a) }
-          .zip([9999, 12, 31, 23, 59, 59, 999]) { |a,b| [a || 0, b].min }
+          .zip([9999, 12, 31, 23, 59, 59, 999])
+          .map { |a,b| [a || 0, b].min }
+        args[1] += 1 if args[1]
         args[6] *= 1000 if args[6]
         Types::Number.new (Time.utc(*args).to_f * 1000).floor
       }, nil, "UTC", [])
@@ -37,7 +40,16 @@ module Twostroke::Runtime
     proto = Types::Object.new
     obj.proto_put "prototype", proto
     
-    { "Date" => :day, "Day" => :wday, "FullYear" => :year, "Hours" => :hour,
+    proto.proto_put "toString", Types::Function.new(->(scope, this, args) {
+        Lib.throw_type_error "this is not a Date object" unless this.data[:time]
+        Types::String.new this.data[:time].strftime("%a %b %d %Y %H:%M:%S GMT%z (%Z)")
+      }, nil, "toString", [])
+    proto.proto_put "valueOf", Types::Function.new(->(scope, this, args) {
+        Lib.throw_type_error "this is not a Date object" unless this.data[:time]
+        Types::Number.new (this.data[:time].to_f * 1000).to_i
+      }, nil, "valueOf", [])
+    
+    { "Date" => :day, "Day" => :wday, "FullYear" => :year, "Year" => ->t{ t.year - 1900 }, "Hours" => :hour,
       "Milliseconds" => ->t{ (t.usec / 1000).to_i }, "Minutes" => :min, "Month" => :month,
       "Seconds" => :sec, "Time" => ->t{ (t.to_f * 1000).floor }, "TimezoneOffset" => ->t{ t.utc_offset / 60 } }.each do |prop,method|
         # Date.prototype.getXXX

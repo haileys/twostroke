@@ -45,13 +45,7 @@ module Twostroke::Runtime::Types
     
     def construct(opts = {})
       @constructing = true
-      opts.each do |k,v|
-        if respond_to? "#{k}="
-          send "#{k}=", v
-        else
-          instance_variable_set "@#{k}", v
-        end
-      end
+      opts.each { |k,v| send "#{k}=", v }
       yield if block_given?
       @constructing = false
     end

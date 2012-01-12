@@ -23,7 +23,10 @@ module Twostroke::Runtime
       
       def get(prop, this = self)
         if prop =~ /\A\d+\z/
-          String.new string[prop.to_i]
+          idx = prop.to_i
+          unless idx < 0 or idx >= string.length
+            String.new string[idx]
+          end
         else
           super prop, this
         end

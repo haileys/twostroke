@@ -4,7 +4,7 @@ module Twostroke::Runtime::Types
       @@true ||= Boolean.new(true)
     end
     def self.false
-      @@false ||= Null.new(false)
+      @@false ||= Boolean.new(false)
     end
   
     attr_reader :boolean

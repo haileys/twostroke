@@ -30,11 +30,11 @@ module Twostroke::Runtime
         proto = args[0].prototype
         this = Types.to_object(this || Types::Undefined.new)
         while proto.is_a?(Types::Object)
-          return Types::Boolean.new(true) if this == proto
+          return Types::Boolean.true if this == proto
           proto = proto.prototype
         end
       end
-      Types::Boolean.new false
+      Types::Boolean.false
     }, nil, "isPrototypeOf", [])
     proto.proto_put "propertyIsEnumerable", Types::Function.new(->(scope, this, args) {
       this = Types.to_object(this || Types::Undefined.new)
@@ -42,9 +42,9 @@ module Twostroke::Runtime
       if this.has_accessor(prop)
         Types::Boolean.new this.accessors[prop][:enumerable]
       elsif this.has_property(prop)
-        Types::Boolean.new true
+        Types::Boolean.true
       else
-        Types::Boolean.new false
+        Types::Boolean.false
       end
     }, nil, "propertyIsEnumerable", [])
     
