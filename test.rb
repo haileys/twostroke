@@ -1,5 +1,7 @@
-require "simplecov"
-SimpleCov.start
+if ARGV.include? "--travis"
+  require "simplecov"
+  SimpleCov.start
+end
 
 $LOAD_PATH << File.expand_path("../lib", __FILE__)
 require "twostroke"
@@ -9,6 +11,7 @@ vm = Twostroke::Runtime::VM.new({})
 Twostroke::Runtime::Lib.setup_environment vm
 
 asserts = 0
+failed = false
 
 $cur_test = nil
 T = Twostroke::Runtime::Types
@@ -40,16 +43,19 @@ vm.global_scope.set_var "test", T::Function.new(->(scope, this, args) {
   rescue => error
   end
   if failure
+    failed = true
     puts
     puts "#{Paint[$cur_test, :bright, :white]}"
     puts "   #{Paint[" FAIL", :red]}  #{test_name}"
     puts "      Assertion failed after #{asserts} assertions: #{failure || "(no message)"}"
   elsif exception
+    failed = true
     puts
     puts "#{Paint[$cur_test, :bright, :white]}"
     puts "   #{Paint["ERROR", :yellow]}  #{test_name}"
     puts "      Uncaught exception after #{asserts} assertions: #{T.to_string(exception).string}"
   elsif error
+    failed = true
     puts
     puts "#{Paint[$cur_test, :bright, :white]}"
     puts "   #{Paint["ERROR", :yellow]}  #{test_name}"
@@ -94,3 +100,5 @@ tests.each do |test|
     puts "      Uncaught exception: #{T.to_string(exception).string}"
   end
 end
+
+exit(failed ? 1 : 0)
