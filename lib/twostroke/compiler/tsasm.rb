@@ -2,7 +2,6 @@ class Twostroke::Compiler::TSASM
   attr_accessor :bytecode, :ast, :prefix
   
   def initialize(ast, prefix = nil)
-    @methods = Hash[self.class.private_instance_methods(false).map { |name| [name, true] }]
     @ast = ast
     @prefix = prefix
   end
@@ -16,14 +15,10 @@ class Twostroke::Compiler::TSASM
       elsif node.is_a? Symbol
         send node
       else
-        if @methods[type(node)]
-          output :".line", @current_line = node.line if node.line and node.line > @current_line
-          @node_stack.push node
-          send type(node), node if node
-          @node_stack.pop
-        else
-          error! "#{type node} not implemented"
-        end
+        output :".line", @current_line = node.line if node.line and node.line > @current_line
+        @node_stack.push node
+        send type(node), node if node
+        @node_stack.pop
       end
     else
       @indent = 0
