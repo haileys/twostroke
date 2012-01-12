@@ -3,7 +3,7 @@ test("new Date", function() {
 });
 
 test("string coercion", function() {
-  assert_equal("Sat Apr 25 1970 17:29:03 GMT+1000 (EST)", String(new Date(9876543210)));
+  assert(/^Sat Apr 25 1970 17:29:03/.test(String(new Date(9876543210))));
 });
 
 test("number coercion", function() {
