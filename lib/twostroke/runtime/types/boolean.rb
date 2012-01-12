@@ -12,6 +12,10 @@ module Twostroke::Runtime::Types
       @boolean = boolean
     end
     
+    def to_ruby
+      boolean
+    end
+    
     def ===(other)
       other.is_a?(Boolean) && boolean == other.boolean
     end

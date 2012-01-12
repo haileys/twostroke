@@ -5,6 +5,10 @@ module Twostroke::Runtime::Types
       @string = string
     end
     
+    def to_ruby
+      string
+    end
+    
     def ===(other)
       other.is_a?(String) && string == other.string
     end

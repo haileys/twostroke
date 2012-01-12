@@ -128,6 +128,21 @@ module Twostroke::Runtime::Types
     end
   end
   
+  def self.marshal(ruby_object)
+    case ruby_object
+    when ::String;          String.new ruby_object
+    when Fixnum, Float;     Number.new ruby_object
+    when ::Array;           Array.new ruby_object.map { |el| box el }
+    when Hash;              o = Object.new
+                            ruby_object.each { |k,v| o.put k.to_s, box(v) }
+                            o
+    when nil;               Null.new
+    when true;              Boolean.true
+    when false;             Boolean.false
+    else                    Undefined.new
+    end
+  end
+  
   require File.expand_path("../types/value.rb", __FILE__)
   require File.expand_path("../types/object.rb", __FILE__)
   Dir.glob(File.expand_path("../types/*", __FILE__)).each do |f|

@@ -13,6 +13,10 @@ module Twostroke::Runtime::Types
       proto_put "constructor", @_class
     end
     
+    def to_ruby
+      Twostroke::Context::ObjectProxy.new self
+    end
+    
     def _class=(c)
       proto_put "constructor", (@_class = c)
     end

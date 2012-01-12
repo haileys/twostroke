@@ -18,6 +18,10 @@ module Twostroke::Runtime::Types
       super()
     end
     
+    def to_ruby
+      number
+    end
+    
     def primitive_value
       Number.new number
     end

@@ -5,6 +5,10 @@ module Twostroke::Runtime::Types
       @number = number
     end
     
+    def to_ruby
+      number
+    end
+    
     def ===(other)
       if number.zero? && other.is_a?(Number) && other.number.zero?
         # in javascript, -0 and 0 are not equal
@@ -15,15 +19,19 @@ module Twostroke::Runtime::Types
         other.is_a?(Number) && number == other.number
       end
     end
+    
     def typeof
       "number"
     end
+    
     def zero?
       number.zero?
     end
+    
     def nan?
       number.is_a?(Float) && number.nan?
     end
+    
     def infinite?
       number.is_a?(Float) && number.infinite?
     end

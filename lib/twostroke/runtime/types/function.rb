@@ -50,6 +50,10 @@ module Twostroke::Runtime::Types
       put "prototype", proto
     end
     
+    def to_ruby
+      ->(this, *args) { call(nil, this, args.map(&Twostroke::Runtime::Types.method(:marshal))).to_ruby }
+    end
+    
     def prototype
       @prototype ||= Function.constructor_function.get("prototype") if Function.constructor_function
     end

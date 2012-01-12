@@ -24,6 +24,10 @@ module Twostroke::Runtime::Types
       super()
     end
     
+    def to_ruby
+      regexp
+    end
+    
     def primitive_value
       String.new(regexp.inspect + (@global ? "g" : ""))
     end

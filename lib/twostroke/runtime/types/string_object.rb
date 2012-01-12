@@ -12,6 +12,10 @@ module Twostroke::Runtime
         @string = string
         super()
       end
+      
+      def to_ruby
+        string
+      end
     
       def primitive_value
         String.new string
