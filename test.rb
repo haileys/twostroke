@@ -76,7 +76,8 @@ end
 tests.each do |test|
 #  puts Paint[test, :bright, :white]
   $cur_test = test
-  src = File.read test
+  file = File.open(test, "r:utf-8")
+  src = file.read
   
   parser = Twostroke::Parser.new(Twostroke::Lexer.new(src))
   parser.parse
