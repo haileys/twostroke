@@ -42,3 +42,10 @@ test("throws if valueOf returns non-primitive", function() {
     assert(e instanceof TypeError);
   }
 });
+
+test("null == undefined", function() {
+  assert(null == undefined);
+  assert(undefined == null);
+  assert(null !== undefined);
+  assert(undefined !== null);
+});
