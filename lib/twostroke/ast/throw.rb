@@ -3,7 +3,7 @@ module Twostroke::AST
     attr_accessor :expression
     
     def collapse
-      self.class.new expression: expression.collapse
+      self.class.new expression: expression && expression.collapse
     end
     
     def walk(&bk)
