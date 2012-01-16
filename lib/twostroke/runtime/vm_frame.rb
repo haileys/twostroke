@@ -38,18 +38,14 @@ module Twostroke::Runtime
       until @return
         ins, arg = insns[ip]
         @ip += 1
-        if respond_to? ins
-          if @exception = catch(:exception) { send ins, arg; nil }
-#            puts "--> #{Types.to_string(exception).string}  #{@name || "(anonymous function)"}:#{@line}  <#{@section}+#{@ip}>"
-            throw :exception, @exception if catch_stack.empty? && finally_stack.empty?
-            if catch_stack.any?
-              @ip = catch_stack.last
-            else
-              @ip = finally_stack.last
-            end
+        if @exception = catch(:exception) { send ins, arg; nil }
+#          puts "--> #{Types.to_string(exception).string}  #{@name || "(anonymous function)"}:#{@line}  <#{@section}+#{@ip}>"
+          throw :exception, @exception if catch_stack.empty? && finally_stack.empty?
+          if catch_stack.any?
+            @ip = catch_stack.last
+          else
+            @ip = finally_stack.last
           end
-        else
-          error! "unknown instruction #{ins}"
         end
       end
       
@@ -92,8 +88,6 @@ module Twostroke::Runtime
         stack.push Types::Number.new(arg.to_f)
       elsif arg.is_a?(String)
         stack.push Types::String.new(arg)
-      else
-        error! "bad argument to push instruction"
       end
     end
     

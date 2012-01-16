@@ -29,6 +29,7 @@ class Twostroke::Compiler::TSASM
       @break_stack = []
       @continue_stack = []
       @node_stack = []
+      @labels = {}
       @current_line = 0
             
       ast.each { |node| hoist node }
@@ -539,6 +540,15 @@ private
     @break_stack.pop
   end
   
+  def Label(node)
+    error! "Label '#{node.name}' has already been declared" if @labels[node.name]
+    end_label = uniqid
+    @labels[node.name] = { break: end_label }
+    compile node.statement
+    output :".label", end_label
+    @labels.delete node.name
+  end
+  
   def Body(node)
     node.statements.each { |s| compile s }
   end
@@ -609,13 +619,23 @@ private
   end
   
   def Break(node)
-    raise Twostroke::Compiler::CompileError, "Break not allowed outside of loop" unless @break_stack.any?
-    output :jmp, @break_stack.last
+    if node.label
+      error! "Undefined label '#{node.label}'" unless @labels[node.label]
+      output :jmp, @labels[node.label][:break]
+    else
+      error! "Break not allowed outside of loop" unless @break_stack.any?
+      output :jmp, @break_stack.last
+    end
   end
   
   def Continue(node)
-    raise Twostroke::Compiler::CompileError, "Continue not allowed outside of loop" unless @continue_stack.any?
-    output :jmp, @continue_stack.last
+    if node.label
+      error! "Undefined label '#{node.label}'" unless @labels[node.label]
+      output :jmp, @labels[node.label][:continue]
+    else
+      error! "Continue not allowed outside of loop" unless @continue_stack.any?
+      output :jmp, @continue_stack.last
+    end
   end
   
   def TypeOf(node)
