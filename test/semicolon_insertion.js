@@ -1,8 +1,16 @@
-test("return is greedily semicolon inserted", function() {
+test("return is a restricted production", function() {
     assert_equal(undefined, (function() {
         return 
         1
     })());
+});
+
+test("throw is a restricted production", function() {
+    try {
+        eval("throw\n1;")
+    } catch(e) {
+        assert(e instanceof SyntaxError);
+    }
 });
 
 test("fragmented statement parses", function() {
