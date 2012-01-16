@@ -559,23 +559,53 @@ module Twostroke
     end
     
     def return
-      assert_type next_token, :RETURN
+      tok = @lexer.restrict do
+        assert_type next_token, :RETURN
+        peek_token
+      end
+      if tok.type == :LINE_TERMINATOR
+        next_token
+        return AST::Return.new line: token.line
+      end
       expr = expression unless peek_token.type == :SEMICOLON || peek_token.type == :CLOSE_BRACE
       AST::Return.new line: token.line, expression: expr
     end
     
     def break
-      assert_type next_token, :BREAK
-      AST::Break.new line: token.line
+      tok = @lexer.restrict do
+        assert_type next_token, :BREAK
+        peek_token
+      end
+      if tok.type == :LINE_TERMINATOR
+        next_token
+        return AST::Break.new line: token.line
+      end
+      label = next_token.val if try_peek_token and peek_token.type == :BAREWORD
+      AST::Break.new line: token.line, label: label
     end
     
     def continue
-      assert_type next_token, :CONTINUE
-      AST::Continue.new line: token.line
+      tok = @lexer.restrict do
+        assert_type next_token, :CONTINUE
+        peek_token
+      end
+      if tok.type == :LINE_TERMINATOR
+        next_token
+        return AST::Continue.new line: token.line
+      end
+      label = next_token.val if try_peek_token and peek_token.type == :BAREWORD
+      AST::Continue.new line: token.line, label: label
     end
     
     def throw
-      assert_type next_token, :THROW
+      tok = @lexer.restrict do
+        assert_type next_token, :THROW
+        peek_token
+      end
+      if tok.type == :LINE_TERMINATOR
+        next_token
+        return AST::Throw.new line: token.line
+      end
       AST::Throw.new line: token.line, expression: expression
     end
     
