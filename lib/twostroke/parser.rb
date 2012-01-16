@@ -561,10 +561,10 @@ module Twostroke
     def return
       tok = @lexer.restrict do
         assert_type next_token, :RETURN
-        peek_token
+        peek_token true
       end
       if tok.type == :LINE_TERMINATOR
-        next_token
+        next_token true
         return AST::Return.new line: token.line
       end
       expr = expression unless peek_token.type == :SEMICOLON || peek_token.type == :CLOSE_BRACE
@@ -600,7 +600,7 @@ module Twostroke
     def throw
       tok = @lexer.restrict do
         assert_type next_token, :THROW
-        error! "illegal newline after throw" if peek_token.type == :LINE_TERMINATOR
+        error! "illegal newline after throw" if peek_token(true).type == :LINE_TERMINATOR
       end
       AST::Throw.new line: token.line, expression: expression
     end
@@ -660,9 +660,10 @@ module Twostroke
         key = token
         assert_type next_token, :COLON
         obj.items.push [key, assignment_expression]
+        assert_type peek_token, :COMMA, :CLOSE_BRACE
         if peek_token.type == :COMMA
           next_token
-          redo
+          next
         end
       end
       next_token
@@ -674,9 +675,10 @@ module Twostroke
       ary = AST::Array.new line: token.line
       while peek_token(true).type != :CLOSE_BRACKET
         ary.items.push assignment_expression
+        assert_type peek_token, :COMMA, :CLOSE_BRACKET
         if peek_token.type == :COMMA
           next_token
-          redo
+          next
         end
       end
       next_token
