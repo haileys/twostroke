@@ -32,11 +32,7 @@ module Twostroke::Runtime
     end
     
     def delete(var)
-      if has_var var
-        @locals.delete var
-      else
-        parent.delete var
-      end
+      parent.delete var
     end
     
     def close
