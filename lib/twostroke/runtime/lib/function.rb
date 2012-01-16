@@ -31,7 +31,8 @@ module Twostroke::Runtime
       end, nil, "call", [])
     # Function.prototype.toString
     proto.proto_put "toString", Types::Function.new(->(scope, this, args) do
-        this.primitive_value
+        Lib.throw_type_error "Function.prototype.toString is not generic" unless this.is_a? Types::Function
+        Types::String.new "function #{this.name}(#{this.arguments.join ","}) { #{this.source || "[native code]"} }"
       end, nil, "toString", [])
     obj.proto_put "prototype", proto
   end
