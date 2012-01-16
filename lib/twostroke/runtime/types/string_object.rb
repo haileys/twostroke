@@ -16,10 +16,6 @@ module Twostroke::Runtime
       def to_ruby
         string
       end
-    
-      def primitive_value
-        String.new string
-      end
       
       def get(prop, this = self)
         if prop =~ /\A\d+\z/

@@ -21,9 +21,5 @@ module Twostroke::Runtime::Types
     def to_ruby
       number
     end
-    
-    def primitive_value
-      Number.new number
-    end
   end
 end

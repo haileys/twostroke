@@ -73,10 +73,6 @@ module Twostroke::Runtime::Types
       "function"
     end
     
-    def primitive_value
-      String.new "function #{name}(#{arguments.join ","}) { #{source || "[native code]"} }"
-    end
-    
     def call(upper_scope, this, args)
       retn_val = function.(upper_scope, this || upper_scope.global_scope.root_object, args)
       # prevent non-Value objects being returned to javascript

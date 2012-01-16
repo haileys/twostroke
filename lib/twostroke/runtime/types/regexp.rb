@@ -28,10 +28,6 @@ module Twostroke::Runtime::Types
       regexp
     end
     
-    def primitive_value
-      String.new(regexp.inspect + (@global ? "g" : ""))
-    end
-    
     def self.to_ruby_regexp(src)
       src.
       
