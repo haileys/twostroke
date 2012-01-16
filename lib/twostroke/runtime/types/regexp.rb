@@ -36,7 +36,7 @@ module Twostroke::Runtime::Types
         gsub(/([^\[]|\A)\^/,"\\1\\A").gsub(/((\]|\A)([^\[]*))\$/,"\\1\\z").
       
       # javascript supports \cA through \cZ for control characters
-        gsub(/\\c[a-z]/i) { |m| (m.last.downcase.ord - 'a'.ord).chr }
+        gsub(/\\c[a-z]/i) { |m| (m[-1].downcase.ord - 'a'.ord + 1).chr }
     end
     
     def self.exec(scope, this, args)
