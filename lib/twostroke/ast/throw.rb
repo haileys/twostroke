@@ -3,12 +3,12 @@ module Twostroke::AST
     attr_accessor :expression
     
     def collapse
-      self.class.new expression: expression && expression.collapse
+      self.class.new expression: expression.collapse
     end
     
     def walk(&bk)
       if yield self
-        expression.walk &bk if expression
+        expression.walk &bk
       end
     end
   end

@@ -600,11 +600,7 @@ module Twostroke
     def throw
       tok = @lexer.restrict do
         assert_type next_token, :THROW
-        peek_token
-      end
-      if tok.type == :LINE_TERMINATOR
-        next_token
-        return AST::Throw.new line: token.line
+        error! "illegal newline after throw" if peek_token.type == :LINE_TERMINATOR
       end
       AST::Throw.new line: token.line, expression: expression
     end
