@@ -166,3 +166,14 @@ test("delete", function() {
 	assert_equal(true, delete Fn.prototype);
 	assert_equal(123, Fn.prototype.hi);
 });
+
+test("break label", function() {
+  br: while(true) {
+    while(true) {
+      break br;
+      assert(false, "did not break");
+    }
+    assert(false, "did not escape second loop");
+  }
+  assert(true);
+});
