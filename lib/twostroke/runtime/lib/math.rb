@@ -32,7 +32,7 @@ module Twostroke::Runtime
     }, nil, "parseInt", [])
     
     # one argument functions
-    %w(sqrt sin cos tan).each do |method|
+    %w(sqrt sin cos tan exp).each do |method|
       obj.proto_put method, Types::Function.new(->(scope, this, args) {
           ans = begin
                   Math.send method, Types.to_number(args[0] || Undefined.new).number
