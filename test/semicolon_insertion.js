@@ -13,6 +13,18 @@ test("throw is a restricted production", function() {
     }
 });
 
+test("break is a restricted production", function() {
+    a:while(true) {
+        while(true) {
+            break
+            a;
+        }
+        assert(true);
+        return;
+    }
+    assert(false);
+});
+
 test("fragmented statement parses", function() {
     var x = { a: 1 };
     eval("delete\nx.a");
