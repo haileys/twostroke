@@ -8,3 +8,17 @@ test("toString", function() {
     assert(/generic/.test(e.toString()));
   }
 });
+
+test("String coercion", function() {
+  assert_equal("true", String(true));
+  assert_equal("false", String(false));
+  assert_equal("true", String(new Boolean(true)));
+  assert_equal("false", String(new Boolean(false)));
+});
+
+test("Number coercion", function() {
+  assert_equal(1, Number(true));
+  assert_equal(0, Number(false));
+  assert_equal(1, Number(new Boolean(true)));
+  assert_equal(0, Number(new Boolean(false)));
+});
