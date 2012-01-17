@@ -301,12 +301,7 @@ private
       node.arguments.each do |arg|
         output :".arg", arg.intern
       end
-      output :".local", node.name.intern if node.name
       node.statements.each { |s| hoist s }
-      if node.name
-        output :callee
-        output :set, node.name.intern
-      end
       node.statements.each { |s| compile s }
       output :undefined
       output :ret
