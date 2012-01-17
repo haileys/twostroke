@@ -255,3 +255,10 @@ test("floating point is used for large numbers but not for small numbers", funct
     assert_equal(99999999999999999999999999999999999999, 99999999999999999999999999999999999999 + 1);
     assert(999999 !== 999999 + 1);
 });
+
+test("redeclaring a variable", function() {
+    assert_equal(123, (function(a) {
+       var a;
+       return a;
+    })(123));
+});
