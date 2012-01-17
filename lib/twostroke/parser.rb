@@ -518,10 +518,10 @@ module Twostroke
           try.catch_statements << statement
         end
         assert_type next_token, :CLOSE_BRACE
+        next_token if try_peek_token(true) && peek_token(true).type == :FINALLY
       end
-      if try_peek_token && peek_token.type == :FINALLY
+      if token && token.type == :FINALLY
         try.finally_statements = []
-        assert_type next_token, :FINALLY
         assert_type next_token, :OPEN_BRACE
         while peek_token.type != :CLOSE_BRACE
           try.finally_statements << statement
