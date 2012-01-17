@@ -1,6 +1,6 @@
 module Twostroke::Runtime
   class VM::Frame
-    attr_reader :vm, :insns, :stack, :sp_stack, :catch_stack, :finally_stack, :enum_stack, :exception, :ip, :scope
+    attr_reader :vm, :insns, :stack, :sp_stack, :ex_stack, :enum_stack, :exception, :ip, :scope
     
     def initialize(vm, section, callee = nil)
       @vm = vm
@@ -21,12 +21,13 @@ module Twostroke::Runtime
       @scope = scope || vm.global_scope
       @stack = []
       @sp_stack = []
-      @catch_stack = []
-      @finally_stack = []
+      @ex_stack = []
+      @exception = nil
       @enum_stack = []
       @temp_slot = nil
       @ip = 0
       @return = false
+      @return_after_finally = false
       @this = this || @scope.global_scope.root_object
       @args = args
       if @callee
@@ -36,16 +37,15 @@ module Twostroke::Runtime
       end
       
       until @return
-        ins, arg = insns[ip]
+        ins, arg = insns[@ip]
+#        puts "#{@ip}: #{ins} #{arg}"
+#        gets
         @ip += 1
-        if @exception = catch(:exception) { send ins, arg; nil }
+        if ex = catch(:exception) { send ins, arg; nil }
+          @exception = ex
 #          puts "--> #{Types.to_string(exception).string}  #{@name || "(anonymous function)"}:#{@line}  <#{@section}+#{@ip}>"
-          throw :exception, @exception if catch_stack.empty? && finally_stack.empty?
-          if catch_stack.any?
-            @ip = catch_stack.last
-          else
-            @ip = finally_stack.last
-          end
+          throw :exception, @exception if ex_stack.empty?
+          @ip = ex_stack.last[:catch] || ex_stack.last[:finally]
         end
       end
       
@@ -72,6 +72,7 @@ module Twostroke::Runtime
     end
     
     define_method ".catch" do |arg|
+      ex_stack.last[:catch] = nil
       scope.declare arg.intern
       scope.set_var arg.intern, @exception
       @exception = nil
@@ -196,10 +197,11 @@ module Twostroke::Runtime
     end
     
     def ret(arg)
-      if finally_stack.empty?
-        @return = true
+      if ex_stack.empty?
+        @return = stack.pop
       else
-        @ip = finally_stack.last
+        @return_after_finally = stack.pop
+        @ip = ex_stack.last[:finally]
       end
     end
     
@@ -445,24 +447,28 @@ module Twostroke::Runtime
       @stack = stack[0...sp_stack.pop]
     end
     
-    def pushcatch(arg)
-      catch_stack.push arg
+    def pushexh(arg)
+      ex_stack.push catch: arg[0], finally: arg[1]
     end
     
-    def popcatch(arg)
-      catch_stack.pop
+    def popexh(arg)
+      exh = ex_stack.pop
+      @ip = exh[:finally]
     end
     
-    def pushfinally(arg)
-      finally_stack.push arg
+    def popcat(arg)
+      ex_stack.last[:catch] = nil
+      @ip = ex_stack.last[:finally]
     end
     
-    def popfinally(arg)
-      finally_stack.pop
-    end
-    
-    def endfinally(arg)
-      throw :exception, @exception if @exception
+    def popfin(arg)
+      ex_stack.pop
+      if @exception
+        @ip = ex_stack.last[:catch]
+      elsif @return_after_finally and !@exception
+        @return = @return_after_finally
+        @return_after_finally = false
+      end
     end
     
     def this(arg)

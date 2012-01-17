@@ -57,6 +57,8 @@ private
       bytecode[k] = v.select do |ins|
         if [:jmp, :jit, :jif, :pushcatch, :pushfinally, :jiee].include?(ins[0])
           ins[1] = labels_at[ins[1]]
+        elsif [:pushexh].include?(ins[0])
+          ins[1].map! { |x| labels_at[x] }
         end
         ins[0] != :".label"
       end
@@ -366,7 +368,7 @@ private
   def Try(node)
     catch_label = uniqid if node.catch_variable
     finally_label = uniqid
-    output :pushexh, catch_label, finally_label
+    output :pushexh, [catch_label, finally_label]
     compile node.try_statements
     output :popexh
     
