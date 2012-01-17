@@ -6,7 +6,7 @@ class Twostroke::Compiler::TSASM
     @prefix = prefix
   end
   
-  def compile(node = nil)
+  def compile(node = nil, *opt_args)
     if node
       if node.respond_to? :each
         # hoist named functions to top
@@ -17,7 +17,7 @@ class Twostroke::Compiler::TSASM
       else
         output :".line", @current_line = node.line if node.line and node.line > @current_line
         @node_stack.push node
-        send type(node), node if node
+        send type(node), node, *opt_args if node
         @node_stack.pop
       end
     else
@@ -378,7 +378,9 @@ private
       output :pushfinally, finally_label
     end
     end_label = uniqid
+    
     compile node.try_statements
+    
     # no exceptions? clean up
     output :popcatch if node.catch_variable
     output :jmp, finally_label
@@ -433,12 +435,13 @@ private
     output :array, node.items.size
   end
   
-  def While(node)
+  def While(node, continue_label = nil)
     start_label = uniqid
     end_label = uniqid
     @continue_stack.push start_label
     @break_stack.push end_label
     output :".label", start_label
+    output :".label", continue_label if continue_label
     compile node.condition
     output :jif, end_label
     compile node.body
@@ -543,8 +546,14 @@ private
   def Label(node)
     error! "Label '#{node.name}' has already been declared" if @labels[node.name]
     end_label = uniqid
+    continue_label = uniqid
     @labels[node.name] = { break: end_label }
-    compile node.statement
+    if [:While, :DoWhile, :ForLoop, :ForIn].include? type(node.statement)
+      @labels[node.name][:continue] = continue_label
+      compile node.statement, continue_label
+    else
+      compile node.statement
+    end
     output :".label", end_label
     @labels.delete node.name
   end
@@ -553,7 +562,7 @@ private
     node.statements.each { |s| compile s }
   end
   
-  def DoWhile(node)
+  def DoWhile(node, continue_label = nil)
     start_label = uniqid
     next_label = uniqid
     end_label = uniqid
@@ -562,12 +571,13 @@ private
     output :".label", start_label
     compile node.body
     output :".label", next_label
+    output :".label", continue_label if continue_label
     compile node.condition
     output :jit, start_label
     output :".label", end_label
   end
   
-  def ForLoop(node)
+  def ForLoop(node, continue_label = nil)
     compile node.initializer if node.initializer
     start_label = uniqid
     next_label = uniqid
@@ -579,6 +589,7 @@ private
     output :jif, end_label
     compile node.body if node.body
     output :".label", next_label
+    output :".label", continue_label if continue_label
     compile node.increment if node.increment
     output :jmp, start_label
     output :".label", end_label
@@ -590,7 +601,7 @@ private
     output :enumnext
   end
   
-  def ForIn(node)
+  def ForIn(node, continue_label = nil)
     end_label = uniqid
     loop_label = uniqid
     @break_stack.push end_label
@@ -598,6 +609,7 @@ private
     compile node.object
     output :enum
     output :".label", loop_label
+    output :".label", continue_label if continue_label
     output :jiee, end_label
     mutate node.lval, :_enum_next
     compile node.body

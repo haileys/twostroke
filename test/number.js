@@ -86,3 +86,17 @@ test("==", function() {
 	assert("5" == 5);
 	assert(5 == "5");
 });
+
+test("^", function() {
+    assert_equal(6, 3 ^ 5);
+});
+
+test(">>>", function() {
+    assert_equal(32589925, -123456789 >>> 7);
+    assert_equal(964506, 123456789 >>> 7);
+});
+
+test(">>", function() {
+    assert_equal(-964507, -123456789 >> 7);
+    assert_equal(964506, 123456789 >> 7);
+});

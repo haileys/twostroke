@@ -181,3 +181,77 @@ test("break label", function() {
     }
     assert(true);
 });
+
+test("can't continue to non existant label", function() {
+    try {
+        eval('while(false) continue foo;');
+    } catch(e) {
+        assert(e instanceof SyntaxError);
+        assert(/foo/.test(e.toString()));
+    }
+});
+
+test("labelled continue while", function() {
+    var x = false;
+    a:while(true) {
+        if(x) {
+            assert(true);
+            return;
+        }
+        while(true) {
+            x = true;
+            continue a;
+            assert(false, "did not continue");
+        }
+    }
+});
+
+test("labelled continue do-while", function() {
+    a:do {
+        do {
+            continue a;
+            assert(false);
+        } while(false);
+        assert(false);
+    } while(false);
+});
+
+test("labelled continue for-loop", function() {
+    var x = false;
+    function init() {
+        if(x) {
+            assert(false, "reran initializer");
+        }
+        x = true;
+    }
+    var i = 0;
+    a: for(init(); i < 10; i++) {
+        assert(true);
+        do {
+            continue a;
+            assert(false);
+        } while(false);
+        assert(false);
+    }
+    assert(true);
+});
+
+test("labelled continue for-in", function() {
+    var a = 0, c = [1, 2, 3, 4, 5];
+    l: for(var x in c) {
+        if(c.hasOwnProperty(x)) {
+            do {
+                a += c[x];
+                continue l;
+                assert(false);
+            } while(false);
+            assert(false);
+        }
+    }
+    assert_equal(15, a);
+});
+
+test("floating point is used for large numbers but not for small numbers", function() {
+    assert_equal(99999999999999999999999999999999999999, 99999999999999999999999999999999999999 + 1);
+    assert(999999 !== 999999 + 1);
+});
