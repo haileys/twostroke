@@ -31,6 +31,15 @@ module Twostroke::Runtime
       end
     }, nil, "parseInt", [])
     
+    scope.set_var "parseFloat", Types::Function.new(->(scope, this, args) {
+      str = Types.to_string(args[0] || Undefined.new).string.gsub(/\A\s+/, "")
+      if str =~ /\A[0-9\.+-]/
+        Types::Number.new str.to_f
+      else
+        Types::Number.new Float::NAN
+      end
+    }, nil, "parseFloat", [])
+    
     # one argument functions
     %w(sqrt sin cos tan exp).each do |method|
       obj.proto_put method, Types::Function.new(->(scope, this, args) {
@@ -62,11 +71,19 @@ module Twostroke::Runtime
       }, nil, "floor", [])
     
     obj.proto_put "max", Types::Function.new(->(scope, this, args) {
-        Types::Number.new [-Float::INFINITY, *args.map { |a| Types.to_number(a).number }].max
+        begin
+          Types::Number.new [-Float::INFINITY, *args.map { |a| Types.to_number(a).number }].max
+        rescue
+          Types::Number.new Float::NAN
+        end
       }, nil, "max", [])
     
     obj.proto_put "min", Types::Function.new(->(scope, this, args) {
-        Types::Number.new [Float::INFINITY, *args.map { |a| Types.to_number(a).number }].min
+        begin
+          Types::Number.new [Float::INFINITY, *args.map { |a| Types.to_number(a).number }].min
+        rescue
+          Types::Number.new Float::NAN
+        end
       }, nil, "min", [])
       
     obj.proto_put "pow", Types::Function.new(->(scope, this, args) {
