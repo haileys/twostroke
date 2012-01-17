@@ -674,10 +674,16 @@ module Twostroke
       assert_type next_token, :OPEN_BRACKET
       ary = AST::Array.new line: token.line
       while peek_token(true).type != :CLOSE_BRACKET
-        ary.items.push assignment_expression
+        unless empty_flag = peek_token(true).type == :COMMA
+          ary.items.push assignment_expression
+        end
         assert_type peek_token, :COMMA, :CLOSE_BRACKET
         if peek_token.type == :COMMA
           next_token
+          # ** hack: **
+          if empty_flag and peek_token(true).type != :CLOSE_BRACKET
+            ary.items.push AST::Void.new value: AST::Number.new(number: 0) # <-- hack
+          end
           next
         end
       end
