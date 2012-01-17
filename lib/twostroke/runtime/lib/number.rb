@@ -11,7 +11,7 @@ module Twostroke::Runtime
         if this.number.is_a? Fixnum or this.number.is_a? Bignum
           Types::String.new this.number.to_s base
         else
-          Types::String.new this.number.to_s.gsub(/(.)\.?0+\z/,"\\1")
+          Types::String.new this.number.to_s.gsub(/\.0+\z/,"")
         end
       else
         Lib.throw_type_error "Number.prototype.toString is not generic"
