@@ -66,7 +66,7 @@ module Twostroke::Runtime::Types
     elsif object.is_a?(Boolean)
       String.new object.boolean.to_s
     elsif object.is_a?(Number)
-      String.new object.number.to_s.gsub(/\.?0+\z/,"")
+      String.new object.number.to_s.gsub(/(.)\.?0+\z/,"\\1")
     elsif object.is_a?(String)
       object
     else
