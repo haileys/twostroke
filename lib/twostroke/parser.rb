@@ -499,8 +499,8 @@ module Twostroke
     end
     
     def try
-      try = AST::Try.new line: token.line, try_statements: []
       assert_type next_token, :TRY
+      try = AST::Try.new line: token.line, try_statements: []
       assert_type next_token, :OPEN_BRACE
       while peek_token.type != :CLOSE_BRACE
         try.try_statements << statement
