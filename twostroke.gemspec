@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = "twostroke"
-  s.version     = "0.2.2"
+  s.version     = "0.2.3"
   s.authors     = ["Charlie Somerville"]
   s.email       = ["charlie@charliesomerville.com"]
   s.homepage    = "http://github.com/charliesome/twostroke"
