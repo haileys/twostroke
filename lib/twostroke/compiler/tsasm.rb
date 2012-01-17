@@ -364,6 +364,26 @@ private
   end
   
   def Try(node)
+    catch_label = uniqid if node.catch_variable
+    finally_label = uniqid
+    output :pushexh, catch_label, finally_label
+    compile node.try_statements
+    output :popexh
+    
+    if catch_label
+      output :".label", catch_label
+      output :".catch", node.catch_variable.intern
+      compile node.catch_statements
+      output :popcat
+    end
+    
+    output :".label", finally_label
+    compile node.finally_statements if node.finally_statements
+    output :popfin
+  end
+
+=begin
+  def oldTry(node)
     if node.catch_variable
       catch_label = uniqid
       output :pushcatch, catch_label
@@ -393,6 +413,7 @@ private
       output :endfinally
     end
   end
+=end
   
   def Or(node)
     compile node.left
