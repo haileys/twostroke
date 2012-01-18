@@ -412,6 +412,13 @@ module Twostroke::Runtime
       stack.push fun
     end
     
+    def block(arg)
+      name, arguments = vm.section_name_args arg
+      scope = @scope
+      fun = Types::Function.new(->(outer_scope, inner_this, args) { VM::Frame.new(vm, arg, fun).execute(scope.close, @this, args) }, "...", name || "", arguments)
+      stack.push fun
+    end
+    
     def callee(arg)
       stack.push @callee
     end

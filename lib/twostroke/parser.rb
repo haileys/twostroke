@@ -311,6 +311,7 @@ module Twostroke
     def value_expression
       case peek_token(true).type
       when :FUNCTION;     function
+      when :BLOCK;        function
       when :STRING;       string
       when :NUMBER;       number
       when :REGEXP;       regexp
@@ -699,9 +700,10 @@ module Twostroke
     end
     
     def function
-      assert_type next_token, :FUNCTION
-      fn = AST::Function.new line: token.line, arguments: [], statements: []
-      error! unless [:BAREWORD, :OPEN_PAREN].include? next_token.type
+      assert_type next_token, :FUNCTION, :BLOCK
+      is_block = token.type == :BLOCK
+      fn = AST::Function.new line: token.line, arguments: [], statements: [], is_block: is_block
+      assert_type next_token, :BAREWORD, :OPEN_PAREN
       if token.type == :BAREWORD
         fn.name = token.val
         assert_type next_token, :OPEN_PAREN

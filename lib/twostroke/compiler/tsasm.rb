@@ -308,10 +308,10 @@ private
       output :undefined
       output :ret
       pop_section
-      output :close, fnid
+      output node.is_block ? :block : :close, fnid
       output :set, node.name.intern if node.name
     else  
-      output :close, fnid
+      output node.is_block ? :block : :close, fnid
     end
   end
   
