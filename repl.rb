@@ -15,11 +15,13 @@ def repl_inspect(obj)
   elsif obj.is_a? T::Number
     Paint[obj.number.inspect, :blue, :bright]
   elsif obj.is_a? T::Boolean
-    Paint[obj.boolean.inspect, :magenta, :bright]
+    Paint[obj.boolean.inspect, :cyan, :bright]
   elsif obj.is_a? T::Null
     Paint["null", :yellow]
   elsif obj.is_a? T::Undefined
     Paint["undefined", :yellow]
+  elsif obj.is_a? T::Function
+    Paint[obj.name.empty? ? "[Function]" : "[Function: #{obj.name}]", :cyan]
   elsif obj.is_a? T::Array
     "[#{obj.items.map(&method(:repl_inspect)).join(", ")}]"
   elsif obj.is_a? T::Object and obj._class == T::Object.constructor_function
