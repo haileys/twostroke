@@ -67,7 +67,7 @@ module Twostroke
       when :WHILE;      consume_semicolon = false; send :while
       when :TRY;        consume_semicolon = false; try
       when :OPEN_BRACE; consume_semicolon = false; body
-      when :FUNCTION;   consume_semicolon = false; function
+      when :FUNCTION;   consume_semicolon = false; function(false)
       when :SEMICOLON;  nil
       when :LINE_TERMINATOR;  nil
       when :BAREWORD;   label
@@ -310,7 +310,7 @@ module Twostroke
     
     def value_expression
       case peek_token(true).type
-      when :FUNCTION;     function
+      when :FUNCTION;     function(true)
       when :STRING;       string
       when :NUMBER;       number
       when :REGEXP;       regexp
@@ -698,9 +698,9 @@ module Twostroke
       expr
     end
     
-    def function
+    def function(as_expr)
       assert_type next_token, :FUNCTION
-      fn = AST::Function.new line: token.line, arguments: [], statements: []
+      fn = AST::Function.new line: token.line, arguments: [], statements: [], as_expression: as_expr
       error! unless [:BAREWORD, :OPEN_PAREN].include? next_token.type
       if token.type == :BAREWORD
         fn.name = token.val

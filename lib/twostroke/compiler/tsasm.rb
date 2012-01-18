@@ -309,7 +309,7 @@ private
       output :ret
       pop_section
       output :close, fnid
-      output :set, node.name.intern if node.name
+      output :set, node.name.intern if node.name && !node.as_expression
     else  
       output :close, fnid
     end
