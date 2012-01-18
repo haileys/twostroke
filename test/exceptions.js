@@ -92,7 +92,6 @@ test("finally still executes if catch throws an exception and the exception keep
             x = (e == 1);
             throw 2;
         } finally {
-            console.log("here");
             y = true;
         }
     } catch(e) {

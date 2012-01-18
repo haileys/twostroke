@@ -380,6 +380,7 @@ private
     end
     
     output :".label", finally_label
+    output :".finally"
     compile node.finally_statements if node.finally_statements
     output :popfin
   end
