@@ -38,8 +38,6 @@ module Twostroke::Runtime
       
       until @return
         ins, arg = insns[@ip]
-#        puts "#{@ip}: #{ins} #{arg}"
-#        gets
         @ip += 1
         if ex = catch(:exception) { send ins, arg; nil }
           @exception = ex
@@ -49,7 +47,7 @@ module Twostroke::Runtime
         end
       end
       
-      stack.last
+      @return
     end
     
     define_method ".line" do |arg|
@@ -76,6 +74,10 @@ module Twostroke::Runtime
       scope.declare arg.intern
       scope.set_var arg.intern, @exception
       @exception = nil
+    end
+    
+    define_method ".finally" do |arg|
+      ex_stack.pop
     end
     
     ## instructions
@@ -462,12 +464,10 @@ module Twostroke::Runtime
     end
     
     def popfin(arg)
-      ex_stack.pop
-      if @exception
-        @ip = ex_stack.last[:catch]
-      elsif @return_after_finally and !@exception
+      throw :exception, @exception if @exception
+      if @return_after_finally
         @return = @return_after_finally
-        @return_after_finally = false
+        @return_after_finally = nil
       end
     end
     
