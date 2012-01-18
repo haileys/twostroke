@@ -1,9 +1,5 @@
 module Twostroke::AST
-  class True < Base    
-    def collapse
-      self
-    end
-    
+  class True < Base
     def walk(&bk)
       yield self
     end

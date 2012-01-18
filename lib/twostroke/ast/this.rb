@@ -1,7 +1,5 @@
 module Twostroke::AST
-  class This < Base
-    def collapse; self; end
-    
+  class This < Base    
     def walk
       yield self
     end

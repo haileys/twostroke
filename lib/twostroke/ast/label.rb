@@ -7,10 +7,6 @@ module Twostroke::AST
       super *args
     end
     
-    def collapse
-      self.class.new name: name, statement: statement
-    end
-    
     def walk(&bk)
       if yield self
         statement.walk &bk
