@@ -282,11 +282,11 @@ module Twostroke
       
       expr = call_expression
       
-      if peek_token.type == :INCREMENT
+      if try_peek_token and peek_token.type == :INCREMENT
         next_token
         return AST::PostIncrement.new line: token.line, value: expr
       end
-      if peek_token.type == :DECREMENT
+      if try_peek_token and peek_token.type == :DECREMENT
         next_token
         return AST::PostDecrement.new line: token.line, value: expr
       end
