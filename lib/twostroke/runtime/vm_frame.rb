@@ -36,7 +36,7 @@ module Twostroke::Runtime
         scope.set_var :arguments, arguments_object
       end
       
-      until @return
+      until @return or @ip >= insns.size
         ins, arg = insns[@ip]
         @ip += 1
         if ex = catch(:exception) { send ins, arg; nil }
