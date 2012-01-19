@@ -250,17 +250,14 @@ private
   def Call(node)
     if type(node.callee) == :MemberAccess
       compile node.callee.object
-      output :dup
-      output :member, node.callee.member.intern
+      output :push, node.callee.member.to_s
       node.arguments.each { |n| compile n }
-      output :thiscall, node.arguments.size
+      output :methcall, node.arguments.size
     elsif type(node.callee) == :Index
       compile node.callee.object
-      output :dup
       compile node.callee.index
-      output :index
       node.arguments.each { |n| compile n }
-      output :thiscall, node.arguments.size
+      output :methcall, node.arguments.size
     else
       compile node.callee
       node.arguments.each { |n| compile n }

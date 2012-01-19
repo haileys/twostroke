@@ -109,6 +109,20 @@ module Twostroke::Runtime
       stack.push fun.call(scope, fun.inherits_caller_this ? @this : this_arg, args)
     end
     
+    def methcall(arg)
+      args = []
+      arg.times { args.unshift stack.pop }
+      prop = Types.to_string(stack.pop).string
+      obj = Types.to_object stack.pop
+      fun = obj.get prop
+      unless fun.respond_to? :call
+        fun = obj.get "__noSuchMethod__"
+        Lib.throw_type_error "called non callable" unless fun.respond_to? :call
+        args = [Types::String.new(prop), Types::Array.new(args)]
+      end
+      stack.push fun.call(scope, fun.inherits_caller_this ? @this : obj, args)
+    end
+    
     def newcall(arg)
       args = []
       arg.times { args.unshift @stack.pop }
