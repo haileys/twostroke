@@ -354,7 +354,8 @@ module Twostroke
       assert_type next_token, :OPEN_BRACE
       body = AST::Body.new line: token.line
       while peek_token.type != :CLOSE_BRACE
-        body.statements.push statement
+        stmt = statement
+        body.statements.push stmt if stmt
       end
       assert_type next_token, :CLOSE_BRACE
       body
@@ -460,7 +461,7 @@ module Twostroke
           expr = expression
           node = AST::Case.new line: token.line, expression: expr
           assert_type next_token, :COLON
-          sw.cases << node
+          sw.cases << node if node
           current_case = node.statements
         elsif peek_token.type == :DEFAULT
           assert_type next_token, :DEFAULT
@@ -468,11 +469,12 @@ module Twostroke
           default = true
           node = AST::Case.new line: token.line
           assert_type next_token, :COLON
-          sw.cases << node
+          sw.cases << node if node
           current_case = node.statements
         else
           error! "statements may only appear under a case" if current_case.nil?
-          current_case << statement
+          stmt = statement
+          current_case << stmt if stmt
         end
       end
       assert_type next_token, :CLOSE_BRACE
@@ -503,7 +505,8 @@ module Twostroke
       try = AST::Try.new line: token.line, try_statements: []
       assert_type next_token, :OPEN_BRACE
       while peek_token.type != :CLOSE_BRACE
-        try.try_statements << statement
+        stmt = statement
+        try.try_statements << stmt if stmt
       end
       assert_type next_token, :CLOSE_BRACE
       assert_type next_token, :CATCH, :FINALLY
@@ -515,7 +518,8 @@ module Twostroke
         assert_type next_token, :CLOSE_PAREN
         assert_type next_token, :OPEN_BRACE
         while peek_token.type != :CLOSE_BRACE
-          try.catch_statements << statement
+          stmt = statement
+          try.catch_statements << stmt if stmt
         end
         assert_type next_token, :CLOSE_BRACE
         next_token if try_peek_token(true) && peek_token(true).type == :FINALLY
@@ -524,7 +528,8 @@ module Twostroke
         try.finally_statements = []
         assert_type next_token, :OPEN_BRACE
         while peek_token.type != :CLOSE_BRACE
-          try.finally_statements << statement
+          stmt = statement
+          try.finally_statements << stmt if stmt
         end
         assert_type next_token, :CLOSE_BRACE
       end
@@ -713,7 +718,8 @@ module Twostroke
       assert_type next_token, :CLOSE_PAREN
       assert_type next_token, :OPEN_BRACE
       while peek_token.type != :CLOSE_BRACE
-        fn.statements.push statement
+        stmt = statement
+        fn.statements << stmt if stmt
       end
       assert_type next_token, :CLOSE_BRACE
       fn
