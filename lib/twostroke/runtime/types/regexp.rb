@@ -31,9 +31,14 @@ module Twostroke::Runtime::Types
     def self.to_ruby_regexp(src)
       src.
       
-      # javascript's ^$ match the start and end of the entire string
-      # ruby's ^$ are line-based, so convert to \A and \z
-        gsub(/([^\[]|\A)\^/,"\\1\\A").gsub(/((\]|\A)([^\[]*))\$/,"\\1\\z").
+      # so ^ in javascript means start of string, but in ruby it means start of
+      # line. we have to go through and replace ^ instances with \A, BUT ^ has
+      # yet another meaning inside of character classes - so we can't escape it
+      # in that case. we also can't escape ^ if it's preceded by a backslash,
+      # but if that backslash is escaped then we have to ignore it.
+      # the following code is nasty.
+        gsub(/(\A|(\]([^\[\\]|\\[^\\])*?))\^/,"\\1\\A").
+        gsub(/((\]|\A)([^\[]*))\$/,"\\1\\z").
       
       # javascript supports \cA through \cZ for control characters
         gsub(/\\c[a-z]/i) { |m| (m[-1].downcase.ord - 'a'.ord + 1).chr }
