@@ -22,6 +22,12 @@ module Twostroke::Runtime
       obj = Types::Function.new(->(scope, this, args) {
         this.proto_put "name", Types::String.new("#{e}Error")
         this.proto_put "message", (args[0] || Types::Undefined.new)
+        this.data[:exception_stack] = []
+        this.define_own_property "stack", get: ->(*) {
+            str = "#{Types.to_string(this.get "name").string}: #{Types.to_string(this.get "message").string}\n" +
+              this.data[:exception_stack].map { |line| "    #{line}" }.join("\n")
+            Types::String.new(str)
+          }, writable: false, enumerable: false
         nil
       }, nil, "#{e}Error", [])
       scope.set_var "#{e}Error", obj
@@ -34,6 +40,12 @@ module Twostroke::Runtime
         exc.construct prototype: obj.prototype, _class: obj do
           exc.proto_put "name", Types::String.new("#{e}Error")
           exc.proto_put "message", Types::String.new(message)
+          exc.data[:exception_stack] = []
+          exc.define_own_property "stack", get: ->(*) {
+            str = "#{Types.to_string(exc.get "name").string}: #{Types.to_string(exc.get "message").string}\n" +
+              exc.data[:exception_stack].map { |line| "    #{line}" }.join("\n")
+            Types::String.new(str)
+          }, writable: false, enumerable: false
         end
         throw :exception, exc
       end
