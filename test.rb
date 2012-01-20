@@ -30,7 +30,7 @@ vm.global_scope.set_var "test", T::Function.new(->(scope, this, args) {
     failure = catch(:test_failure) do
       exception = catch(:exception) do
         if args[1].respond_to? :call
-          args[1].call(nil, vm.global_scope, [])
+          args[1].call(nil, vm.global_scope.root_object, [])
         else
           throw :test_failure, "" unless T.is_truthy args[1]
         end
