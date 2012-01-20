@@ -52,23 +52,22 @@ module Twostroke::Runtime
         }, nil, method, [])
     end
 
+    %w(floor ceil abs).each do |method|
+      obj.proto_put method, Types::Function.new(->(scope, this, args) {
+          retn  = begin
+                    Types.to_number(args[0] || Undefined.new).number.send method
+                  rescue FloatDomainError
+                    Float::NAN
+                  end
+          Types::Number.new retn
+        }, nil, method, [])
+    end
+
     obj.proto_put "PI", Types::Number.new(Math::PI)
 
     obj.proto_put "random", Types::Function.new(->(scope, this, args) {
       Types::Number.new rand
     }, nil, "random", [])
-
-    obj.proto_put "floor", Types::Function.new(->(scope, this, args) {
-        Types::Number.new Types.to_number(args[0] || Undefined.new).number.floor
-      }, nil, "floor", [])
-
-    obj.proto_put "ceil", Types::Function.new(->(scope, this, args) {
-        Types::Number.new Types.to_number(args[0] || Undefined.new).number.ceil
-      }, nil, "ceil", [])
-      
-    obj.proto_put "abs", Types::Function.new(->(scope, this, args) {
-        Types::Number.new Types.to_number(args[0] || Undefined.new).number.abs
-      }, nil, "floor", [])
     
     obj.proto_put "max", Types::Function.new(->(scope, this, args) {
         begin
