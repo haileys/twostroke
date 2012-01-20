@@ -41,7 +41,9 @@ module Twostroke::Runtime
         @ip += 1
         if ex = catch(:exception) { send ins, arg; nil }
           @exception = ex
-#          puts "--> #{Types.to_string(exception).string}  #{@name || "(anonymous function)"}:#{@line}  <#{@section}+#{@ip}>"
+          if ex.data[:exception_stack]
+            ex.data[:exception_stack] << "at #{@name || "(anonymous function)"}:#{@line}  <#{@section}+#{@ip}>"
+          end
           throw :exception, @exception if ex_stack.empty?
           @ip = ex_stack.last[:catch] || ex_stack.last[:finally]
         end

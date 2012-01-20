@@ -3,6 +3,12 @@ module Twostroke::Runtime
     error = Types::Function.new(->(scope, this, args) {
       this.proto_put "name", Types::String.new("Error")
       this.proto_put "message", (args[0] || Types::Undefined.new)
+      this.data[:exception_stack] = []
+      this.define_own_property "stack", get: ->(*) {
+          str = "#{Types.to_string(this.get "name").string}: #{Types.to_string(this.get "message").string}\n" +
+            this.data[:exception_stack].map { |line| "    #{line}" }.join("\n")
+          Types::String.new(str)
+        }, writable: false, enumerable: false
       nil # so the constructor ends up returning the object being constructed
     }, nil, "Error", [])
     scope.set_var "Error", error
