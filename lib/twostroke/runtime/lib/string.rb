@@ -62,6 +62,15 @@ module Twostroke::Runtime
         indexA, indexB = indexB, indexA if indexB < indexA
         Types::String.new(str[indexA...indexB] || "")
       }, nil, "substring", [])
+    # String.prototype.substr
+    proto.proto_put "substr", Types::Function.new(->(scope, this, args) {
+        index = args[0] && Types.to_int32(args[0])
+        len = args[1] && Types.to_uint32(args[1])
+        str = Types.to_string(this).string
+        return Types::String.new(str) unless index
+        return Types::String.new(str[index..-1] || "") unless len
+        Types::String.new(str[index, len] || "")
+      }, nil, "substr", [])
     # String.prototype.slice
     proto.proto_put "slice", Types::Function.new(->(scope, this, args) {
         sobj = Types.to_string(this)
