@@ -603,8 +603,10 @@ private
     @continue_stack.push next_label
     @break_stack.push end_label
     output :".label", start_label
-    compile node.condition if node.condition
-    output :jif, end_label
+    if node.condition
+      compile node.condition
+      output :jif, end_label
+    end
     compile node.body if node.body
     output :".label", next_label
     output :".label", continue_label if continue_label
