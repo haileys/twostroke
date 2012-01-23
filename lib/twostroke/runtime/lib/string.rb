@@ -44,7 +44,7 @@ module Twostroke::Runtime
           md = re.match s, offset
           break unless md && (offset.zero? || global)
           retn << md.pre_match[offset..-1]
-          retn << Types.to_string(callback.(scope, nil, [*md.to_a.map { |c| Types::String.new c }, Types::Number.new(md.begin 0), sobj])).string
+          retn << Types.to_string(callback.(scope, nil, [*md.to_a.map { |c| Types::String.new(c || "") }, Types::Number.new(md.begin 0), sobj])).string
           offset = md.end 0
         end
         
