@@ -71,9 +71,11 @@ private
         output :".local", node.name.intern
         false
       elsif node.is_a? Twostroke::AST::Function
-        output :".local", node.name.intern if node.name
-        # because javascript is odd, entire function bodies need to be hoisted, not just their declarations
-        Function(node, true)
+        if node.name
+          output :".local", node.name.intern
+          # because javascript is odd, entire function bodies need to be hoisted, not just their declarations
+          Function(node, true)
+        end
         false
       else
         true
