@@ -9,6 +9,10 @@ module Twostroke::Runtime
     scope.set_var "isNaN", Types::Function.new(->(scope, this, args) {
       Types::Boolean.new(args[0].is_a?(Types::Number) && args[0].nan?)
     }, nil, "isNaN", [])
+
+    scope.set_var "isFinite", Types::Function.new(->(scope, this, args) {
+      Types::Boolean.new(args[0].is_a?(Types::Number) && !args[0].infinite?)
+    }, nil, "isFinite", [])
     
     scope.set_var "parseInt", Types::Function.new(->(scope, this, args) {
       str = Types.to_string(args[0] || Undefined.new).string.gsub(/\A\s+/,"")
