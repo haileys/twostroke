@@ -38,7 +38,7 @@ module Twostroke::Runtime::Types
       # but if that backslash is escaped then we have to ignore it.
       # the following code is nasty.
         gsub(/(\A|(\]([^\[\\]|\\[^\\])*?))\^/,"\\1\\A").
-        gsub(/((\]|\A)([^\[]*))\$/,"\\1\\z").
+        gsub(/((\]|\A)([^\[]*))\$/) { |m| z = m[0...-1]; z == "\\" ? "\\$" : "#{z}\\z" }.
       
       # javascript supports \cA through \cZ for control characters
         gsub(/\\c[a-z]/i) { |m| (m[-1].downcase.ord - 'a'.ord + 1).chr }
