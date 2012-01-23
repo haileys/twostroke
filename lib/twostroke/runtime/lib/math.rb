@@ -15,7 +15,7 @@ module Twostroke::Runtime
     }, nil, "isFinite", [])
     
     scope.set_var "parseInt", Types::Function.new(->(scope, this, args) {
-      str = Types.to_string(args[0] || Undefined.new).string.gsub(/\A\s+/,"")
+      str = Types.to_string(args[0] || Types::Undefined.new).string.gsub(/\A\s+/,"")
       unless args[1] and (radix = Types.to_uint32(args[1])) != 0
         case str
         when /\A0x/i; radix = 16
@@ -36,7 +36,7 @@ module Twostroke::Runtime
     }, nil, "parseInt", [])
     
     scope.set_var "parseFloat", Types::Function.new(->(scope, this, args) {
-      str = Types.to_string(args[0] || Undefined.new).string.gsub(/\A\s+/, "")
+      str = Types.to_string(args[0] || Types::Undefined.new).string.gsub(/\A\s+/, "")
       if str =~ /\A[0-9\.+-]/
         Types::Number.new str.to_f
       else
@@ -48,7 +48,7 @@ module Twostroke::Runtime
     %w(sqrt sin cos tan exp).each do |method|
       obj.proto_put method, Types::Function.new(->(scope, this, args) {
           ans = begin
-                  Math.send method, Types.to_number(args[0] || Undefined.new).number
+                  Math.send method, Types.to_number(args[0] || Types::Undefined.new).number
                 rescue Math::DomainError
                   Float::NAN
                 end
@@ -59,7 +59,7 @@ module Twostroke::Runtime
     %w(floor ceil abs).each do |method|
       obj.proto_put method, Types::Function.new(->(scope, this, args) {
           retn  = begin
-                    Types.to_number(args[0] || Undefined.new).number.send method
+                    Types.to_number(args[0] || Types::Undefined.new).number.send method
                   rescue FloatDomainError
                     Float::NAN
                   end
