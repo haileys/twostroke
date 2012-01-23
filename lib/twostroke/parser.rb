@@ -698,7 +698,7 @@ module Twostroke
     
     def parens
       assert_type next_token, :OPEN_PAREN
-      expr = AST::BracketedExpression.new line: token.line, value: expression
+      expr = expression
       assert_type next_token, :CLOSE_PAREN
       expr
     end
