@@ -90,6 +90,10 @@ class TestFile
     @ctx = ctx
     @tests = []
     @scope = @ctx.vm.global_scope.close
+    setup
+  end
+  
+  def setup
     set_test_helpers
     @ctx.raw_exec File.read(@file), @scope
   end
@@ -123,7 +127,11 @@ end
 
 ctx = Twostroke::Context.new
 
+# these are test suites that must be run in an isolated context
+isolated_tests = [/mootools/]
+
 files = Dir[File.expand_path("../test/*.js", __FILE__)]
+          .sort
           .map { |file| TestFile.new file, ctx }
           .each &:run
 
@@ -139,7 +147,7 @@ files.each do |f|
       print Paint[" ERROR  ", :yellow]
     end
     puts "#{f.file} - #{t.name}"
-    puts t.message.lines.map { |l| "        #{l}" }
+    puts t.message.lines.map { |l| "        #{l}" } if t.message
     puts
   end
 end
