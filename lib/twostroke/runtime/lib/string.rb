@@ -139,7 +139,7 @@ module Twostroke::Runtime
     obj.proto_put "prototype", proto
     
     obj.proto_put "fromCharCode", Types::Function.new(->(scope, this, args) {
-        Types::String.new args.map { |a| Types.to_number(a).number.to_i.chr }.join
+        Types::String.new args.map { |a| Types.to_number(a).number.to_i.chr "utf-8" }.join
       }, nil, "fromCharCode", [])
   end
 end
