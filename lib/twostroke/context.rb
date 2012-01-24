@@ -11,25 +11,25 @@ module Twostroke
     def [](var)
       vm.global_scope.get_var(var.intern).to_ruby
     end
-    
-    def raw_eval(src)
+
+    def raw_eval(src, scope = vm.global_scope.close)
       prefix = make_prefix
       bytecode = compile src, prefix
       main = :"#{prefix}main"
       bytecode[main][-2] = [:ret]
       vm.bytecode.merge! bytecode
-      vm.execute main, vm.global_scope.close
+      vm.execute main, scope
     end  
     
     def eval(src)
       raw_eval(src + ";").to_ruby
     end
     
-    def raw_exec(src)
+    def raw_exec(src, scope = nil)
       prefix = make_prefix
       bytecode = compile src, prefix
       vm.bytecode.merge! bytecode
-      vm.execute :"#{prefix}_main"
+      vm.execute :"#{prefix}main", scope
     end
     
     def exec(src)
