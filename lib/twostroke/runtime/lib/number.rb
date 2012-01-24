@@ -3,7 +3,7 @@ module Twostroke::Runtime
     obj = Types::NumberObject.constructor_function
     scope.set_var "Number", obj
     
-    proto = Types::Object.new
+    proto = Types::NumberObject.new 0
     proto.proto_put "toString", Types::Function.new(->(scope, this, args) {
       if this.is_a?(Types::NumberObject)
         base = args[0] ? Types.to_uint32(args[0]) : 10
@@ -17,7 +17,10 @@ module Twostroke::Runtime
         Lib.throw_type_error "Number.prototype.toString is not generic"
       end
     }, nil, "toString", [])
-    proto.proto_put "valueOf", Types::Function.new(->(scope, this, args) { this.is_a?(Types::NumberObject) ? Types::Number.new(this.number) : Types.to_primitive(this) }, nil, "valueOf", [])
+    proto.proto_put "valueOf", Types::Function.new(->(scope, this, args) do
+      Lib.throw_type_error "Number.prototype.valueOf is not generic" unless this.is_a? Types::NumberObject
+      Types::Number.new(this.number)
+    end, nil, "valueOf", [])
     # Number.prototype.toExponential
     proto.proto_put "toExponential", Types::Function.new(->(scope, this, args) do
         n = Types.to_number(this)
