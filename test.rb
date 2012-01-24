@@ -127,9 +127,6 @@ end
 
 ctx = Twostroke::Context.new
 
-# these are test suites that must be run in an isolated context
-isolated_tests = [/mootools/]
-
 files = Dir[File.expand_path("../test/*.js", __FILE__)]
           .sort
           .map { |file| TestFile.new file, ctx }
