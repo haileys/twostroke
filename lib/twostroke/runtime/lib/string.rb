@@ -36,7 +36,7 @@ module Twostroke::Runtime
         global = find.is_a?(Types::RegExp) && find.global
         
         replace = args[1] || Types::Undefined.new
-        callback = replace.respond_to?(:call) ? replace : ->(*_) { replace }
+        callback = replace.respond_to?(:call) ? replace : ->* { replace }
         
         retn = ""
         offset = 0
