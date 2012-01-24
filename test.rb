@@ -1,3 +1,4 @@
+require "bundler/setup"
 require "simplecov"
 SimpleCov.start
 
@@ -5,99 +6,140 @@ $LOAD_PATH << File.expand_path("../lib", __FILE__)
 require "twostroke"
 require "paint"
 
-vm = Twostroke::Runtime::VM.new({})
-Twostroke::Runtime::Lib.setup_environment vm
+trap("INT") { puts caller; exit! }
 
-asserts = 0
-failed = false
-
-$cur_test = nil
-T = Twostroke::Runtime::Types
-vm.global_scope.set_var "assert", T::Function.new(->(scope, this, args) {
-  throw :test_failure, (args[1] ? T.to_string(args[1]).string : "") unless T.is_truthy(args[0])
-  asserts += 1
-}, nil, nil, [])
-vm.global_scope.set_var "assert_equal", T::Function.new(->(scope, this, args) {
-  throw :test_failure, "<#{T.to_string(args[0]).string}> !== <#{T.to_string(args[1]).string}>  #{T.to_string(args[2]).string if args[2]}" unless T.seq args[0], args[1]
-  asserts += 1
-}, nil, nil, [])
-vm.global_scope.set_var "test", T::Function.new(->(scope, this, args) {
-  test_name = T.to_string(args[0] || T::Undefined.new).string
-  exception = nil
-  failure = nil
-  asserts = 0
-  begin
-    failure = catch(:test_failure) do
-      exception = catch(:exception) do
-        if args[1].respond_to? :call
-          args[1].call(nil, vm.global_scope.root_object, [])
-        else
-          throw :test_failure, "" unless T.is_truthy args[1]
-        end
-        false
+class TestCase
+  T = Twostroke::Runtime::Types
+  
+  attr_reader :name, :status, :message
+  
+  def initialize(name, function, scope)
+    @name = name
+    @function = function
+    @scope = scope
+    @assertions = 0
+  end
+  
+  def run
+    set_test_helpers
+    catch :test_failure do
+      ex = catch :exception do
+        @function.call @scope, nil, []
+        
+        if @assertions.zero?
+          @status = :error
+          @message = "No assertions"
+          return false
+        end  
+        @status = :pass
+        return true
       end
-      false
+      
+      @status = :error
+      if trace = ex.get("stack") and trace.is_a?(T::String)
+        @message = trace.string
+      else
+        @message = T.to_string(ex).string
+      end
     end
-  rescue => error
+    false
+  rescue => e
+    @status = :error
+    @message = ["#{e.class}: #{e.to_s}", *e.backtrace].join "\n"
+    false
   end
-  if failure
-    failed = true
-    puts
-    puts "#{Paint[$cur_test, :bright, :white]}"
-    puts "   #{Paint[" FAIL", :red]}  #{test_name}"
-    puts "      Assertion failed after #{asserts} assertions: #{failure || "(no message)"}"
-  elsif exception
-    failed = true
-    puts
-    puts "#{Paint[$cur_test, :bright, :white]}"
-    puts "   #{Paint["ERROR", :yellow]}  #{test_name}"
-    puts "      Uncaught exception after #{asserts} assertions: #{T.to_string(exception).string}"
-  elsif error
-    failed = true
-    puts
-    puts "#{Paint[$cur_test, :bright, :white]}"
-    puts "   #{Paint["ERROR", :yellow]}  #{test_name}"
-    puts "      Internal error after #{asserts} assertions: #{error} at:"
-    error.backtrace.each do |bt|
-      puts "        #{bt}"
+  
+  def fail(message)
+    @status = :fail
+    @message = message
+    throw :test_failure
+  end
+  
+private
+  def set_test_helpers
+    %w(assert assert_equal).each do |m|
+      @scope.set_var m, T::Function.new(->(outer, this, args) {
+        send m, *args
+        nil
+      }, nil, nil, [])
     end
-  else
-    print "."
-#    puts "   #{Paint[" PASS", :green]}  #{test_name}"
   end
-}, nil, nil, [])
 
-if ARGV.empty?
-  tests = Dir["test/**/*.js"]
-else
-  tests = ARGV.map { |f| "test/#{f}.js" }
-end
-
-tests.each do |test|
-#  puts Paint[test, :bright, :white]
-  $cur_test = test
-  file = File.open(test, "r:utf-8")
-  src = file.read
-  
-  parser = Twostroke::Parser.new(Twostroke::Lexer.new(src))
-  parser.parse
-  
-  compiler = Twostroke::Compiler::TSASM.new parser.statements, "test_#{test}_"
-  compiler.compile
-
-  compiler.bytecode.each do |k,v|
-    vm.bytecode[k] = v
+  def assert(condition, message = nil)
+    @assertions += 1
+    unless T.is_truthy condition
+      fail message && T.to_string(message).string
+    end
   end
   
-  exception = catch(:exception) do
-    vm.execute :"test_#{test}_main"
-    nil
-  end
-  
-  if exception
-    puts "   #{Paint["ERROR", :yellow]}"
-    puts "      Uncaught exception: #{T.to_string(exception).string}"
+  def assert_equal(a, b, message = nil)
+    @assertions += 1
+    unless T.seq a, b
+      msg = "<#{T.to_string(a).string}> !== <#{T.to_string(b).string}>"
+      msg << ": #{T.to_string(message).string}" if message
+      fail msg
+    end
   end
 end
 
-exit(failed ? 1 : 0)
+class TestFile
+  attr_reader :file, :tests
+  
+  def initialize(file, ctx)
+    @file = file
+    @ctx = ctx
+    @tests = []
+    @scope = @ctx.vm.global_scope.close
+    set_test_helpers
+    @ctx.raw_exec File.read(@file), @scope
+  end
+  
+  def run
+    tests.each do |test|
+      if test.run
+        print "."
+      elsif test.status == :error
+        print "E"
+      else
+        print "F"
+      end
+      STDOUT.flush
+    end
+  end
+  
+private
+  def set_test_helpers
+    @scope.set_var "test", Twostroke::Runtime::Types::Function.new(->(outer, this, args) {
+      test *args
+      nil
+    }, nil, nil, [])
+  end
+  
+  def test(name, function)
+    name = Twostroke::Runtime::Types.to_string(name).string
+    tests << TestCase.new(name, function, @scope)
+  end
+end
+
+ctx = Twostroke::Context.new
+
+files = Dir[File.expand_path("../test/*.js", __FILE__)]
+          .map { |file| TestFile.new file, ctx }
+          .each &:run
+
+results = files.map(&:tests).flatten.map(&:status)
+puts "\n\nTests finished - #{results.count :fail} failures and #{results.count :error} errors from #{results.count} test cases\n\n"
+
+files.each do |f|
+  f.tests.each do |t|
+    next if t.status == :pass
+    if t.status == :fail
+      print Paint["  FAIL  ", :red]
+    else
+      print Paint[" ERROR  ", :yellow]
+    end
+    puts "#{f.file} - #{t.name}"
+    puts t.message.lines.map { |l| "        #{l}" }
+    puts
+  end
+end
