@@ -11,6 +11,7 @@ test("code after throw is not executed", function() {
         throw 1;
         assert(false);
     } catch(e) {
+        assert(true);
     }
 });
 

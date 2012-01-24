@@ -214,6 +214,7 @@ test("labelled continue do-while", function() {
         } while(false);
         assert(false);
     } while(false);
+    assert(true);
 });
 
 test("labelled continue for-loop", function() {
