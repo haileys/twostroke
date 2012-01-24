@@ -7,11 +7,13 @@ module Twostroke::Runtime
     scope.set_var "NaN", Types::Number.new(Float::NAN)
     
     scope.set_var "isNaN", Types::Function.new(->(scope, this, args) {
-      Types::Boolean.new(args[0].is_a?(Types::Number) && args[0].nan?)
+      num = Types.to_number(args[0] || Types::Undefined.new)
+      Types::Boolean.new(num.nan?)
     }, nil, "isNaN", [])
 
     scope.set_var "isFinite", Types::Function.new(->(scope, this, args) {
-      Types::Boolean.new(args[0].is_a?(Types::Number) && !args[0].infinite? && !args[0].nan?)
+      num = Types.to_number(args[0] || Types::Undefined.new)
+      Types::Boolean.new(!num.infinite? && !num.nan?)
     }, nil, "isFinite", [])
     
     scope.set_var "parseInt", Types::Function.new(->(scope, this, args) {
