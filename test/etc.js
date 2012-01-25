@@ -40,3 +40,24 @@ test("json parser works with object", function() {
     var o = JSON.parse('{"a":{"b":{"a":{"b":123}}}}');
     assert_equal(123, o.a.b.a.b);
 });
+
+test("json stringifer", function() {
+    assert_equal("123", JSON.stringify(123));
+    assert_equal("123.456", JSON.stringify(123.456));
+    assert_equal("-123456", JSON.stringify(-123.456e3));
+    assert_equal("true", JSON.stringify(true));
+    assert_equal("false", JSON.stringify(false));
+    assert_equal("null", JSON.stringify(null));
+    assert_equal('"foo"', JSON.stringify("foo"));
+    assert_equal('""', JSON.stringify(""));
+});
+
+test("json parser works with arrays", function() {
+    assert_equal("[1,2,3]", JSON.stringify([1,2,3]));
+    assert_equal("[[[[1]]]]", JSON.stringify([[[[1]]]]));
+});
+
+test("json parser works with object", function() {
+    assert_equal('{"a":1,"b":[2]}', JSON.stringify({ a: 1, b: [2] }));
+    assert_equal('{"a":{"b":{"a":{"b":123}}}}', JSON.stringify({a:{b:{a:{b:123}}}}));
+});
