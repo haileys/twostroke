@@ -4,13 +4,14 @@
 
 Twostroke is a Javascript implementation written in **pure Ruby**. It currently consists of:
 
-* A parser (which works, but is in need of an overhaul)
+* A hand-written parser
 * A TSASM compiler (Twostroke's internal bytecode format)
 * A VM that runs TSASM bytecode
-* A minimal Javascript standard library implementation (also in need of some love)
+* A minimal Javascript standard library implementation
 * A test suite containing:
   * Some tests written for Twostroke
   * Underscore.js's complete test suite (minus the cases relying on the DOM)
+  * Parts of mootools' test suite
   
 # Why use Twostroke?
 
