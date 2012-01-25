@@ -1,6 +1,6 @@
 # Twostroke
 
-![travis](https://secure.travis-ci.org/charliesome/travis.png)
+[![travis](https://secure.travis-ci.org/charliesome/twostroke.png)](http://travis-ci.org/charliesome/twostroke)
 
 Twostroke is a Javascript implementation written in **pure Ruby**. It currently consists of:
 
