@@ -46,7 +46,7 @@ module Twostroke
       end,
       [ :BAREWORD, /[a-zA-Z_\$][\$a-zA-Z_0-9]*/, ->m { m[0] } ],
 
-      [ :STRING, /(["'])((\\\n|\\.|[^\n\r\u2028\u2029\1])*?[^\1\\]?)\1/, ->m { unescape_string m[2] } ],
+      [ :STRING, /(["'])((\\\n|\\.|((?!\1)(?!\\).))*?((?!\1)(?!\\).)?)\1/, ->m { unescape_string m[2] } ],
       
       [ :REGEXP, %r{/(?<src>(\\.|[^\1])*?[^\1\\]?)/(?<opts>[gim]+)?}, ->m {
         str = m[:src].
