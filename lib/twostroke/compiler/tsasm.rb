@@ -481,11 +481,7 @@ private
   end
   
   def Number(node)
-    if node.number.is_a? Bignum
-      output :push, node.number.to_f
-    else
-      output :push, node.number
-    end
+    output :push, node.number.to_f
   end
   
   def UnaryPlus(node)
