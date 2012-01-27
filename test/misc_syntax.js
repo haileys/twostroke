@@ -252,6 +252,11 @@ test("labelled continue for-in", function() {
     assert_equal(15, a);
 });
 
+test("labelled block", function() {
+    eval("a: { };");
+    assert(true);
+});
+
 test("floating point is used for large numbers but not for small numbers", function() {
     assert_equal(99999999999999999999999999999999999999, 99999999999999999999999999999999999999 + 1);
     assert(999999 !== 999999 + 1);
