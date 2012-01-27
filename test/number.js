@@ -21,6 +21,34 @@ test("toExponential", function() {
 	assert_equal((1.0).toExponential(), "1.0e+0");
 	assert_equal((123).toExponential(), "1.23e+2");
 	assert_equal((0.00123).toExponential(), "1.23e-3");
+	assert_equal("Infinity", Infinity.toExponential());
+	assert_equal("-Infinity", (-Infinity).toExponential());
+	assert_equal("NaN", NaN.toExponential());
+	assert_equal(123456789..toExponential(3), "1.235e+8");
+	assert_equal(123456789..toExponential(NaN), "1e+8");
+	assert_equal(123456789..toExponential(Infinity), "1e+8");
+	assert_equal(123456789..toExponential(-Infinity), "1e+8");
+});
+
+test("toFixed", function() {
+  assert_equal("1235", 1234.5.toFixed());
+  assert_equal("12.35", 12.345678.toFixed(2));
+  assert_equal("1235", 1234.56789.toFixed(NaN));
+  assert_equal("1235", 1234.56789.toFixed(Infinity));
+  assert_equal("1235", 1234.56789.toFixed(-Infinity));
+});
+
+test("toPrecision", function() {
+  assert_equal("5.123456", 5.123456.toPrecision());
+  assert_equal("5.1235", 5.123456.toPrecision(5));
+  assert_equal("5.1", 5.123456.toPrecision(2));
+  assert_equal("5", 5.123456.toPrecision(1));
+  try {
+    123..toPrecision(NaN);
+    assert(false, "did not throw");
+  } catch(e) {
+    assert(e instanceof RangeError);
+  }
 });
 
 test("typeof", function() {
@@ -57,4 +85,18 @@ test("int32", function() {
 test("==", function() {
 	assert("5" == 5);
 	assert(5 == "5");
+});
+
+test("^", function() {
+    assert_equal(6, 3 ^ 5);
+});
+
+test(">>>", function() {
+    assert_equal(32589925, -123456789 >>> 7);
+    assert_equal(964506, 123456789 >>> 7);
+});
+
+test(">>", function() {
+    assert_equal(-964507, -123456789 >> 7);
+    assert_equal(964506, 123456789 >> 7);
 });

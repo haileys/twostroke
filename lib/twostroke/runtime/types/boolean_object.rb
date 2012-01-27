@@ -18,8 +18,8 @@ module Twostroke::Runtime::Types
       @boolean = boolean
     end
     
-    def primitive_value
-      Boolean.new boolean
+    def to_ruby
+      boolean
     end
   end
 end

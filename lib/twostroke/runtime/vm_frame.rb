@@ -1,6 +1,6 @@
 module Twostroke::Runtime
   class VM::Frame
-    attr_reader :vm, :insns, :stack, :sp_stack, :catch_stack, :finally_stack, :enum_stack, :exception, :ip, :scope
+    attr_reader :vm, :insns, :stack, :sp_stack, :ex_stack, :enum_stack, :exception, :ip, :scope
     
     def initialize(vm, section, callee = nil)
       @vm = vm
@@ -21,12 +21,13 @@ module Twostroke::Runtime
       @scope = scope || vm.global_scope
       @stack = []
       @sp_stack = []
-      @catch_stack = []
-      @finally_stack = []
+      @ex_stack = []
+      @exception = nil
       @enum_stack = []
       @temp_slot = nil
       @ip = 0
       @return = false
+      @return_after_finally = false
       @this = this || @scope.global_scope.root_object
       @args = args
       if @callee
@@ -35,29 +36,31 @@ module Twostroke::Runtime
         scope.set_var :arguments, arguments_object
       end
       
-      until @return
-        ins, arg = insns[ip]
+      until @return or @ip >= insns.size
+        ins, arg = insns[@ip]
+        if vm.instruction_trace
+          # if an instruction trace callback is set, call it with information about this ins
+          vm.instruction_trace.call @section, @ip, ins, arg
+        end
         @ip += 1
-        if respond_to? ins
-          if @exception = catch(:exception) { send ins, arg; nil }
-#            puts "--> #{Types.to_string(exception).string}  #{@name || "(anonymous function)"}:#{@line}  <#{@section}+#{@ip}>"
-            throw :exception, @exception if catch_stack.empty? && finally_stack.empty?
-            if catch_stack.any?
-              @ip = catch_stack.last
-            else
-              @ip = finally_stack.last
-            end
+        if ex = catch(:exception) { send ins, arg; nil }
+          @exception = ex
+          if ex.respond_to? :data and ex.data[:exception_stack]
+            ex.data[:exception_stack] << "at #{@this._class && @this._class.name}.#{@name || "(anonymous function)"}:#{@line}  <#{@section}+#{@ip}>"
           end
-        else
-          error! "unknown instruction #{ins}"
+          throw :exception, @exception if ex_stack.empty?
+          @ip = ex_stack.last[:catch] || ex_stack.last[:finally]
         end
       end
       
-      stack.last
+      @return
     end
     
     define_method ".line" do |arg|
       @line = arg
+      if vm.line_trace
+        vm.line_trace.call @section, @line
+      end
     end
     
     define_method ".name" do |arg|
@@ -76,9 +79,14 @@ module Twostroke::Runtime
     end
     
     define_method ".catch" do |arg|
+      ex_stack.last[:catch] = nil
       scope.declare arg.intern
       scope.set_var arg.intern, @exception
       @exception = nil
+    end
+    
+    define_method ".finally" do |arg|
+      ex_stack.pop
     end
     
     ## instructions
@@ -88,12 +96,8 @@ module Twostroke::Runtime
         stack.push scope.get_var(arg)
       elsif arg.is_a?(Fixnum) || arg.is_a?(Float)
         stack.push Types::Number.new(arg)
-      elsif arg.is_a?(Bignum)
-        stack.push Types::Number.new(arg.to_f)
       elsif arg.is_a?(String)
         stack.push Types::String.new(arg)
-      else
-        error! "bad argument to push instruction"
       end
     end
     
@@ -112,6 +116,20 @@ module Twostroke::Runtime
       Lib.throw_type_error "called non callable" unless fun.respond_to?(:call)
       this_arg = Types.to_object stack.pop
       stack.push fun.call(scope, fun.inherits_caller_this ? @this : this_arg, args)
+    end
+    
+    def methcall(arg)
+      args = []
+      arg.times { args.unshift stack.pop }
+      prop = Types.to_string(stack.pop).string
+      obj = Types.to_object stack.pop
+      fun = obj.get prop
+      unless fun.respond_to? :call
+        fun = obj.get "__noSuchMethod__"
+        Lib.throw_type_error "called non callable" unless fun.respond_to? :call
+        args = [Types::String.new(prop), Types::Array.new(args)]
+      end
+      stack.push fun.call(scope, fun.inherits_caller_this ? @this : obj, args)
     end
     
     def newcall(arg)
@@ -204,10 +222,11 @@ module Twostroke::Runtime
     end
     
     def ret(arg)
-      if finally_stack.empty?
-        @return = true
+      if ex_stack.empty?
+        @return = stack.pop
       else
-        @ip = finally_stack.last
+        @return_after_finally = stack.pop
+        @ip = ex_stack.last[:finally]
       end
     end
     
@@ -232,11 +251,11 @@ module Twostroke::Runtime
     end
     
     def true(arg)
-      stack.push Types::Boolean.new(true)
+      stack.push Types::Boolean.true
     end
     
     def false(arg)
-      stack.push Types::Boolean.new(false)
+      stack.push Types::Boolean.false
     end
     
     def jmp(arg)
@@ -300,13 +319,13 @@ module Twostroke::Runtime
       stack.push Types::Number.new(l << r)
     end
     
-    def sar(arg)
+    def slr(arg)
       r = Types.to_uint32(stack.pop) & 31
       l = Types.to_int32 stack.pop
       stack.push Types::Number.new(l >> r)
     end
     
-    def slr(arg)
+    def sar(arg)
       r = Types.to_uint32(stack.pop) & 31
       l = Types.to_uint32 stack.pop
       stack.push Types::Number.new(l >> r)
@@ -453,24 +472,26 @@ module Twostroke::Runtime
       @stack = stack[0...sp_stack.pop]
     end
     
-    def pushcatch(arg)
-      catch_stack.push arg
+    def pushexh(arg)
+      ex_stack.push catch: arg[0], finally: arg[1]
     end
     
-    def popcatch(arg)
-      catch_stack.pop
+    def popexh(arg)
+      exh = ex_stack.pop
+      @ip = exh[:finally]
     end
     
-    def pushfinally(arg)
-      finally_stack.push arg
+    def popcat(arg)
+      ex_stack.last[:catch] = nil
+      @ip = ex_stack.last[:finally]
     end
     
-    def popfinally(arg)
-      finally_stack.pop
-    end
-    
-    def endfinally(arg)
+    def popfin(arg)
       throw :exception, @exception if @exception
+      if @return_after_finally
+        @return = @return_after_finally
+        @return_after_finally = nil
+      end
     end
     
     def this(arg)

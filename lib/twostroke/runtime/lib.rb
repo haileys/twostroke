@@ -3,7 +3,9 @@ module Twostroke::Runtime
     INITIALIZERS = []
   
     def self.setup_environment(vm)
-      INITIALIZERS.each { |i| i.arity == 1 ? i.(vm.global_scope) : i.(vm.global_scope, vm) }
+      scope = vm.global_scope
+      INITIALIZERS.each { |i| i.arity == 1 ? i.(scope) : i.(scope, vm) }
+      scope.get_var("Object").prototype = Types::Function.constructor_function.get("prototype")
     end
   
     def self.register(&bk)

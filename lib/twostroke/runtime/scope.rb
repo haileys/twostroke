@@ -28,15 +28,11 @@ module Twostroke::Runtime
     end
     
     def declare(var)
-      @locals[var] = Types::Undefined.new
+      @locals[var] = Types::Undefined.new unless @locals[var]
     end
     
     def delete(var)
-      if has_var var
-        @locals.delete var
-      else
-        parent.delete var
-      end
+      parent.delete var
     end
     
     def close

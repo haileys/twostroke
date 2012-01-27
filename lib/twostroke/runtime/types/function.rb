@@ -5,7 +5,10 @@ module Twostroke::Runtime::Types
         @@constructor_function = nil # lock the Function constructor out from here...
         @@created_funcs = 0
         @@constructor_function = Function.new(->(scope, this, args) {
-          formal_parameters = (args.size > 1 ? args[0...-1] : []).map { |a| Twostroke::Runtime::Types.to_string(a).string }
+          formal_parameters = (args.size > 1 ? args[0...-1] : [])
+                              .map { |a| Twostroke::Runtime::Types.to_string(a).string }
+                              .map { |a| a.split "," }
+                              .flatten
           src = Twostroke::Runtime::Types.to_string(args[-1] || Undefined.new).string
           
           parser = Twostroke::Parser.new(Twostroke::Lexer.new(src))
@@ -50,6 +53,10 @@ module Twostroke::Runtime::Types
       put "prototype", proto
     end
     
+    def to_ruby
+      ->(this, *args) { call(nil, this, args.map(&Twostroke::Runtime::Types.method(:marshal))).to_ruby }
+    end
+    
     def prototype
       @prototype ||= Function.constructor_function.get("prototype") if Function.constructor_function
     end
@@ -67,10 +74,6 @@ module Twostroke::Runtime::Types
     
     def typeof
       "function"
-    end
-    
-    def primitive_value
-      String.new "function #{name}(#{arguments.join ","}) { #{source || "[native code]"} }"
     end
     
     def call(upper_scope, this, args)

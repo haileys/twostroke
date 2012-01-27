@@ -18,11 +18,18 @@ test("exec additional attributes", function() {
 });
 
 test("toString", function() {
-  assert_equal("/abc/i", /abc/i.toString());
-  try {
-    RegExp.prototype.toString.call("test");
-    assert(false, "did not throw!");
-  } catch(e) {
-    assert(true);
-  }
+    assert_equal("/abc/i", /abc/i.toString());
+    try {
+        RegExp.prototype.toString.call("test");
+        assert(false, "did not throw!");
+    } catch(e) {
+        assert(true);
+    }
+});
+
+test("\\c[A-Z]", function() {
+    assert(/\cA/.test("\x01"));
+    assert(/\ca/.test("\x01"));
+    assert(/\cZ/.test(String.fromCharCode(26)));
+    assert(/\cz/.test(String.fromCharCode(26)));
 });

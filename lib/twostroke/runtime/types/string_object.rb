@@ -12,14 +12,17 @@ module Twostroke::Runtime
         @string = string
         super()
       end
-    
-      def primitive_value
-        String.new string
+      
+      def to_ruby
+        string
       end
       
       def get(prop, this = self)
         if prop =~ /\A\d+\z/
-          String.new string[prop.to_i]
+          idx = prop.to_i
+          unless idx < 0 or idx >= string.length
+            String.new string[idx]
+          end
         else
           super prop, this
         end

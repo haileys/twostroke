@@ -28,6 +28,54 @@ test("sqrt", function() {
 	assert_feq(0, Math.sqrt(0));
 	assert_feq(4, Math.sqrt(16));
 	assert_feq(Math.PI, Math.sqrt(Math.PI * Math.PI));
+  assert(isNaN(Math.sqrt(-1)));
 });
+
+test("max", function() {
+    assert_equal(-Infinity, Math.max());
+    assert_equal(10, Math.max(10));
+    assert_equal(20, Math.max(0.5, 20));
+    assert(isNaN(Math.max(1, 2, NaN, 3, 4)));
+});
+
+test("min", function() {
+    assert_equal(Infinity, Math.min());
+    assert_equal(10, Math.min(10));
+    assert_equal(0.5, Math.min(0.5, 20));
+    assert(isNaN(Math.min(1, 2, NaN, 3, 4)));
+});
+
+test("parseInt", function() {
+  assert_equal(123, parseInt("123"));
+  assert_equal(123, parseInt("123", 10));
+  assert_equal(123, parseInt("0123", 10));
+  assert_equal(123, parseInt("0173"));
+  assert_equal(123, parseInt("173", 8));
+  assert_equal(123, parseInt("0x7b"));
+  assert_equal(123, parseInt("0X7B"));
+  assert_equal(123, parseInt("7b", 16));
+  
+  assert(isNaN(parseInt("123", 1)));
+  assert(isNaN(parseInt("123", 37)));
+  assert(isNaN(parseInt("f00")));
+});
+
+test("parseFloat", function() {
+    assert_equal(3.14, parseFloat("3.14"));
+    assert_equal(3.14, parseFloat("314e-2"));
+    assert_equal(3.14, parseFloat("0.0314E+2"));
+    assert_equal(3.14, parseFloat("3.14more non-digit characters"))
+    assert_equal(3.14, parseFloat("  \t3.14"));
+    assert(isNaN(parseFloat("what")));
+    assert(isNaN(parseFloat("")));
+    assert(isNaN(parseFloat("FF2")));
+});
+
+test("pow", function() {
+  assert_equal(27, Math.pow(3, 3));
+  assert_equal(4, Math.pow(16, 0.5));
+  assert_equal(1024, Math.pow(16, 2.5));
+  assert(isNaN(Math.pow(-1, 0.5)));
+})
 
 })();

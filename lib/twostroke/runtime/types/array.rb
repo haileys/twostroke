@@ -26,6 +26,10 @@ module Twostroke::Runtime
           end, writable: true, enumerable: false
       end
       
+      def to_ruby
+        items.map &:to_ruby
+      end
+      
       def length
         items.size
       end

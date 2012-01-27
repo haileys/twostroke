@@ -6,9 +6,6 @@ module Twostroke::AST
       @is_default = false
       super *args
     end
-    def collapse
-      self.class.new expression: expression && expression.collapse, statements: statements.collect(&:collapse)
-    end
     
     def walk(&bk)
       if yield self

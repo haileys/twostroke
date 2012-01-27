@@ -1,8 +1,6 @@
 module Twostroke::AST
   class Break < Base
-    def collapse
-      self
-    end
+    attr_accessor :label
     
     def walk
       yield self

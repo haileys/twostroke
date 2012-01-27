@@ -4,8 +4,8 @@ module Twostroke::Runtime
     scope.set_var "RegExp", regexp
     proto = Types::Object.new
     proto.proto_put "toString", Types::Function.new(->(scope, this, args) {
-        Lib.throw_type_error "RegExp.prototype.toString is not generic" unless this.is_a?(Types::RegExp)
-        this.primitive_value
+        Lib.throw_type_error "RegExp.prototype.toString is not generic" unless this.is_a? Types::RegExp
+        Types::String.new this.regexp.inspect + (this.global ? "g" : "")
       }, nil, "toString", [])
     proto.define_own_property "global", get: ->(this) {
         Types::Boolean.new this.global

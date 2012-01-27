@@ -4,17 +4,10 @@ module Twostroke::Runtime
     scope.set_var "Function", obj
     
     proto = Types::Object.new
-    proto.proto_put "toString", Types::Function.new(->(scope, this, args) {
-        if this.is_a?(Types::Function)
-          this.primitive_value
-        else
-          Lib.throw_type_error "Function.prototype.toString is not generic"
-        end
-      }, nil, "toString", [])
     proto.proto_put "valueOf", Types::Function.new(->(scope, this, args) { this }, nil, "valueOf", [])
-    proto.define_own_property "arity", get: ->(this) { this.arguments.size }, writable: false
-    proto.define_own_property "length", get: ->(this) { this.arguments.size }, writable: false
-    proto.define_own_property "name", get: ->(this) { this.name }, writable: false
+    proto.define_own_property "arity", get: ->(this) { Types::Number.new this.arguments.size }, writable: false
+    proto.define_own_property "length", get: ->(this) { Types::Number.new this.arguments.size }, writable: false
+    proto.define_own_property "name", get: ->(this) { Types::String.new this.name }, writable: false
     # Function.prototype.apply
     proto.proto_put "apply", Types::Function.new(->(scope, this, args) do
         Lib.throw_type_error "cannot call Function.prototype.apply on non-callable object" unless this.respond_to?(:call)
@@ -38,7 +31,8 @@ module Twostroke::Runtime
       end, nil, "call", [])
     # Function.prototype.toString
     proto.proto_put "toString", Types::Function.new(->(scope, this, args) do
-        this.primitive_value
+        Lib.throw_type_error "Function.prototype.toString is not generic" unless this.is_a? Types::Function
+        Types::String.new "function #{this.name}(#{this.arguments.join ","}) { #{this.source || "[native code]"} }"
       end, nil, "toString", [])
     obj.proto_put "prototype", proto
   end

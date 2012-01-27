@@ -1,4 +1,8 @@
+.*
+._*
 *.gem
 etc/
 coverage/
 test262*
+samples
+Gemfile.lock

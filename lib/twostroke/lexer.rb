@@ -12,7 +12,7 @@ module Twostroke
   end
   
   class Lexer
-    attr_accessor :str, :col, :line
+    attr_accessor :str, :col, :line, :restricted
     
     def state
       { str: str, col: col, line: line }
@@ -28,6 +28,14 @@ module Twostroke
       @col = 1
       @line = 1
       @line_terminator = false
+      @restricted = false
+    end
+    
+    def restrict
+      @restricted = true
+      retn = yield
+      @restricted = false
+      retn
     end
     
     def read_token(allow_regexp = true)
@@ -40,7 +48,7 @@ module Twostroke
           @col = 1 if !newlines.zero?
           @line += newlines
           @col += m[0].length - (m[0].rindex("\n") || 0)
-          if token[0] == :LINE_TERMINATOR or [:WHITESPACE, :MULTI_COMMENT, :SINGLE_COMMENT].include? token[0]
+          if [:WHITESPACE, :MULTI_COMMENT, :SINGLE_COMMENT].include?(token[0]) or (!restricted && token[0] == :LINE_TERMINATOR)
             return read_token(allow_regexp)
           else
             return tok

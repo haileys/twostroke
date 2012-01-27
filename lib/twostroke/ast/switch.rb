@@ -5,9 +5,6 @@ module Twostroke::AST
       @cases = []
       super *args
     end
-    def collapse
-      self.class.new expression: expression.collapse, cases: cases.collect(&:collapse)
-    end
     
     def walk(&bk)
       if yield self

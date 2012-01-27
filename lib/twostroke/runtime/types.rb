@@ -34,7 +34,7 @@ module Twostroke::Runtime::Types
     elsif object.is_a?(String)
       Number.new(Float(object.string)) rescue Number.new(Float::NAN)
     else # object is Object
-      to_number to_primitive(object)
+      to_number to_primitive(object, "Number")
     end
   end
   
@@ -66,11 +66,11 @@ module Twostroke::Runtime::Types
     elsif object.is_a?(Boolean)
       String.new object.boolean.to_s
     elsif object.is_a?(Number)
-      String.new object.number.to_s
+      String.new object.number.to_s.gsub(/\.0+\z/,"")
     elsif object.is_a?(String)
       object
     else
-      to_string to_primitive(object)
+      to_string to_primitive(object, "String")
     end
   end
   
@@ -125,6 +125,21 @@ module Twostroke::Runtime::Types
       a === b
     else
       false
+    end
+  end
+  
+  def self.marshal(ruby_object)
+    case ruby_object
+    when ::String, Symbol;  String.new ruby_object.to_s
+    when Fixnum, Float;     Number.new ruby_object
+    when ::Array;           Array.new ruby_object.map { |el| marshal el }
+    when Hash;              o = Object.new
+                            ruby_object.each { |k,v| o.put k.to_s, marshal(v) }
+                            o
+    when nil;               Null.new
+    when true;              Boolean.true
+    when false;             Boolean.false
+    else                    Undefined.new
     end
   end
   

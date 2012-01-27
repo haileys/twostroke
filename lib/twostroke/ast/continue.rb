@@ -1,8 +1,6 @@
 module Twostroke::AST
   class Continue < Base
-    def collapse
-      self
-    end
+    attr_accessor :label
     
     def walk
       yield self

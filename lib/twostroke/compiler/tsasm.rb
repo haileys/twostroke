@@ -2,12 +2,11 @@ class Twostroke::Compiler::TSASM
   attr_accessor :bytecode, :ast, :prefix
   
   def initialize(ast, prefix = nil)
-    @methods = Hash[self.class.private_instance_methods(false).map { |name| [name, true] }]
     @ast = ast
     @prefix = prefix
   end
   
-  def compile(node = nil)
+  def compile(node = nil, *opt_args)
     if node
       if node.respond_to? :each
         # hoist named functions to top
@@ -16,14 +15,10 @@ class Twostroke::Compiler::TSASM
       elsif node.is_a? Symbol
         send node
       else
-        if @methods[type(node)]
-          output :".line", @current_line = node.line if node.line and node.line > @current_line
-          @node_stack.push node
-          send type(node), node if node
-          @node_stack.pop
-        else
-          error! "#{type node} not implemented"
-        end
+        output :".line", @current_line = node.line if node.line and node.line > @current_line
+        @node_stack.push node
+        send type(node), node, *opt_args if node
+        @node_stack.pop
       end
     else
       @indent = 0
@@ -34,6 +29,7 @@ class Twostroke::Compiler::TSASM
       @break_stack = []
       @continue_stack = []
       @node_stack = []
+      @labels = {}
       @current_line = 0
             
       ast.each { |node| hoist node }
@@ -61,6 +57,8 @@ private
       bytecode[k] = v.select do |ins|
         if [:jmp, :jit, :jif, :pushcatch, :pushfinally, :jiee].include?(ins[0])
           ins[1] = labels_at[ins[1]]
+        elsif [:pushexh].include?(ins[0])
+          ins[1].map! { |x| labels_at[x] }
         end
         ins[0] != :".label"
       end
@@ -73,9 +71,11 @@ private
         output :".local", node.name.intern
         false
       elsif node.is_a? Twostroke::AST::Function
-        output :".local", node.name.intern if node.name
-        # because javascript is odd, entire function bodies need to be hoisted, not just their declarations
-        Function(node, true)
+        if node.name
+          output :".local", node.name.intern
+          # because javascript is odd, entire function bodies need to be hoisted, not just their declarations
+          Function(node, true)
+        end
         false
       else
         true
@@ -252,17 +252,14 @@ private
   def Call(node)
     if type(node.callee) == :MemberAccess
       compile node.callee.object
-      output :dup
-      output :member, node.callee.member.intern
+      output :push, node.callee.member.to_s
       node.arguments.each { |n| compile n }
-      output :thiscall, node.arguments.size
+      output :methcall, node.arguments.size
     elsif type(node.callee) == :Index
       compile node.callee.object
-      output :dup
       compile node.callee.index
-      output :index
       node.arguments.each { |n| compile n }
-      output :thiscall, node.arguments.size
+      output :methcall, node.arguments.size
     else
       compile node.callee
       node.arguments.each { |n| compile n }
@@ -305,18 +302,13 @@ private
       node.arguments.each do |arg|
         output :".arg", arg.intern
       end
-      output :".local", node.name.intern if node.name
       node.statements.each { |s| hoist s }
-      if node.name
-        output :callee
-        output :set, node.name.intern
-      end
       node.statements.each { |s| compile s }
       output :undefined
       output :ret
       pop_section
       output :close, fnid
-      output :set, node.name.intern if node.name
+      output :set, node.name.intern if node.name && !node.as_expression
     else  
       output :close, fnid
     end
@@ -373,6 +365,27 @@ private
   end
   
   def Try(node)
+    catch_label = uniqid if node.catch_variable
+    finally_label = uniqid
+    output :pushexh, [catch_label, finally_label]
+    compile node.try_statements
+    output :popexh
+    
+    if catch_label
+      output :".label", catch_label
+      output :".catch", node.catch_variable.intern
+      compile node.catch_statements
+      output :popcat
+    end
+    
+    output :".label", finally_label
+    output :".finally"
+    compile node.finally_statements if node.finally_statements
+    output :popfin
+  end
+
+=begin
+  def oldTry(node)
     if node.catch_variable
       catch_label = uniqid
       output :pushcatch, catch_label
@@ -382,7 +395,9 @@ private
       output :pushfinally, finally_label
     end
     end_label = uniqid
+    
     compile node.try_statements
+    
     # no exceptions? clean up
     output :popcatch if node.catch_variable
     output :jmp, finally_label
@@ -400,6 +415,7 @@ private
       output :endfinally
     end
   end
+=end
   
   def Or(node)
     compile node.left
@@ -437,12 +453,13 @@ private
     output :array, node.items.size
   end
   
-  def While(node)
+  def While(node, continue_label = nil)
     start_label = uniqid
     end_label = uniqid
     @continue_stack.push start_label
     @break_stack.push end_label
     output :".label", start_label
+    output :".label", continue_label if continue_label
     compile node.condition
     output :jif, end_label
     compile node.body
@@ -544,11 +561,26 @@ private
     @break_stack.pop
   end
   
+  def Label(node)
+    error! "Label '#{node.name}' has already been declared" if @labels[node.name]
+    end_label = uniqid
+    continue_label = uniqid
+    @labels[node.name] = { break: end_label }
+    if [:While, :DoWhile, :ForLoop, :ForIn].include? type(node.statement)
+      @labels[node.name][:continue] = continue_label
+      compile node.statement, continue_label
+    else
+      compile node.statement
+    end
+    output :".label", end_label
+    @labels.delete node.name
+  end
+  
   def Body(node)
     node.statements.each { |s| compile s }
   end
   
-  def DoWhile(node)
+  def DoWhile(node, continue_label = nil)
     start_label = uniqid
     next_label = uniqid
     end_label = uniqid
@@ -557,12 +589,13 @@ private
     output :".label", start_label
     compile node.body
     output :".label", next_label
+    output :".label", continue_label if continue_label
     compile node.condition
     output :jit, start_label
     output :".label", end_label
   end
   
-  def ForLoop(node)
+  def ForLoop(node, continue_label = nil)
     compile node.initializer if node.initializer
     start_label = uniqid
     next_label = uniqid
@@ -570,10 +603,13 @@ private
     @continue_stack.push next_label
     @break_stack.push end_label
     output :".label", start_label
-    compile node.condition if node.condition
-    output :jif, end_label
+    if node.condition
+      compile node.condition
+      output :jif, end_label
+    end
     compile node.body if node.body
     output :".label", next_label
+    output :".label", continue_label if continue_label
     compile node.increment if node.increment
     output :jmp, start_label
     output :".label", end_label
@@ -585,7 +621,7 @@ private
     output :enumnext
   end
   
-  def ForIn(node)
+  def ForIn(node, continue_label = nil)
     end_label = uniqid
     loop_label = uniqid
     @break_stack.push end_label
@@ -593,6 +629,7 @@ private
     compile node.object
     output :enum
     output :".label", loop_label
+    output :".label", continue_label if continue_label
     output :jiee, end_label
     mutate node.lval, :_enum_next
     compile node.body
@@ -614,13 +651,23 @@ private
   end
   
   def Break(node)
-    raise Twostroke::Compiler::CompileError, "Break not allowed outside of loop" unless @break_stack.any?
-    output :jmp, @break_stack.last
+    if node.label
+      error! "Undefined label '#{node.label}'" unless @labels[node.label]
+      output :jmp, @labels[node.label][:break]
+    else
+      error! "Break not allowed outside of loop" unless @break_stack.any?
+      output :jmp, @break_stack.last
+    end
   end
   
   def Continue(node)
-    raise Twostroke::Compiler::CompileError, "Continue not allowed outside of loop" unless @continue_stack.any?
-    output :jmp, @continue_stack.last
+    if node.label
+      error! "Undefined label '#{node.label}'" unless @labels[node.label]
+      output :jmp, @labels[node.label][:continue]
+    else
+      error! "Continue not allowed outside of loop" unless @continue_stack.any?
+      output :jmp, @continue_stack.last
+    end
   end
   
   def TypeOf(node)

@@ -9,6 +9,30 @@ bytecode = {}
 vm = Twostroke::Runtime::VM.new bytecode
 Twostroke::Runtime::Lib.setup_environment vm
 
+def repl_inspect(obj)
+  if obj.is_a? T::String
+    Paint[obj.string.inspect, :green]
+  elsif obj.is_a? T::Number
+    Paint[obj.number.inspect, :blue, :bright]
+  elsif obj.is_a? T::Boolean
+    Paint[obj.boolean.inspect, :cyan, :bright]
+  elsif obj.is_a? T::Null
+    Paint["null", :yellow]
+  elsif obj.is_a? T::Undefined
+    Paint["undefined", :yellow]
+  elsif obj.is_a? T::Function
+    Paint[obj.name.empty? ? "[Function]" : "[Function: #{obj.name}]", :cyan]
+  elsif obj.is_a? T::RegExp
+    Paint[obj.regexp.inspect + (obj.global ? "g" : ""), :bright, :red]
+  elsif obj.is_a? T::Array
+    "[#{obj.items.map(&method(:repl_inspect)).join(", ")}]"
+  elsif obj.is_a? T::Object and obj._class == T::Object.constructor_function
+    "{ #{obj.enum_for(:each_enumerable_property).map { |k| Paint[k, :magenta] + ": " + repl_inspect(obj.get(k)) }.join ", "} }"
+  else
+    Twostroke::Runtime::Types.to_string(obj).string
+  end
+end
+
 ARGV.reject { |inc| inc =~ /^--/ }.each do |inc|
   parser = Twostroke::Parser.new(Twostroke::Lexer.new(File.read inc))
   parser.parse
@@ -86,20 +110,7 @@ loop do
     if exception
       obj = exception
     end
-    str = if obj.is_a? T::String
-      Paint[obj.string.inspect, :green]
-    elsif obj.is_a? T::Number
-      Paint[obj.number.inspect, :blue, :bright]
-    elsif obj.is_a? T::Boolean
-      Paint[obj.boolean.inspect, :magenta]
-    elsif obj.is_a?(T::Null)
-      Paint["null", :yellow]
-    elsif obj.is_a?(T::Undefined)
-      Paint["undefined", :yellow]
-    else
-      Twostroke::Runtime::Types.to_string(obj).string
-    end
-    
+    str = repl_inspect obj    
     if exception
       print Paint["!!!", :white, :red] + " "
     else

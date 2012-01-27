@@ -7,10 +7,6 @@ module Twostroke::AST
       super *args
     end
     
-    def collapse
-      self.class.new callee: callee.collapse, arguments: arguments.map(&:collapse)
-    end
-    
     def walk(&bk)
       if yield self
         callee.walk &bk

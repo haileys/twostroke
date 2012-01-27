@@ -14,7 +14,7 @@ module Twostroke
     def parse
       while try_peek_token(true)
         st = statement
-        statements.push st.collapse if st # don't collapse
+        statements.push st if st
       end
     end
   
@@ -67,7 +67,7 @@ module Twostroke
       when :WHILE;      consume_semicolon = false; send :while
       when :TRY;        consume_semicolon = false; try
       when :OPEN_BRACE; consume_semicolon = false; body
-      when :FUNCTION;   consume_semicolon = false; function
+      when :FUNCTION;   consume_semicolon = false; function(false)
       when :SEMICOLON;  nil
       when :LINE_TERMINATOR;  nil
       when :BAREWORD;   label
@@ -303,11 +303,11 @@ module Twostroke
       
       expr = call_expression
       
-      if peek_token.type == :INCREMENT
+      if try_peek_token and peek_token.type == :INCREMENT
         next_token
         return AST::PostIncrement.new line: token.line, value: expr
       end
-      if peek_token.type == :DECREMENT
+      if try_peek_token and peek_token.type == :DECREMENT
         next_token
         return AST::PostDecrement.new line: token.line, value: expr
       end
@@ -331,7 +331,7 @@ module Twostroke
     
     def value_expression
       case peek_token(true).type
-      when :FUNCTION;     function
+      when :FUNCTION;     function(true)
       when :STRING;       string
       when :NUMBER;       number
       when :REGEXP;       regexp
@@ -375,7 +375,8 @@ module Twostroke
       assert_type next_token, :OPEN_BRACE
       body = AST::Body.new line: token.line
       while peek_token.type != :CLOSE_BRACE
-        body.statements.push statement
+        stmt = statement
+        body.statements.push stmt if stmt
       end
       assert_type next_token, :CLOSE_BRACE
       body
@@ -481,7 +482,7 @@ module Twostroke
           expr = expression
           node = AST::Case.new line: token.line, expression: expr
           assert_type next_token, :COLON
-          sw.cases << node
+          sw.cases << node if node
           current_case = node.statements
         elsif peek_token.type == :DEFAULT
           assert_type next_token, :DEFAULT
@@ -489,11 +490,12 @@ module Twostroke
           default = true
           node = AST::Case.new line: token.line
           assert_type next_token, :COLON
-          sw.cases << node
+          sw.cases << node if node
           current_case = node.statements
         else
           error! "statements may only appear under a case" if current_case.nil?
-          current_case << statement
+          stmt = statement
+          current_case << stmt if stmt
         end
       end
       assert_type next_token, :CLOSE_BRACE
@@ -520,11 +522,12 @@ module Twostroke
     end
     
     def try
-      try = AST::Try.new line: token.line, try_statements: []
       assert_type next_token, :TRY
+      try = AST::Try.new line: token.line, try_statements: []
       assert_type next_token, :OPEN_BRACE
       while peek_token.type != :CLOSE_BRACE
-        try.try_statements << statement
+        stmt = statement
+        try.try_statements << stmt if stmt
       end
       assert_type next_token, :CLOSE_BRACE
       assert_type next_token, :CATCH, :FINALLY
@@ -536,16 +539,18 @@ module Twostroke
         assert_type next_token, :CLOSE_PAREN
         assert_type next_token, :OPEN_BRACE
         while peek_token.type != :CLOSE_BRACE
-          try.catch_statements << statement
+          stmt = statement
+          try.catch_statements << stmt if stmt
         end
         assert_type next_token, :CLOSE_BRACE
+        next_token if try_peek_token(true) && peek_token(true).type == :FINALLY
       end
-      if try_peek_token && peek_token.type == :FINALLY
+      if token && token.type == :FINALLY
         try.finally_statements = []
-        assert_type next_token, :FINALLY
         assert_type next_token, :OPEN_BRACE
         while peek_token.type != :CLOSE_BRACE
-          try.finally_statements << statement
+          stmt = statement
+          try.finally_statements << stmt if stmt
         end
         assert_type next_token, :CLOSE_BRACE
       end
@@ -580,23 +585,49 @@ module Twostroke
     end
     
     def return
-      assert_type next_token, :RETURN
+      tok = @lexer.restrict do
+        assert_type next_token, :RETURN
+        peek_token true
+      end
+      if tok.type == :LINE_TERMINATOR
+        next_token true
+        return AST::Return.new line: token.line
+      end
       expr = expression unless peek_token.type == :SEMICOLON || peek_token.type == :CLOSE_BRACE
       AST::Return.new line: token.line, expression: expr
     end
     
     def break
-      assert_type next_token, :BREAK
-      AST::Break.new line: token.line
+      tok = @lexer.restrict do
+        assert_type next_token, :BREAK
+        peek_token
+      end
+      if tok.type == :LINE_TERMINATOR
+        next_token
+        return AST::Break.new line: token.line
+      end
+      label = next_token.val if try_peek_token and peek_token.type == :BAREWORD
+      AST::Break.new line: token.line, label: label
     end
     
     def continue
-      assert_type next_token, :CONTINUE
-      AST::Continue.new line: token.line
+      tok = @lexer.restrict do
+        assert_type next_token, :CONTINUE
+        peek_token
+      end
+      if tok.type == :LINE_TERMINATOR
+        next_token
+        return AST::Continue.new line: token.line
+      end
+      label = next_token.val if try_peek_token and peek_token.type == :BAREWORD
+      AST::Continue.new line: token.line, label: label
     end
     
     def throw
-      assert_type next_token, :THROW
+      tok = @lexer.restrict do
+        assert_type next_token, :THROW
+        error! "illegal newline after throw" if peek_token(true).type == :LINE_TERMINATOR
+      end
       AST::Throw.new line: token.line, expression: expression
     end
     
@@ -655,9 +686,10 @@ module Twostroke
         key = token
         assert_type next_token, :COLON
         obj.items.push [key, assignment_expression]
+        assert_type peek_token, :COMMA, :CLOSE_BRACE
         if peek_token.type == :COMMA
           next_token
-          redo
+          next
         end
       end
       next_token
@@ -668,10 +700,17 @@ module Twostroke
       assert_type next_token, :OPEN_BRACKET
       ary = AST::Array.new line: token.line
       while peek_token(true).type != :CLOSE_BRACKET
-        ary.items.push assignment_expression
+        unless empty_flag = peek_token(true).type == :COMMA
+          ary.items.push assignment_expression
+        end
+        assert_type peek_token, :COMMA, :CLOSE_BRACKET
         if peek_token.type == :COMMA
           next_token
-          redo
+          # ** hack: **
+          if empty_flag and peek_token(true).type != :CLOSE_BRACKET
+            ary.items.push AST::Void.new value: AST::Number.new(number: 0) # <-- hack
+          end
+          next
         end
       end
       next_token
@@ -685,9 +724,9 @@ module Twostroke
       expr
     end
     
-    def function
+    def function(as_expr)
       assert_type next_token, :FUNCTION
-      fn = AST::Function.new line: token.line, arguments: [], statements: []
+      fn = AST::Function.new line: token.line, arguments: [], statements: [], as_expression: as_expr
       error! unless [:BAREWORD, :OPEN_PAREN].include? next_token.type
       if token.type == :BAREWORD
         fn.name = token.val
@@ -700,7 +739,8 @@ module Twostroke
       assert_type next_token, :CLOSE_PAREN
       assert_type next_token, :OPEN_BRACE
       while peek_token.type != :CLOSE_BRACE
-        fn.statements.push statement
+        stmt = statement
+        fn.statements << stmt if stmt
       end
       assert_type next_token, :CLOSE_BRACE
       fn

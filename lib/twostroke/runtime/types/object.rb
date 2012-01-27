@@ -13,6 +13,10 @@ module Twostroke::Runtime::Types
       proto_put "constructor", @_class
     end
     
+    def to_ruby
+      Twostroke::Context::ObjectProxy.new self
+    end
+    
     def _class=(c)
       proto_put "constructor", (@_class = c)
     end
@@ -41,15 +45,10 @@ module Twostroke::Runtime::Types
     
     def construct(opts = {})
       @constructing = true
-      opts.each do |k,v|
-        if respond_to? "#{k}="
-          send "#{k}=", v
-        else
-          instance_variable_set "@#{k}", v
-        end
-      end
+      opts.each { |k,v| send "#{k}=", v }
       yield if block_given?
       @constructing = false
+      self
     end
     
     def get(prop, this = self)
@@ -133,7 +132,7 @@ module Twostroke::Runtime::Types
       end
     end
     
-    def default_value(hint = nil)      
+    def default_value(hint = nil)
       if hint.nil?
         # @TODO
         # hint = is_a?(Date) ? "String" : "Number"
@@ -165,6 +164,8 @@ module Twostroke::Runtime::Types
         end
         Twostroke::Runtime::Lib.throw_type_error "could not convert object to string"
       end
+
+      Twostroke::Runtime::Lib.throw_type_error "could not convert object to string"
     end
     
     def define_own_property(prop, descriptor)
