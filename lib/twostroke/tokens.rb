@@ -115,6 +115,7 @@ module Twostroke
       [ :GTE, />=/ ],
       [ :LT, /</ ],
       [ :GT, />/ ],
+      [ :INFIX, /`/ ],
 
     ].map do |a|
       [a[0], Regexp.new("\\A#{a[1].source}", Regexp::MULTILINE), a[2]]

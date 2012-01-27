@@ -211,9 +211,20 @@ module Twostroke
         :IN           => AST::In,
         :INSTANCEOF   => AST::InstanceOf
       }
-      expr = shift_expression
+      expr = infix_expression
       while try_peek_token(true) and nodes.keys.include? peek_token(true).type
-        expr = nodes[next_token(true).type].new left: expr, line: token.line, right: shift_expression
+        expr = nodes[next_token(true).type].new left: expr, line: token.line, right: infix_expression
+      end
+      expr
+    end
+    
+    def infix_expression
+      expr = shift_expression
+      while try_peek_token and peek_token.type == :INFIX
+        next_token
+        infix = shift_expression
+        assert_type next_token, :INFIX
+        expr = AST::Call.new callee: infix, arguments: [expr, shift_expression]
       end
       expr
     end
