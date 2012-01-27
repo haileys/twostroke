@@ -311,7 +311,7 @@ module Twostroke
     def value_expression
       case peek_token(true).type
       when :FUNCTION;     function(true)
-      when :BLOCK;        function
+      when :BLOCK;        function(true)
       when :STRING;       string
       when :NUMBER;       number
       when :REGEXP;       regexp
