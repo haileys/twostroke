@@ -36,7 +36,7 @@ module Twostroke::Runtime
         global = find.is_a?(Types::RegExp) && find.global
         
         replace = args[1] || Types::Undefined.new
-        callback = replace.respond_to?(:call) ? replace : ->(*_) { replace }
+        callback = replace.respond_to?(:call) ? replace : ->* { replace }
         
         retn = ""
         offset = 0
@@ -44,7 +44,7 @@ module Twostroke::Runtime
           md = re.match s, offset
           break unless md && (offset.zero? || global)
           retn << md.pre_match[offset..-1]
-          retn << Types.to_string(callback.(scope, nil, [*md.to_a.map { |c| Types::String.new c }, Types::Number.new(md.begin 0), sobj])).string
+          retn << Types.to_string(callback.(scope, nil, [*md.to_a.map { |c| Types::String.new(c || "") }, Types::Number.new(md.begin 0), sobj])).string
           offset = md.end 0
         end
         
@@ -52,6 +52,25 @@ module Twostroke::Runtime
 
         Types::String.new retn
       }, nil, "replace", [])
+    # String.prototype.substring
+    proto.proto_put "substring", Types::Function.new(->(scope, this, args) {
+        indexA = args[0] && Types.to_int32(args[0])
+        indexB = args[1] && Types.to_int32(args[1])
+        str = Types.to_string(this).string
+        return Types::String.new(str) unless indexA
+        return Types::String.new(str[indexA..-1] || "") unless indexB
+        indexA, indexB = indexB, indexA if indexB < indexA
+        Types::String.new(str[indexA...indexB] || "")
+      }, nil, "substring", [])
+    # String.prototype.substr
+    proto.proto_put "substr", Types::Function.new(->(scope, this, args) {
+        index = args[0] && Types.to_int32(args[0])
+        len = args[1] && Types.to_uint32(args[1])
+        str = Types.to_string(this).string
+        return Types::String.new(str) unless index
+        return Types::String.new(str[index..-1] || "") unless len
+        Types::String.new(str[index, len] || "")
+      }, nil, "substr", [])
     # String.prototype.slice
     proto.proto_put "slice", Types::Function.new(->(scope, this, args) {
         sobj = Types.to_string(this)
@@ -120,7 +139,7 @@ module Twostroke::Runtime
     obj.proto_put "prototype", proto
     
     obj.proto_put "fromCharCode", Types::Function.new(->(scope, this, args) {
-        Types::String.new args.map { |a| Types.to_number(a).number.to_i.chr }.join
+        Types::String.new args.map { |a| Types.to_number(a).number.to_i.chr "utf-8" }.join
       }, nil, "fromCharCode", [])
   end
 end

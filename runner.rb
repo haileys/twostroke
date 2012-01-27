@@ -25,6 +25,15 @@ end
 
 ex = catch(:exception) { vm.execute; nil }
 if ex
-  puts "Uncaught exception: #{Twostroke::Runtime::Types.to_string(ex).string}"
+  if ex.respond_to? :get and stack = ex.get("stack") and stack.is_a? Twostroke::Runtime::Types::String
+    puts stack.string
+  else
+    puts "Uncaught exception: #{Twostroke::Runtime::Types.to_string(ex).string}"
+  end
   exit 1
+end
+
+if ARGV.include? "--post-pry"
+  require "pry"
+  pry binding
 end

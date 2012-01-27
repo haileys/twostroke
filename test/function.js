@@ -55,16 +55,34 @@ test("new with array index", function() {
 });
 
 test("instanceof", function() {
-  assert(!("hi" instanceof String));
-  assert(new String("hi") instanceof String);
-  var x = String;
-  assert(new x("hi") instanceof String);
-  assert(new String("hi") instanceof x);
-  assert(Function instanceof Function);
-  try {
-    String instanceof new String("hi");
-    assert(false, "did not throw");
-  } catch(e) {
-    assert(/instanceof/.test(e.toString()));
-  }
+    assert(!("hi" instanceof String));
+    assert(new String("hi") instanceof String);
+    var x = String;
+    assert(new x("hi") instanceof String);
+    assert(new String("hi") instanceof x);
+    assert(Function instanceof Function);
+    try {
+        String instanceof new String("hi");
+        assert(false, "did not throw");
+    } catch(e) {
+        assert(/instanceof/.test(e.toString()));
+    }
+});
+
+test("function constructor", function() {
+    var f = new Function("return 123;");
+    assert_equal(123, f());
+});
+
+test("function constructor arguments", function() {
+    var f = new Function("a", "b", "return a + b;");
+    assert_equal(3, f(1,2));
+});
+
+test("function constructor comma separated arguments", function() {
+    var f = new Function("a,b", "return a + b;");
+    assert_equal(3, f(1,2));
+    
+    var f = new Function("a,b", "c,d", "return a + b + c + d;");
+    assert_equal(10, f(1,2,3,4));
 });

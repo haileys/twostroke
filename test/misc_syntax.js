@@ -214,6 +214,7 @@ test("labelled continue do-while", function() {
         } while(false);
         assert(false);
     } while(false);
+    assert(true);
 });
 
 test("labelled continue for-loop", function() {
@@ -249,6 +250,11 @@ test("labelled continue for-in", function() {
         }
     }
     assert_equal(15, a);
+});
+
+test("labelled block", function() {
+    eval("a: { };");
+    assert(true);
 });
 
 test("floating point is used for large numbers but not for small numbers", function() {

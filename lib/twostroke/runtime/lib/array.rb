@@ -45,9 +45,9 @@ module Twostroke::Runtime
       end_index = Types.to_number(args[1] || Types::Undefined.new)
       begin_index = Types::Number.new(0) if begin_index.nan? || begin_index.infinite?
       if end_index.nan? || end_index.infinite?
-        Types::Array.new this.generic_items[begin_index.number.to_i..-1]
+        Types::Array.new(this.generic_items[begin_index.number.to_i..-1] || [])
       else
-        Types::Array.new this.generic_items[begin_index.number.to_i...end_index.number.to_i]
+        Types::Array.new(this.generic_items[begin_index.number.to_i...end_index.number.to_i] || [])
       end
     }, nil, "slice", [])
     # Array.prototype.splice

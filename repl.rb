@@ -22,6 +22,8 @@ def repl_inspect(obj)
     Paint["undefined", :yellow]
   elsif obj.is_a? T::Function
     Paint[obj.name.empty? ? "[Function]" : "[Function: #{obj.name}]", :cyan]
+  elsif obj.is_a? T::RegExp
+    Paint[obj.regexp.inspect + (obj.global ? "g" : ""), :bright, :red]
   elsif obj.is_a? T::Array
     "[#{obj.items.map(&method(:repl_inspect)).join(", ")}]"
   elsif obj.is_a? T::Object and obj._class == T::Object.constructor_function

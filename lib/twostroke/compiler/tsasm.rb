@@ -71,9 +71,11 @@ private
         output :".local", node.name.intern
         false
       elsif node.is_a? Twostroke::AST::Function
-        output :".local", node.name.intern if node.name
-        # because javascript is odd, entire function bodies need to be hoisted, not just their declarations
-        Function(node, true)
+        if node.name
+          output :".local", node.name.intern
+          # because javascript is odd, entire function bodies need to be hoisted, not just their declarations
+          Function(node, true)
+        end
         false
       else
         true
@@ -250,17 +252,14 @@ private
   def Call(node)
     if type(node.callee) == :MemberAccess
       compile node.callee.object
-      output :dup
-      output :member, node.callee.member.intern
+      output :push, node.callee.member.to_s
       node.arguments.each { |n| compile n }
-      output :thiscall, node.arguments.size
+      output :methcall, node.arguments.size
     elsif type(node.callee) == :Index
       compile node.callee.object
-      output :dup
       compile node.callee.index
-      output :index
       node.arguments.each { |n| compile n }
-      output :thiscall, node.arguments.size
+      output :methcall, node.arguments.size
     else
       compile node.callee
       node.arguments.each { |n| compile n }
@@ -309,7 +308,7 @@ private
       output :ret
       pop_section
       output node.is_block ? :block : :close, fnid
-      output :set, node.name.intern if node.name
+      output :set, node.name.intern if node.name && !node.as_expression
     else  
       output node.is_block ? :block : :close, fnid
     end
@@ -604,8 +603,10 @@ private
     @continue_stack.push next_label
     @break_stack.push end_label
     output :".label", start_label
-    compile node.condition if node.condition
-    output :jif, end_label
+    if node.condition
+      compile node.condition
+      output :jif, end_label
+    end
     compile node.body if node.body
     output :".label", next_label
     output :".label", continue_label if continue_label

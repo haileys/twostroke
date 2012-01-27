@@ -36,12 +36,18 @@ module Twostroke::Runtime
         scope.set_var :arguments, arguments_object
       end
       
-      until @return
+      until @return or @ip >= insns.size
         ins, arg = insns[@ip]
+        if vm.instruction_trace
+          # if an instruction trace callback is set, call it with information about this ins
+          vm.instruction_trace.call @section, @ip, ins, arg
+        end
         @ip += 1
         if ex = catch(:exception) { send ins, arg; nil }
           @exception = ex
-#          puts "--> #{Types.to_string(exception).string}  #{@name || "(anonymous function)"}:#{@line}  <#{@section}+#{@ip}>"
+          if ex.respond_to? :data and ex.data[:exception_stack]
+            ex.data[:exception_stack] << "at #{@this._class && @this._class.name}.#{@name || "(anonymous function)"}:#{@line}  <#{@section}+#{@ip}>"
+          end
           throw :exception, @exception if ex_stack.empty?
           @ip = ex_stack.last[:catch] || ex_stack.last[:finally]
         end
@@ -52,6 +58,9 @@ module Twostroke::Runtime
     
     define_method ".line" do |arg|
       @line = arg
+      if vm.line_trace
+        vm.line_trace.call @section, @line
+      end
     end
     
     define_method ".name" do |arg|
@@ -107,6 +116,20 @@ module Twostroke::Runtime
       Lib.throw_type_error "called non callable" unless fun.respond_to?(:call)
       this_arg = Types.to_object stack.pop
       stack.push fun.call(scope, fun.inherits_caller_this ? @this : this_arg, args)
+    end
+    
+    def methcall(arg)
+      args = []
+      arg.times { args.unshift stack.pop }
+      prop = Types.to_string(stack.pop).string
+      obj = Types.to_object stack.pop
+      fun = obj.get prop
+      unless fun.respond_to? :call
+        fun = obj.get "__noSuchMethod__"
+        Lib.throw_type_error "called non callable" unless fun.respond_to? :call
+        args = [Types::String.new(prop), Types::Array.new(args)]
+      end
+      stack.push fun.call(scope, fun.inherits_caller_this ? @this : obj, args)
     end
     
     def newcall(arg)

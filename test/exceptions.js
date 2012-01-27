@@ -11,6 +11,7 @@ test("code after throw is not executed", function() {
         throw 1;
         assert(false);
     } catch(e) {
+        assert(true);
     }
 });
 
@@ -127,5 +128,22 @@ test("nested try/catches work", function() {
         }
     } catch(e) {
         assert(e === 2);
+    }
+});
+
+test("exceptions have stack trace", function() {
+    try {
+        (function fnA() {
+            (function fnB() {
+                (function fnC() {
+                    throw new TypeError;
+                })();
+            })();
+        })();
+        assert(false, "did not throw");
+    } catch(e) {
+        var stack = e.stack;
+        assert(stack.indexOf("fnC") < stack.indexOf("fnB"));
+        assert(stack.indexOf("fnB") < stack.indexOf("fnA"));
     }
 });

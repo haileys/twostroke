@@ -7,10 +7,6 @@ module Twostroke::AST
       super *args
     end
     
-    def collapse
-      self.class.new statements: statements.reject(&:nil?).map(&:collapse)
-    end
-    
     def walk(&bk)
       if yield self
         statements.each { |s| s.walk &bk }

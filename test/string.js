@@ -126,3 +126,18 @@ i");
   assert_equal(" ", "\u0020");
   assert_equal(" ", "\40");
 });
+
+test("substring", function() {
+    assert_equal("foobar", "foobar".substring());
+    assert_equal("foobar", "foobar".substring(0, 6));
+    assert_equal("ar", "foobar".substring(-2, 6));
+    assert_equal("ob", "foobar".substring(2, 4));
+    assert_equal("bar", "foobar".substring(3));
+});
+
+test("comparison", function() {
+    assert("hello" > "a");
+    assert("a" < "b");
+    assert("a" <= "a");
+    assert("A" < "a");
+});

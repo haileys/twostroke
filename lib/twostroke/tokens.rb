@@ -1,5 +1,25 @@
 module Twostroke
   class Lexer
+    def self.unescape_string(str)
+      str.gsub(/\\(([0-6]{1,3})|u([a-f0-9]{4})|x([a-f0-9]{2})|\n|.)/i) do |m|
+        case m
+        when /\\([0-6]{1,3})/; m[1..-1].to_i(8).chr "utf-8" 
+        when /\\u([a-f0-9]{4})/i; m[2..-1].to_i(16).chr "utf-8"
+        when /\\x([a-f0-9]{2})/i; m[2..-1].to_i(16).chr "utf-8"
+        else case m[1]
+               when "b"; "\b"
+               when "n"; "\n"
+               when "f"; "\f"
+               when "v"; "\v"
+               when "r"; "\r"
+               when "t"; "\t"
+               when "\n"; ""
+               else; m[1]
+             end
+        end
+      end
+    end
+
     RESERVED = %w(
       function var if instanceof in else for while do this return
         throw typeof try catch finally void null new delete switch
@@ -26,27 +46,21 @@ module Twostroke
       end,
       [ :BAREWORD, /[a-zA-Z_\$][\$a-zA-Z_0-9]*/, ->m { m[0] } ],
 
-      [ :STRING, /(["'])((\\\n|\\.|[^\n\r\u2028\u2029\1])*?[^\1\\]?)\1/, ->m do
-        m[2].gsub(/\\(([0-6]{1,3})|u([a-f0-9]{4})|x([a-f0-9]{2})|\n|.)/i) do |m|
-          case m
-          when /\\([0-6]{1,3})/; m[1..-1].to_i(8).chr "utf-8" 
-          when /\\u([a-f0-9]{4})/i; m[2..-1].to_i(16).chr "utf-8"
-          when /\\x([a-f0-9]{2})/i; m[2..-1].to_i(16).chr "utf-8"
-          else case m[1]
-                 when "b"; "\b"
-                 when "n"; "\n"
-                 when "f"; "\f"
-                 when "v"; "\v"
-                 when "r"; "\r"
-                 when "t"; "\t"
-                 when "\n"; ""
-                 else; m[1]
-               end
-          end
-        end
-      end ],
+      [ :STRING, /(["'])((\\\n|\\.|[^\n\r\u2028\u2029\1])*?[^\1\\]?)\1/, ->m { unescape_string m[2] } ],
       
-      [ :REGEXP, %r{/(?<src>(\\.|[^\1])*?[^\1\\]?)/(?<opts>[gim]+)?}, ->m { [m[:src], m[:opts]] } ],
+      [ :REGEXP, %r{/(?<src>(\\.|[^\1])*?[^\1\\]?)/(?<opts>[gim]+)?}, ->m {
+        str = m[:src].
+              gsub(/\\u([0-9a-f]{4})/i) { |m| m[2..-1].hex.chr "utf-8" }.
+              gsub(/\\x([0-9a-f]{2})/i) { |m|
+                cp = m[2..-1].hex
+                if cp < 127
+                  "\\x#{cp.to_s 16}"
+                else
+                  cp.chr "utf-8"
+                end
+              }
+        [str, m[:opts]]
+      } ],
 
       [ :OPEN_PAREN, /\(/ ],
       [ :CLOSE_PAREN, /\)/ ],

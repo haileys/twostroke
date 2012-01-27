@@ -5,9 +5,9 @@ module Twostroke::Runtime
     
     proto = Types::Object.new
     proto.proto_put "valueOf", Types::Function.new(->(scope, this, args) { this }, nil, "valueOf", [])
-    proto.define_own_property "arity", get: ->(this) { this.arguments.size }, writable: false
-    proto.define_own_property "length", get: ->(this) { this.arguments.size }, writable: false
-    proto.define_own_property "name", get: ->(this) { this.name }, writable: false
+    proto.define_own_property "arity", get: ->(this) { Types::Number.new this.arguments.size }, writable: false
+    proto.define_own_property "length", get: ->(this) { Types::Number.new this.arguments.size }, writable: false
+    proto.define_own_property "name", get: ->(this) { Types::String.new this.name }, writable: false
     # Function.prototype.apply
     proto.proto_put "apply", Types::Function.new(->(scope, this, args) do
         Lib.throw_type_error "cannot call Function.prototype.apply on non-callable object" unless this.respond_to?(:call)
