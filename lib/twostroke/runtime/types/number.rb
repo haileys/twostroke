@@ -2,7 +2,7 @@ module Twostroke::Runtime::Types
   class Number < Primitive    
     attr_reader :number
     def initialize(number)
-      @number = number
+      @number = number.to_f
     end
     
     def to_ruby
