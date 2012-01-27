@@ -32,7 +32,12 @@ module Twostroke::Runtime::Types
     elsif object.is_a?(Number)
       object
     elsif object.is_a?(String)
-      Number.new(Float(object.string)) rescue Number.new(Float::NAN)
+      str = object.string.strip
+      if str.empty?
+        Number.new 0
+      else  
+        Number.new(Float(str)) rescue Number.new(Float::NAN)
+      end
     else # object is Object
       to_number to_primitive(object, "Number")
     end

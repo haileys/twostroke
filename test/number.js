@@ -65,6 +65,8 @@ test("Number", function() {
 	assert_equal(0, Number(null));
 	assert_equal(0, Number(false));
 	assert_equal(1, Number(true));
+	assert_equal(0, Number(""));
+	assert_equal(0, Number("     "));
 	assert_equal(123, Number("123"));
 	assert_equal(123.456, Number("123.456"));
 	assert_equal(5, Number({ toString: function() { return "5"; } }));
