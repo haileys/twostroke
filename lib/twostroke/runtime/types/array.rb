@@ -7,7 +7,7 @@ module Twostroke::Runtime
               if args.length.zero?
                 Array.new
               elsif args.length == 1
-                Array.new([nil] * Twostroke::Runtime::Types.to_uint32(args[0]))
+                Array.new([nil] * Types.to_uint32(args[0]))
               else
                 Array.new args
               end
