@@ -17,6 +17,15 @@ module Twostroke::Runtime
       end, nil, "toString", [])
     # Array.prototype.valueOf
     proto.proto_put "valueOf", Types::Function.new(->(scope, this, args) { this }, nil, "valueOf", [])
+    # Array.prototype.forEach
+    proto.proto_put "forEach", Types::Function.new(->(scope, this, args) {
+      obj = args[1] && Types.is_truthy(args[1]) ? Types.to_object(args[1]) : this
+      callback = args[0]
+      Lib.throw_type_error "expected function" unless args[0].is_a? Types::Function
+      this.generic_items.each_with_index do |x,i|
+        args[0].call nil, obj, [x || Types::Undefined.new, Types::Number.new(i), this]
+      end
+    }, nil, "forEach", [])
     # Array.prototype.pop
     proto.proto_put "pop", Types::Function.new(->(scope, this, args) {
       Lib.throw_type_error "Array.prototype.pop is not generic" unless this.is_a? Types::Array
