@@ -54,6 +54,15 @@ test("length=", function() {
   assert("1,2,3,4" == a);
 });
 
+test("join", function() {
+    assert_equal("", [].join(""));
+    assert_equal("", [].join(","));
+    assert_equal("12", [1,2].join(""));
+    assert_equal("1,2", [1,2].join(","));
+    assert_equal("1,2", [1,2].join());
+    assert_equal(",,,,", Array(5).join(), "join sparse array");
+});
+
 test("concat", function() {
   var a = [];
   

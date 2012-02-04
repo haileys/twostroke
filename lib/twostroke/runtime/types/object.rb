@@ -48,6 +48,7 @@ module Twostroke::Runtime::Types
       opts.each { |k,v| send "#{k}=", v }
       yield if block_given?
       @constructing = false
+      self
     end
     
     def get(prop, this = self)

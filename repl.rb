@@ -25,7 +25,7 @@ def repl_inspect(obj)
   elsif obj.is_a? T::RegExp
     Paint[obj.regexp.inspect + (obj.global ? "g" : ""), :bright, :red]
   elsif obj.is_a? T::Array
-    "[#{obj.items.map(&method(:repl_inspect)).join(", ")}]"
+    "[#{obj.items.reject(&:nil?).map(&method(:repl_inspect)).join(", ")}]"
   elsif obj.is_a? T::Object and obj._class == T::Object.constructor_function
     "{ #{obj.enum_for(:each_enumerable_property).map { |k| Paint[k, :magenta] + ": " + repl_inspect(obj.get(k)) }.join ", "} }"
   else
@@ -109,6 +109,9 @@ loop do
     exception = catch(:exception) { obj = vm.execute(:"repl_#{sect}_main", vm.global_scope) || Twostroke::Runtime::Types::Undefined.new; nil }
     if exception
       obj = exception
+      vm.global_scope.set_var "$EX", obj
+    else  
+      vm.global_scope.set_var "$_", obj
     end
     str = repl_inspect obj    
     if exception

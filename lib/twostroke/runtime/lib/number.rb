@@ -50,7 +50,7 @@ module Twostroke::Runtime
         else
           digits = digits.number
         end
-        digits = [[0,digits].max,20].min
+        digits = [[0,digits].max,20].min.to_i
         Types::String.new sprintf("%.#{digits}f", Types.to_number(this).number.round(digits))
       end, nil, "toFixed", [])
     # Number.prototype.toLocaleString
