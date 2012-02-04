@@ -177,6 +177,12 @@ private
     output :not
   end
   
+  def UserOperator(node)
+    compile node.left
+    compile node.right
+    output :userop, node.operator
+  end
+  
   def post_mutate(left, op)
     if type(left) == :Variable || type(left) == :Declaration
       output :push, left.name.intern

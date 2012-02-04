@@ -224,9 +224,17 @@ module Twostroke
         :RIGHT_TRIPLE_SHIFT => AST::RightArithmeticShift,
         :RIGHT_SHIFT        => AST::RightLogicalShift
       }
-      expr = additive_expression
+      expr = user_expression
       while try_peek_token and nodes.keys.include? peek_token.type
-        expr = nodes[next_token.type].new left: expr, line: token.line, right: additive_expression
+        expr = nodes[next_token.type].new left: expr, line: token.line, right: user_expression
+      end
+      expr
+    end
+
+    def user_expression
+      expr = additive_expression
+      while try_peek_token and peek_token.type == :USER_OP
+        expr = AST::UserOperator.new left: expr, operator: next_token.val, line: token.line, right: additive_expression
       end
       expr
     end

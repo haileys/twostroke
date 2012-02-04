@@ -29,6 +29,14 @@ module Twostroke::Runtime
       trace_handler.call :instruction, sc, this, args
     }, nil, "setInstructionTrace", ["callback"])
     
+    ts.put "addOperator", Types::Function.new(->(sc, this, args) {
+      oper = Types.to_string(args[0] || Types::Undefined.new).string
+      fn = args[1]
+      Lib.throw_type_error "expected function" unless fn.respond_to? :call
+      Twostroke::Lexer::TOKENS.unshift [ :USER_OP, Regexp.new("\\A#{Regexp.escape oper}", Regexp::MULTILINE), ->m { m[0] } ]
+      vm.user_operators[oper] = fn
+    }, nil, "addOperator", ["operator", "fn"])
+    
     scope.set_var "Twostroke", ts
   end
 end

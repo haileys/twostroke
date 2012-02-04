@@ -331,6 +331,14 @@ module Twostroke::Runtime
       stack.push Types::Number.new(l >> r)
     end
     
+    def userop(arg)
+      r = stack.pop
+      l = stack.pop
+      fn = @vm.user_operators[arg]
+      Lib.throw_type_error "undefined user operator #{arg}" unless fn
+      stack.push fn.call(@scope, nil, [l, r])
+    end
+    
     def add(arg)
       r = stack.pop
       l = stack.pop

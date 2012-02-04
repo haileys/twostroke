@@ -1,6 +1,6 @@
 module Twostroke::Runtime
   class VM    
-    attr_accessor :bytecode
+    attr_accessor :bytecode, :user_operators
     attr_reader :global_scope, :lib
     attr_accessor :line_trace, :instruction_trace
     
@@ -10,6 +10,7 @@ module Twostroke::Runtime
       @lib = {}
       @name_args = {}
       @vm_eval_counter = 0
+      @user_operators = {}
     end
     
     def execute(section = :main, scope = nil, this = nil)
