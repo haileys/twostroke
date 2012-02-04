@@ -95,7 +95,9 @@ class TestFile
   
   def setup
     set_test_helpers
-    @ctx.raw_exec File.read(@file), @scope
+    if ex = catch(:exception) { @ctx.raw_exec File.read(@file), @scope; nil }
+      STDERR.puts "could not load test file #{file}"
+    end
   end
   
   def run
