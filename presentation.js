@@ -1,4 +1,4 @@
-// this presentation expects a 110x25 terminal
+// this presentation expects a 110x30 terminal
 
 function Presentation() {
 	this.slides = [];
@@ -18,7 +18,7 @@ Presentation.prototype.addSlide = function(slide) {
 Presentation.prototype.showSlide = function(slide) {
     this.clearScreen();
 	slide.render(this);
-	console._print("\033[25;110H");
+	console._print("\033[30;110H");
 };
 Presentation.prototype.present = function() {
     for(var i = 0; i < this.slides.length; i++) {
