@@ -43,7 +43,7 @@ FirstSlide.prototype.render = function(presentation) {
     var author = 
     "                                              Charlie Somerville                                              ";
     
-    console._print("\n\n\n\n\n");
+    console._print("\n\n\n\n\n\n\n\n");
     console._print("\033[37;44m" + banner.replace(/#/g, "\033[34;47m \033[37;44m") + "\033[0m");
     console._print("\n\n\n\n");
     console._print(author);
