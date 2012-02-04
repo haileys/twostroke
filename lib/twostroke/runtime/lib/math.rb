@@ -96,6 +96,6 @@ module Twostroke::Runtime
         b = Types.to_number(args[1] || Types::Undefined.new).number
         ans = a ** b
         Types::Number.new(ans.is_a?(Complex) ? Float::NAN : ans)
-      }, nil, "random", [])
+      }, nil, "pow", [])
   end
 end

@@ -38,6 +38,10 @@ module Twostroke::Runtime
       
       until @return or @ip >= insns.size
         ins, arg = insns[@ip]
+        if vm.instruction_trace
+          # if an instruction trace callback is set, call it with information about this ins
+          vm.instruction_trace.call @section, @ip, ins, arg
+        end
         @ip += 1
         if ex = catch(:exception) { send ins, arg; nil }
           @exception = ex
@@ -54,6 +58,9 @@ module Twostroke::Runtime
     
     define_method ".line" do |arg|
       @line = arg
+      if vm.line_trace
+        vm.line_trace.call @section, @line
+      end
     end
     
     define_method ".name" do |arg|

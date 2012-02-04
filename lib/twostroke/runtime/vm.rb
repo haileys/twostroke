@@ -2,6 +2,7 @@ module Twostroke::Runtime
   class VM    
     attr_accessor :bytecode
     attr_reader :global_scope, :lib
+    attr_accessor :line_trace, :instruction_trace
     
     def initialize(bytecode)
       @bytecode = bytecode
