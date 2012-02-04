@@ -96,10 +96,21 @@ Slide.prototype.render = function(presentation) {
 
 var presentation = new Presentation();
 presentation.addSlide(new FirstSlide());
-presentation.addSlide(Slide.createWithBulletPoints(
-    "What is Twostroke?",
-    [   "A Javascript implementation"
-    ,   "...written in Ruby"
-    ,   "...that works fairly well!"
-    ]));
+[
+    [
+        "What is Twostroke?",
+        [   "A Javascript implementation"
+        ,   "...written in Ruby"
+        ,   "...that works fairly well!"
+        ]
+    ],
+    [
+        "Why is Twostroke useful?",
+        [   "Rapid prototyping of language extensions"
+        ,   "As a learning tool"
+        ]
+    ]
+].forEach(function(slide) {
+    presentation.addSlide(Slide.createWithBulletPoints.apply(Slide, slide));
+});
 presentation.present();
