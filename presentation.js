@@ -118,8 +118,8 @@ TextSlide.prototype.onRender = function() {
         console._print("     " + line + "\n");
     });
 };
-
 var presentation = new Presentation();
+/*
 presentation.addSlide(new FirstSlide());
 [
     [
@@ -154,15 +154,16 @@ presentation.addSlide(new TextSlide("How Twostroke works - a simple 'Hello World
 ));
 presentation.addSlide(new TextSlide("How Twostroke works - a simple 'Hello World' example",
     "[#<\033[31mTwostroke::AST::Call\033(B\033[m\n  \033[36m@callee\033(B\033[m=\n   #<\033[31mTwostroke::AST::MemberAccess\033(B\033[m\n    \033[36m@member\033(B\033[m=\033[32m\"log\"\033(B\033[m,\n    \033[36m@object\033(B\033[m=\n     #<\033[31mTwostroke::AST::Variable\033(B\033[m \033[36m@name\033(B\033[m=\033[32m\"console\"\033(B\033[m>>,\n  \033[36m@arguments\033(B\033[m=\n   [#<\033[31mTwostroke::AST::String\033(B\033[m\n     \033[36m@string\033(B\033[m=\033[32m\"Hello World!\"\033(B\033[m>]>]\n"
-));
+));*/
 presentation.addSlide(new TextSlide("How Twostroke works - a simple 'Hello World' example",
-    'main:\n' +
-    '   \033[38;5;241m0\033[m    \033[36m.line\033[0m      \033[33m1\033[0m\n' +
-    '   \033[38;5;241m1\033[m    \033[36mpush\033[0m       \033[1;31mconsole\033[0m\n' +
-    '   \033[38;5;241m2\033[m    \033[36mpush\033[0m       \033[32m"log"\033[0m\n' +
-    '   \033[38;5;241m3\033[m    \033[36mpush\033[0m       \033[32m"Hello World!"\033[0m\n' +
-    '   \033[38;5;241m4\033[m    \033[36mmethcall\033[0m   \033[33m1\033[0m\n' +
-    '   \033[38;5;241m5\033[m    \033[36mundefined\033[0m\n' +
+    '\033[4mTwostroke:\033[0m                                     \033[4mMozilla Spidermonkey:\033[0m\n\n' + 
+    'main:                                          main:\n' +
+    '   \033[38;5;241m0\033[m    \033[36m.line\033[0m      \033[33m1\033[0m                           \033[38;5;241m00000:\033[m  \033[36mgetgname\033[m  \033[32m"console"\033[m\n' +
+    '   \033[38;5;241m1\033[m    \033[36mpush\033[0m       \033[1;31mconsole\033[0m                     \033[38;5;241m00003:\033[m  \033[36mcallprop\033[m  \033[32m"log"\033[m\n' +
+    '   \033[38;5;241m2\033[m    \033[36mpush\033[0m       \033[32m"log"\033[0m                       \033[38;5;241m00006:\033[m  \033[36mstring\033[m    \033[32m"Hello World"\033[m\n' +
+    '   \033[38;5;241m3\033[m    \033[36mpush\033[0m       \033[32m"Hello World!"\033[0m              \033[38;5;241m00009:\033[m  \033[36mcall\033[m      \033[33m1\033[0m\n' +
+    '   \033[38;5;241m4\033[m    \033[36mmethcall\033[0m   \033[33m1\033[0m                           \033[38;5;241m00012:\033[m  \033[36mpop\033[m\n' +
+    '   \033[38;5;241m5\033[m    \033[36mundefined\033[0m                              \033[38;5;241m00013:\033[m  \033[36mstop\033[m\n' +
     '   \033[38;5;241m6\033[m    \033[36mret\033[0m\n'
 ));
 
