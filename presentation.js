@@ -119,7 +119,6 @@ TextSlide.prototype.onRender = function() {
     });
 };
 var presentation = new Presentation();
-/*
 presentation.addSlide(new FirstSlide());
 [
     [
@@ -154,7 +153,7 @@ presentation.addSlide(new TextSlide("How Twostroke works - a simple 'Hello World
 ));
 presentation.addSlide(new TextSlide("How Twostroke works - a simple 'Hello World' example",
     "[#<\033[31mTwostroke::AST::Call\033(B\033[m\n  \033[36m@callee\033(B\033[m=\n   #<\033[31mTwostroke::AST::MemberAccess\033(B\033[m\n    \033[36m@member\033(B\033[m=\033[32m\"log\"\033(B\033[m,\n    \033[36m@object\033(B\033[m=\n     #<\033[31mTwostroke::AST::Variable\033(B\033[m \033[36m@name\033(B\033[m=\033[32m\"console\"\033(B\033[m>>,\n  \033[36m@arguments\033(B\033[m=\n   [#<\033[31mTwostroke::AST::String\033(B\033[m\n     \033[36m@string\033(B\033[m=\033[32m\"Hello World!\"\033(B\033[m>]>]\n"
-));*/
+));
 presentation.addSlide(new TextSlide("How Twostroke works - a simple 'Hello World' example",
     '\033[4mTwostroke:\033[0m                                     \033[4mMozilla Spidermonkey:\033[0m\n\n' + 
     'main:                                          main:\n' +
