@@ -47,7 +47,7 @@ module Twostroke::Runtime
     }, nil, "parseFloat", [])
     
     # one argument functions
-    %w(sqrt sin cos tan exp).each do |method|
+    %w(sqrt sin cos tan exp log).each do |method|
       obj.proto_put method, Types::Function.new(->(scope, this, args) {
           ans = begin
                   Math.send method, Types.to_number(args[0] || Types::Undefined.new).number
