@@ -135,7 +135,7 @@ presentation.addSlide(new FirstSlide());
         "Why is Twostroke useful?",
         [   "Rapid prototyping of language extensions"
         ,   "Pure Ruby - no C extensions required"
-        ,   "As a learning tool"
+        ,   "Learning tool"
         ]
     ],
     [
@@ -200,16 +200,14 @@ presentation.addSlide(new TextSlide("How Twostroke works - a more realistic exam
     '   \033[38;5;241m7\033[m    \033[36mret\033[0m'
 ));
 
-[
-    [
-        "Extending JavaScript with Twostroke",
-        [   "Written in Ruby, not C or C++"
-        ,   "Easy to make large changes or add new features"
-        ,   "No low level issues to worry about, eg. memory management"
-        ]
+presentation.addSlide(Slide.createWithBulletPoints(
+    "Extending JavaScript with Twostroke",
+    [   "Written in Ruby, not C or C++"
+    ,   "Easy to make large changes or add new features"
+    ,   "No low level issues to worry about, eg. memory management"
     ]
-].forEach(function(slide) {
-    presentation.addSlide(Slide.createWithBulletPoints.apply(Slide, slide));
-});
+));
+
+presentation.addSlide(new Slide("Questions?"));
 
 presentation.present();
