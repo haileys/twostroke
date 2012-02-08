@@ -86,7 +86,7 @@ Slide.createWithBulletPoints = function(title, bulletPoints, opts) {
 }
 Slide.prototype.renderTitle = function() {
     console._print("\033[37;44m" + Array(111).join(" ") + "\n");
-    console._print("   \033[4m" + this.title + "\033[0m\033[37;44m" + Array(111 - 3 - this.title.length).join(" ") + "\n");
+    console._print("   " + this.title + "\033[0m\033[37;44m" + Array(111 - 3 - this.title.length).join(" ") + "\n");
     console._print(Array(111).join(" ") + "\n\033[0m\n\n");
 };
 Slide.prototype.renderBulletPoint = function(text) {
