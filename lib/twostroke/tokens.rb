@@ -117,7 +117,7 @@ module Twostroke
       [ :GT, />/ ],
 
     ].map do |a|
-      [a[0], Regexp.new("\\A#{a[1].source}", Regexp::MULTILINE), a[2]]
+      [a[0], /\G#{a[1].source}/m, a[2]]
     end
   end
 end

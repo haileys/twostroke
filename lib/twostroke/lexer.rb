@@ -12,19 +12,23 @@ module Twostroke
   end
   
   class Lexer
-    attr_accessor :str, :col, :line, :restricted
+    attr_accessor :str, :offset, :col, :line, :restricted
     
     def state
-      { str: str, col: col, line: line }
+      { str: str, col: col, line: line, offset: offset, restricted: restricted }
     end
+    
     def state=(state)
       @str = state[:str]
+      @offset = state[:offset]
       @col = state[:col]
       @line = state[:line]
+      @restricted = state[:restricted]
     end
     
     def initialize(str)
       @str = str
+      @offset = 0
       @col = 1
       @line = 1
       @line_terminator = false
@@ -40,10 +44,10 @@ module Twostroke
     
     def read_token(allow_regexp = true)
       TOKENS.select { |t| allow_regexp || t[0] != :REGEXP }.each do |token|
-        m = token[1].match @str
+        m = token[1].match @str, @offset
         if m
           tok = Token.new(:type => token[0], :val => token[2] ? token[2].call(m) : nil, :line => @line, :col => @col)
-          @str = m.post_match
+          @offset += m[0].size
           newlines = m[0].count "\n"
           @col = 1 if !newlines.zero?
           @line += newlines
@@ -55,7 +59,7 @@ module Twostroke
           end
         end
       end
-      if @str.size > 0
+      if @offset < @str.size
         raise LexError, "Illegal character '#{@str[0]}' at line #{@line}, col #{@col}."
       else
         nil
