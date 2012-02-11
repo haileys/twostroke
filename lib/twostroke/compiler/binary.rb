@@ -69,8 +69,7 @@ private
   end
 
   def compile_node(node)
-    handler = node.class.name.split("::").last.intern
-    send handler, node
+    send type(node), node
   end
   
   def output(*ops)
@@ -87,12 +86,55 @@ private
     end
   end
   
+  def type(node)
+    node.class.name.split("::").last.intern
+  end
+  
   # ast node compilers
   
-  def Addition(node)
-    compile_node node.left
-    compile_node node.right
-    output :add
+  { Addition: :add, Subtraction: :sub, Multiplication: :mul, Division: :div,
+    Equality: :eq, StrictEquality: :seq, LessThan: :lt, GreaterThan: :gt,
+    LessThanEqual: :lte, GreaterThanEqual: :gte, BitwiseAnd: :and,
+    BitwiseOr: :or, BitwiseXor: :xor, In: :in, RightArithmeticShift: :sar,
+    LeftShift: :sal, RightLogicalShift: :slr, InstanceOf: :instanceof,
+    Modulus: :mod
+  }.each do |method,op|
+    define_method method do |node|
+      if node.assign_result_left
+        if type(node.left) == :Variable || type(node.left) == :Declaration
+          compile node.left
+          compile node.right
+          output op
+          if idx, sc = lookup_var(node.left.name)
+            output :setvar, idx, sc
+          else
+            output :setglobal, node.left.name
+          end
+        elsif type(node.left) == :MemberAccess
+          compile node.left.object
+          output :dup
+          output :member, node.left.member
+          compile node.right
+          output op
+          output :setprop, node.left.member          
+        elsif type(node.left) == :Index
+          compile node.left.object
+          compile node.left.index
+          output :dup, 2
+          output :index
+          compile node.right
+          output op
+          output :setindex
+        else
+          error! "Bad lval in combined operation/assignment"
+        end
+      else
+        compile node.left
+        compile node.right
+        output op
+      end
+    end
+    private method
   end
   
   def Number(node)
