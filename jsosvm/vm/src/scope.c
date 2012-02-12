@@ -56,23 +56,23 @@ js_scope_t* js_scope_close(js_scope_t* scope)
 VAL js_scope_get_global_var(js_scope_t* scope, js_string_t* name)
 {
     js_value_t* obj = js_value_get_pointer(scope->global->global_object);
-    return obj->vtable->get(obj, name);
+    return obj->object.vtable->get(obj, name);
 }
 
 void js_scope_set_global_var(js_scope_t* scope, js_string_t* name, VAL value)
 {
     js_value_t* obj = js_value_get_pointer(scope->global->global_object);
-    obj->vtable->put(obj, name, value);
+    obj->object.vtable->put(obj, name, value);
 }
 
 bool js_scope_global_var_exists(js_scope_t* scope, js_string_t* name)
 {
     js_value_t* obj = js_value_get_pointer(scope->global->global_object);
-    return obj->vtable->has_property(obj, name);
+    return obj->object.vtable->has_property(obj, name);
 }
 
 void js_scope_delete_global_var(js_scope_t* scope, js_string_t* name)
 {
     js_value_t* obj = js_value_get_pointer(scope->global->global_object);
-    obj->vtable->delete(obj, name);
+    obj->object.vtable->delete(obj, name);
 }

@@ -63,8 +63,8 @@ typedef struct js_object_internal_methods {
     bool                        (*define_own_property)  (js_value_t*, js_property_descriptor_t*);
     
     /* these are optional, set to NULL if not implemented: */
-    VAL                         (*call)                 (js_value_t*, VAL, js_arguments_t*);
-    VAL                         (*construct)            (js_value_t*, js_arguments_t*);
+    VAL                         (*call)                 (js_value_t*, VAL, uint32_t argc, VAL* argv);
+    VAL                         (*construct)            (js_value_t*, uint32_t argc, VAL* argv);
 } js_object_internal_methods_t;
 
 VAL js_value_make_pointer(js_value_t* ptr);

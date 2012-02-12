@@ -4,7 +4,7 @@
 
 /* this function is insecure. todo: sprinkle some more bounds checks through */
 
-js_image_t* js_parse_image(char* buff, uint32_t buff_size)
+js_image_t* js_image_parse(char* buff, uint32_t buff_size)
 {
     uint32_t i, sz;
     /*char* buff_end = buff + buff_size;*/

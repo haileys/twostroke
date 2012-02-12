@@ -1,6 +1,9 @@
-CFLAGS=-m32 -Wall -Wextra -iquote inc
+CFLAGS=-m32 -Wall -Wextra -iquote inc -g
 
-all: src/image.o src/scope.o src/st.o src/value.o src/vm.o
+all: runner
+
+runner: src/image.o src/scope.o src/st.o src/value.o src/vm.o
 
 clean:
-	rm src/*.o
+	rm -f src/*.o
+	rm -f runner

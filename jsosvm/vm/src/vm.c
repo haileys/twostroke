@@ -33,13 +33,18 @@ js_vm_t* js_vm_new()
 #define NEXT_DOUBLE() (IP += 2, *(double*)&INSNS[IP - 2])
 #define NEXT_STRING() (&image->strings[NEXT_UINT32()])
 
-#define PUSH(v) ((SP >= SMAX ? (STACK = realloc(STACK, sizeof(VAL) * SMAX *= 2)) : STACK)[SP++] = (v))
+#define PUSH(v) do { \
+                    if(SP >= SMAX) { \
+                        STACK = realloc(STACK, sizeof(VAL) * (SMAX *= 2)); \
+                    } \
+                    STACK[SP++] = (v); \
+                } while(false)
 #define POP()   (STACK[--SP])
+#define PEEK()  (STACK[SP - 1])
 
 VAL js_vm_exec(js_vm_t* vm, js_image_t* image, uint32_t section, js_scope_t* scope, VAL this, uint32_t argc, VAL* argv)
 {
     uint32_t IP = 0;
-    uint32_t IP_MAX = image->sections[section].instruction_count;
     uint32_t* INSNS = image->sections[section].instructions;
     uint32_t opcode;
     
@@ -47,35 +52,60 @@ VAL js_vm_exec(js_vm_t* vm, js_image_t* image, uint32_t section, js_scope_t* sco
     uint32_t SMAX = 4;
     VAL* STACK = malloc(sizeof(VAL) * SMAX);
     
-    VAL l, r;
-    
     while(1) {
         opcode = NEXT_UINT32();
         switch(opcode) {
-            
-        case JS_OP_UNDEFINED:
-            PUSH(js_value_undefined());
-            break;
-            
-        case JS_OP_RET:
-            return POP();
-            break;
-            
-        case JS_OP_PUSHNUM:
-            PUSH(js_value_make_double(NEXT_DOUBLE()));
-            break;
-            
-        case JS_OP_ADD:
-            r = js_to_primitive(POP());
-            l = js_to_primitive(POP());
-            if(js_value_get_type(l) == JS_T_STRING || js_value_get_type(r) == JS_T_STRING) {
-                /* concatenate strings @TODO */
+            case JS_OP_UNDEFINED:
                 PUSH(js_value_undefined());
-            } else {
-                PUSH(js_value_make_double(js_value_get_double(js_to_number(l)) + js_value_get_double(js_to_number(r))));
+                break;
+            
+            case JS_OP_RET:
+                return POP();
+                break;
+            
+            case JS_OP_PUSHNUM:
+                PUSH(js_value_make_double(NEXT_DOUBLE()));
+                break;
+            
+            case JS_OP_ADD: {
+                VAL r = js_to_primitive(POP());
+                VAL l = js_to_primitive(POP());
+                if(js_value_get_type(l) == JS_T_STRING || js_value_get_type(r) == JS_T_STRING) {
+                    /* concatenate strings @TODO */
+                    PUSH(js_value_undefined());
+                } else {
+                    PUSH(js_value_make_double(js_value_get_double(js_to_number(l)) + js_value_get_double(js_to_number(r))));
+                }
+                break;
             }
             
-        case JS_OP_PUSHGLOBAL:
+            case JS_OP_PUSHGLOBAL: {
+                js_string_t* var = NEXT_STRING();
+                PUSH(js_scope_get_global_var(scope, var));
+                break;
+            }
+        
+            case JS_OP_PUSHSTR:
+                /* @TODO */
+                break;
+        
+            case JS_OP_METHCALL:
+                /* @TODO */
+                break;
+        
+            case JS_OP_SETVAR: {
+                uint32_t idx = NEXT_UINT32();
+                uint32_t sc = NEXT_UINT32();
+                js_scope_set_var(scope, idx, sc, PEEK());
+                break;
+            }
+        
+            case JS_OP_PUSHVAR: {
+                uint32_t idx = NEXT_UINT32();
+                uint32_t sc = NEXT_UINT32();
+                PUSH(js_scope_get_var(scope, idx, sc));
+                break;
+            }
         }
     }
 }

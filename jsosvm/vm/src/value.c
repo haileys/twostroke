@@ -93,7 +93,10 @@ VAL js_to_boolean(VAL value)
         case JS_T_BOOLEAN:
             return value;
         case JS_T_NUMBER:
-            return js_value_make_boolean(js_value_get_double(value) != 0 && !isNAN(js_value_get_double(value)));
+            return js_value_make_boolean(
+                js_value_get_double(value) != 0 /* non zero */
+                && js_value_get_double(value) == js_value_get_double(value) /* non-nan */
+            );
         case JS_T_STRING:
             /* @TODO return string != "" */
         default:
@@ -179,15 +182,24 @@ VAL js_to_number(VAL value)
             /* @TODO parse string */
         default:
             /* @TODO js_to_number( js_to_primitive( value, "number" ) ) */
+            break;
     }
+    // @TODO throw?
+    return js_value_null();
 }
 
 VAL js_object_get(VAL obj, js_string_t* prop)
 {
-    
+    /* @TODO */
+    obj = obj;
+    prop = prop;
+    return js_value_undefined();
 }
 
 void js_object_put(VAL obj, js_string_t* prop, VAL value)
 {
-    
+    /* @TODO */
+    obj = obj;
+    prop = prop;
+    value = value;
 }
