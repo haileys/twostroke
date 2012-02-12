@@ -7,6 +7,7 @@ class Twostroke::Compiler::Binary
     @section_stack = [0]
     @scope_stack = [{}]
     @interned_strings = {}
+    @label_ai = 0
   end
   
   def compile
@@ -27,6 +28,15 @@ class Twostroke::Compiler::Binary
     methcall:   6,
     setvar:     7,
     pushvar:    8,
+    true:       9,
+    false:      10,
+    null:       11,
+    jmp:        12,
+    jit:        13,
+    jif:        14,
+    sub:        15,
+    mul:        16,
+    div:        17,
   }
 
 private
@@ -46,7 +56,20 @@ private
   end
   
   def generate_bytecode_for_section(section)
-    section.join
+    acc = 0
+    label_refs = {}
+    section.each do |sect|
+      if sect.is_a? Array
+        fixup, arg = sect
+        case fixup
+        when :label;  label_refs[arg] = acc / 4
+        when :ref;    acc += 4
+        end
+      else
+        acc += sect.bytes.count
+      end
+    end
+    section.reject { |a,b| a == :label }.map { |x| x.is_a?(Array) ? [label_refs[x[1]]].pack("L<") : x }.join
   end
 
   def current_section
@@ -77,7 +100,7 @@ private
   
   def lookup_var(var)
     @scope_stack.reverse_each.each_with_index do |scope, index|
-      return [index, scope[var]] if scope[var]
+      return [scope[var], index] if scope[var]
     end
     nil
   end
@@ -106,6 +129,8 @@ private
         current_section << [op].pack("L<")
       when String
         current_section << [intern_string(op)].pack("L<")
+      when Array
+        current_section << op # this is a fixup to be resolved later
       else
         raise "bad op type #{op.class.name}"
       end
@@ -131,6 +156,10 @@ private
         true
       end
     end
+  end
+  
+  def uniqid
+    @label_ai += 1
   end
   
   # ast node compilers
@@ -241,5 +270,42 @@ private
     else  
       error! "Bad lval in assignment"
     end
+  end
+  
+  def Return(node)
+    compile_node node.expression
+    output :ret
+  end
+  
+  def If(node)
+    compile_node node.condition
+    else_label = uniqid
+    output :jif, [:ref, else_label]
+    compile_node node.then
+    if node.else
+      end_label = uniqid
+      output :jmp, [:ref, end_label]
+      output [:label, else_label]
+      compile_node node.else
+      output [:label, end_label]
+    else
+      output [:label, else_label]
+    end
+  end
+  
+  def Body(node)
+    node.statements.each &method(:compile_node)
+  end
+  
+  def True(node)
+    output :true
+  end
+  
+  def False(node)
+    output :false
+  end
+  
+  def Null(node)
+    output :null
   end
 end

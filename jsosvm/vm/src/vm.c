@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include "vm.h"
 
 static js_instruction_t insns[] = {
@@ -10,7 +11,16 @@ static js_instruction_t insns[] = {
     { "pushstr",    OPERAND_STRING },
     { "methcall",   OPERAND_UINT32 },
     { "setvar",     OPERAND_UINT32_UINT32 },
-    { "pushvar",    OPERAND_UINT32_UINT32 },    
+    { "pushvar",    OPERAND_UINT32_UINT32 },
+    { "true",       OPERAND_NONE },
+    { "false",      OPERAND_NONE },
+    { "null",       OPERAND_NONE },
+    { "jmp",        OPERAND_UINT32 },
+    { "jit",        OPERAND_UINT32 },
+    { "jif",        OPERAND_UINT32 },
+    { "sub",        OPERAND_NONE },
+    { "mul",        OPERAND_NONE },
+    { "div",        OPERAND_NONE },
 };
 
 js_instruction_t* js_instruction(uint32_t opcode)
@@ -106,6 +116,66 @@ VAL js_vm_exec(js_vm_t* vm, js_image_t* image, uint32_t section, js_scope_t* sco
                 PUSH(js_scope_get_var(scope, idx, sc));
                 break;
             }
+            
+            case JS_OP_TRUE:
+                PUSH(js_value_true());
+                break;
+                
+            case JS_OP_FALSE:
+                PUSH(js_value_false());
+                break;
+
+            case JS_OP_NULL:
+                PUSH(js_value_null());
+                break;
+                
+            case JS_OP_JMP: {
+                uint32_t next = NEXT_UINT32();
+                IP = next;
+                break;
+            }
+                
+            case JS_OP_JIT: {
+                uint32_t next = NEXT_UINT32();
+                if(js_value_is_truthy(POP())) {
+                    IP = next;
+                }
+                break;
+            }
+            
+            case JS_OP_JIF: {
+                uint32_t next = NEXT_UINT32();
+                if(!js_value_is_truthy(POP())) {
+                    IP = next;
+                }
+                break;
+            }
+            
+            case JS_OP_SUB: {
+                VAL r = js_to_primitive(POP());
+                VAL l = js_to_primitive(POP());
+                PUSH(js_value_make_double(js_value_get_double(js_to_number(l)) - js_value_get_double(js_to_number(r))));
+                break;
+            }
+            
+            case JS_OP_MUL: {
+                VAL r = js_to_primitive(POP());
+                VAL l = js_to_primitive(POP());
+                PUSH(js_value_make_double(js_value_get_double(js_to_number(l)) * js_value_get_double(js_to_number(r))));
+                break;
+            }
+            
+            case JS_OP_DIV: {
+                VAL r = js_to_primitive(POP());
+                VAL l = js_to_primitive(POP());
+                PUSH(js_value_make_double(js_value_get_double(js_to_number(l)) / js_value_get_double(js_to_number(r))));
+                break;
+            }
+            
+            default:
+                /* @TODO proper-ify this */
+                fprintf(stderr, "[PANIC] unknown opcode %u\n", opcode);
+                exit(-1);
         }
     }
 }

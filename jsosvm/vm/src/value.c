@@ -1,6 +1,12 @@
 #include <math.h>
 #include "value.h"
 
+/*
+ *
+ * bit twiddling stuff
+ *
+ */
+ 
 js_value_t* js_value_get_pointer(VAL val)
 {
     return (void*)(uint32_t)(val.i & 0xfffffffful);
@@ -75,6 +81,19 @@ js_type_t js_value_get_type(VAL val)
     return ptr->type;
 }
 
+/*
+ *
+ * END bit twiddling stuff
+ *
+ */
+
+
+VAL js_value_make_native_function(VAL(*call)(VAL, uint32_t, VAL*), VAL(*construct)(VAL, uint32_t, VAL*))
+{
+    js_function_t* fn = malloc(sizeof(js_function_t));
+    fn->
+}
+ 
 bool js_value_is_truthy(VAL val)
 {
     if(js_value_get_type(val) == JS_T_BOOLEAN) {

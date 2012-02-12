@@ -30,7 +30,22 @@ typedef struct {
 } js_string_t;
 
 typedef struct {
-    
+    VAL value;
+    /*
+    bool is_accessor;
+    bool enumerable;
+    bool configurable;
+    union {
+        struct {
+            VAL value;
+            bool writable;
+        } data;
+        struct {
+            VAL get;
+            VAL set;
+        } accessor;
+    };
+    */
 } js_property_descriptor_t;
 
 struct js_object_internal_methods;
@@ -41,6 +56,23 @@ typedef struct {
     VAL class;
     st_table properties;
 } js_object_t;
+
+typedef struct {
+    js_value_t base;
+    bool is_native;
+    union {
+        struct {
+            VAL(*call)(VAL, uint32_t, VAL*);
+            VAL(*construct)(VAL, uint32_t, VAL*);
+        } native;
+        struct {
+            js_vm_t* vm;
+            js_image_t* image;
+            uint32_t section;
+            js_scope_t* outer_scope;
+        } js;
+    };
+} js_function_t;
 
 typedef struct {
     js_type_t type;
@@ -63,8 +95,8 @@ typedef struct js_object_internal_methods {
     bool                        (*define_own_property)  (js_value_t*, js_property_descriptor_t*);
     
     /* these are optional, set to NULL if not implemented: */
-    VAL                         (*call)                 (js_value_t*, VAL, uint32_t argc, VAL* argv);
-    VAL                         (*construct)            (js_value_t*, uint32_t argc, VAL* argv);
+    VAL                         (*call)                 (js_value_t*, VAL, uint32_t, VAL*);
+    VAL                         (*construct)            (js_value_t*, uint32_t, VAL*);
 } js_object_internal_methods_t;
 
 VAL js_value_make_pointer(js_value_t* ptr);
@@ -74,6 +106,7 @@ VAL js_value_null();
 VAL js_value_false();
 VAL js_value_true();
 VAL js_value_make_boolean(bool boolean);
+VAL js_value_make_native_function(VAL(*call)(VAL, uint32_t, VAL*), VAL(*construct)(VAL, uint32_t, VAL*));
 
 js_value_t* js_value_get_pointer(VAL val);
 double js_value_get_double(VAL val);
