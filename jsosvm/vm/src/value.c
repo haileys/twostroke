@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <limits.h>
 #include <math.h>
 #include "value.h"
 #include "object.h"
@@ -13,7 +14,11 @@
  
 js_value_t* js_value_get_pointer(VAL val)
 {
-    return (void*)(uint32_t)(val.i & 0xfffffffful);
+    #if __WORDSIZE == 32
+        return (void*)(val.i & 0xfffffffful);
+    #else
+        return (void*)(val.i & 0x7ffffffffffful);
+    #endif
 }
 
 double js_value_get_double(VAL val)
@@ -23,15 +28,18 @@ double js_value_get_double(VAL val)
 
 VAL js_value_make_double(double num)
 {
+    /*
     VAL val;
     val.d = num;
     return val;
+    */
+    return *(VAL*)&num;
 }
 
 VAL js_value_make_pointer(js_value_t* ptr)
 {
     VAL val;
-    val.i = (uint64_t)(uint32_t)ptr;
+    val.i = (uint64_t)(intptr_t)ptr;
     val.i |= 0xfffa000000000000ull;
     return val;
 }
@@ -71,7 +79,7 @@ js_type_t js_value_get_type(VAL val)
     if(val.i <= 0xfff8000000000000ull) return JS_T_NUMBER;
     
     ptr = js_value_get_pointer(val);
-    uint32_t raw = (uint32_t)ptr;
+    intptr_t raw = (intptr_t)ptr;
     if(raw == 1) {
         return JS_T_UNDEFINED;
     }
