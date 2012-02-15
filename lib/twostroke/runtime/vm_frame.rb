@@ -1,3 +1,5 @@
+require "#{__FILE__}/../vm"
+
 module Twostroke::Runtime
   class VM::Frame
     attr_reader :vm, :insns, :stack, :sp_stack, :ex_stack, :enum_stack, :exception, :ip, :scope
