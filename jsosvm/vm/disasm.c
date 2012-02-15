@@ -64,4 +64,6 @@ int main()
     for(i = 0; i < image->string_count; i++) {
         printf("    %04d  \"%s\"\n", i, image->strings[i].buff);
     }
+    
+    return 0;
 }

@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "vm.h"
+#include "object.h"
 
 static js_instruction_t insns[] = {
     { "undefined",  OPERAND_NONE },
@@ -21,6 +22,15 @@ static js_instruction_t insns[] = {
     { "sub",        OPERAND_NONE },
     { "mul",        OPERAND_NONE },
     { "div",        OPERAND_NONE },
+    { "setglobal",  OPERAND_STRING },
+    { "close",      OPERAND_UINT32 },
+    { "call",       OPERAND_UINT32 },
+    { "setcallee",  OPERAND_UINT32 },
+    { "setarg",     OPERAND_UINT32_UINT32 },
+    { "lt",         OPERAND_NONE },
+    { "lte",        OPERAND_NONE },
+    { "gt",         OPERAND_NONE },
+    { "gte",        OPERAND_NONE },
 };
 
 js_instruction_t* js_instruction(uint32_t opcode)
@@ -34,7 +44,7 @@ js_instruction_t* js_instruction(uint32_t opcode)
 js_vm_t* js_vm_new()
 {
     js_vm_t* vm = malloc(sizeof(js_vm_t));
-    vm->global_scope = js_scope_make_global(js_value_undefined() /* @TODO: change to object */);
+    vm->global_scope = js_scope_make_global(js_value_make_object(js_value_undefined(), js_value_undefined()) /* @TODO: change to object */);
     return vm;
 }
 
@@ -52,6 +62,24 @@ js_vm_t* js_vm_new()
 #define POP()   (STACK[--SP])
 #define PEEK()  (STACK[SP - 1])
 
+static int comparison_oper(VAL left, VAL right)
+{
+    double l, r;
+    if(js_value_get_type(left) == JS_T_STRING && js_value_get_type(right) == JS_T_STRING) {
+        return js_string_cmp(&js_value_get_pointer(left)->string, &js_value_get_pointer(right)->string);
+    } else {
+        l = js_value_get_double(js_to_number(left));
+        r = js_value_get_double(js_to_number(right));
+        if(l < r) {
+            return -1;
+        } else if(l > r) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+}
+
 VAL js_vm_exec(js_vm_t* vm, js_image_t* image, uint32_t section, js_scope_t* scope, VAL this, uint32_t argc, VAL* argv)
 {
     uint32_t IP = 0;
@@ -59,8 +87,14 @@ VAL js_vm_exec(js_vm_t* vm, js_image_t* image, uint32_t section, js_scope_t* sco
     uint32_t opcode;
     
     uint32_t SP = 0;
-    uint32_t SMAX = 4;
+    uint32_t SMAX = 8;
     VAL* STACK = malloc(sizeof(VAL) * SMAX);
+    
+    // shutup gcc @TODO:
+    (void)vm;
+    (void)this;
+    (void)argc;
+    (void)argv;
     
     while(1) {
         opcode = NEXT_UINT32();
@@ -169,6 +203,79 @@ VAL js_vm_exec(js_vm_t* vm, js_image_t* image, uint32_t section, js_scope_t* sco
                 VAL r = js_to_primitive(POP());
                 VAL l = js_to_primitive(POP());
                 PUSH(js_value_make_double(js_value_get_double(js_to_number(l)) / js_value_get_double(js_to_number(r))));
+                break;
+            }
+            
+            case JS_OP_SETGLOBAL: {
+                js_string_t* str = NEXT_STRING();
+                js_scope_set_global_var(scope, str, PEEK());
+                break;
+            }
+            
+            case JS_OP_CLOSE: {
+                uint32_t sect = NEXT_UINT32();
+                PUSH(js_value_make_function(vm, image, sect, scope));
+                break;
+            }
+
+            case JS_OP_CALL: {
+                uint32_t i, argc = NEXT_UINT32();
+                VAL* argv = malloc(sizeof(VAL) * argc);
+                VAL fn;
+                for(i = 0; i < argc; i++) {
+                    argv[argc - i - 1] = POP();
+                }
+                fn = POP();
+                PUSH(js_call(fn, js_value_null() /* TODO this value */, argc, argv));
+                break;
+            }
+            
+            case JS_OP_SETCALLEE: {
+                uint32_t idx = NEXT_UINT32();
+                if(scope->parent) { /* not global scope... */
+                    js_scope_set_var(scope, idx, 0, scope->locals.callee);
+                }
+                break;
+            }
+            
+            case JS_OP_SETARG: {
+                uint32_t var = NEXT_UINT32();
+                uint32_t arg = NEXT_UINT32();
+                if(scope->parent) { /* not global scope... */
+                    if(arg >= argc) {
+                        js_scope_set_var(scope, var, 0, js_value_undefined());
+                    } else {
+                        js_scope_set_var(scope, var, 0, argv[arg]);
+                    }
+                }
+                break;
+            }
+            
+            case JS_OP_LT: {
+                VAL right = POP();
+                VAL left = POP();
+                PUSH(js_value_make_boolean(comparison_oper(left, right) < 0));
+                break;
+            }
+            
+            case JS_OP_LTE: {
+                VAL right = POP();
+                VAL left = POP();
+                PUSH(js_value_make_boolean(comparison_oper(left, right) <= 0));
+                break;
+            }
+            
+            case JS_OP_GT: {
+                VAL right = POP();
+                VAL left = POP();
+                PUSH(js_value_make_boolean(comparison_oper(left, right) > 0));
+                break;
+            }
+            
+            case JS_OP_GTE: {
+                VAL right = POP();
+                VAL left = POP();
+                PUSH(js_value_make_boolean(comparison_oper(left, right) >= 0));
                 break;
             }
             

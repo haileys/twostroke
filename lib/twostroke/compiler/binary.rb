@@ -5,7 +5,7 @@ class Twostroke::Compiler::Binary
     @ast = ast
     @sections = [[]]
     @section_stack = [0]
-    @scope_stack = [{}]
+    @scope_stack = []
     @interned_strings = {}
     @label_ai = 0
   end
@@ -37,6 +37,15 @@ class Twostroke::Compiler::Binary
     sub:        15,
     mul:        16,
     div:        17,
+    setglobal:  18,
+    close:      19,
+    call:       20,
+    setcallee:  21,
+    setarg:     22,
+    lt:         23,
+    lte:        24,
+    gt:         25,
+    gte:        26,
   }
 
 private
@@ -76,9 +85,13 @@ private
     @sections[@section_stack.last]
   end
 
-  def push_section
-    @section_stack << @sections.size
-    @sections << []
+  def push_section(section = nil)
+    unless section
+      @section_stack << @sections.size
+      @sections << []
+    else
+      @section_stack << section
+    end  
     @section_stack.last
   end
   
@@ -87,7 +100,7 @@ private
   end
   
   def push_scope
-    @scope_stack << { ai: 0 }
+    @scope_stack << { }
   end
   
   def pop_scope
@@ -95,7 +108,9 @@ private
   end
   
   def create_local_var(var)
-    @scope_stack.last[var] ||= @scope_stack.last.count
+    if @scope_stack.any?
+      @scope_stack.last[var] ||= @scope_stack.last.count
+    end
   end
   
   def lookup_var(var)
@@ -208,6 +223,39 @@ private
       end
     end
     private method
+  end
+  
+  def Function(node, in_hoist_stage = false)
+    fnid = node.fnid
+    
+    if !node.name or in_hoist_stage
+      if fnid
+        push_section(fnid)
+      else
+        node.fnid = fnid = push_section
+      end
+      push_scope
+      output :setcallee, create_local_var(node.name) if node.name
+      node.arguments.each_with_index do |arg, idx|
+        output :setarg, create_local_var(arg), idx
+      end
+      node.statements.each { |s| hoist s }
+      node.statements.each { |s| compile_node s }
+      pop_scope
+      output :undefined
+      output :ret
+      pop_section
+      output :close, fnid
+      if node.name && !node.as_expression
+        if idx = create_local_var(node.name)
+          output :setvar, create_local_var(node.name), 0 
+        else
+          output :setglobal, node.name
+        end
+      end
+    else  
+      output :close, fnid
+    end
   end
   
   def Variable(node)

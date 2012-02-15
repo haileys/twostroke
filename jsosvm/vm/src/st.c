@@ -454,6 +454,7 @@ static int
 delete_never(key, value, never)
 st_data_t key, value, never;
 {
+    (void)key; // make gcc shutup
     if (value == never) return ST_DELETE;
     return ST_CONTINUE;
 }

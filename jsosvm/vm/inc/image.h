@@ -9,7 +9,7 @@ typedef struct {
     uint32_t* instructions;
 } js_section_t;
 
-typedef struct {
+typedef struct js_image {
     uint32_t signature;
     uint32_t section_count;
     js_section_t* sections;

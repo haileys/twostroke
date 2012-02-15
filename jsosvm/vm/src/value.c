@@ -1,5 +1,9 @@
+#include <stdlib.h>
 #include <math.h>
 #include "value.h"
+#include "object.h"
+#include "scope.h"
+#include "vm.h"
 
 /*
  *
@@ -87,19 +91,73 @@ js_type_t js_value_get_type(VAL val)
  *
  */
 
+VAL js_value_make_object(VAL prototype, VAL class)
+{
+    js_value_t* obj = malloc(sizeof(js_value_t));
+    obj->type = JS_T_OBJECT;
+    obj->object.vtable = js_object_base_vtable();
+    obj->object.prototype = prototype;
+    obj->object.class = class;
+    obj->object.properties = js_st_table_new();
+    return js_value_make_pointer(obj);
+}
 
-VAL js_value_make_native_function(VAL(*call)(VAL, uint32_t, VAL*), VAL(*construct)(VAL, uint32_t, VAL*))
+VAL js_value_make_native_function(void* state, VAL(*call)(void*, VAL, uint32_t, VAL*), VAL(*construct)(void*, VAL, uint32_t, VAL*))
 {
     js_function_t* fn = malloc(sizeof(js_function_t));
-    fn->
+    fn->base.type = JS_T_FUNCTION;
+    fn->base.object.vtable = js_object_base_vtable();
+    fn->base.object.prototype = js_value_undefined(); // @TODO: set to Function.prototype
+    fn->base.object.class = js_value_undefined(); // @TODO: set to Function
+    fn->base.object.properties = js_st_table_new();
+    fn->is_native = true;
+    fn->native.state = state;
+    fn->native.call = call;
+    fn->native.construct = construct;
+    return js_value_make_pointer((js_value_t*)fn);
 }
- 
+
+VAL js_value_make_function(js_vm_t* vm, js_image_t* image, uint32_t section, js_scope_t* outer_scope)
+{
+    js_function_t* fn = malloc(sizeof(js_function_t));
+    fn->base.type = JS_T_FUNCTION;
+    fn->base.object.vtable = js_object_base_vtable();
+    fn->base.object.prototype = js_value_undefined(); // @TODO: set to Function.prototype
+    fn->base.object.class = js_value_undefined(); // @TODO: set to Function
+    fn->base.object.properties = js_st_table_new();
+    fn->is_native = false;
+    fn->js.vm = vm;
+    fn->js.image = image;
+    fn->js.section = section;
+    fn->js.outer_scope = outer_scope;
+    return js_value_make_pointer((js_value_t*)fn);
+}
+
 bool js_value_is_truthy(VAL val)
 {
     if(js_value_get_type(val) == JS_T_BOOLEAN) {
         return val.i == js_value_true().i;
     } else {
         return js_value_is_truthy(js_to_boolean(val));
+    }
+}
+
+bool js_value_is_object(VAL val)
+{
+    return !js_value_is_primitive(val);
+}
+
+bool js_value_is_primitive(VAL val)
+{
+    switch(js_value_get_type(val)) {
+        case JS_T_NULL:
+        case JS_T_UNDEFINED:
+        case JS_T_BOOLEAN:
+        case JS_T_NUMBER:
+        case JS_T_STRING:
+            return true;
+        default:
+            return false;
     }
 }
 
@@ -128,6 +186,8 @@ VAL js_to_object(VAL value)
     switch(js_value_get_type(value)) {
         case JS_T_NULL:
         case JS_T_UNDEFINED:
+            printf("[PANIC] tried to convert undefined to object!\n");
+            exit(-1);
             // @TODO throw exception
         case JS_T_BOOLEAN:
             // @TODO convert to Boolean object
@@ -209,16 +269,46 @@ VAL js_to_number(VAL value)
 
 VAL js_object_get(VAL obj, js_string_t* prop)
 {
-    /* @TODO */
-    obj = obj;
-    prop = prop;
-    return js_value_undefined();
+    js_value_t* val;
+    if(js_value_is_primitive(obj)) {
+        return js_object_get(js_to_object(obj), prop);
+    }
+    val = js_value_get_pointer(obj);
+    return val->object.vtable->get(val, prop);
 }
 
 void js_object_put(VAL obj, js_string_t* prop, VAL value)
 {
-    /* @TODO */
-    obj = obj;
-    prop = prop;
-    value = value;
+    js_value_t* val;
+    if(js_value_is_primitive(obj)) {
+        js_object_put(js_to_object(obj), prop, value);
+        return;
+    }
+    val = js_value_get_pointer(obj);
+    val->object.vtable->put(val, prop, value);
+}
+
+VAL js_call(VAL fn, VAL this, uint32_t argc, VAL* argv)
+{
+    js_function_t* function;
+    if(js_value_get_type(fn) != JS_T_FUNCTION) {
+        // @TODO throw exception
+        printf("[PANIC] called non callable");
+        exit(-1);
+    }
+    function = (js_function_t*)js_value_get_pointer(fn);
+    if(function->is_native) {
+        return function->native.call(function->native.state, this, argc, argv);
+    } else {
+        return js_vm_exec(function->js.vm, function->js.image, function->js.section, js_scope_close(function->js.outer_scope, fn), this, argc, argv);
+    }
+}
+
+VAL js_construct(VAL fn, uint32_t argc, VAL* argv)
+{
+    // @TODO
+    (void)fn;
+    (void)argc;
+    (void)argv;
+    return js_value_undefined();
 }

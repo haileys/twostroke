@@ -54,25 +54,8 @@ typedef struct {
     struct js_object_internal_methods* vtable;
     VAL prototype;
     VAL class;
-    st_table properties;
+    st_table* properties;
 } js_object_t;
-
-typedef struct {
-    js_value_t base;
-    bool is_native;
-    union {
-        struct {
-            VAL(*call)(VAL, uint32_t, VAL*);
-            VAL(*construct)(VAL, uint32_t, VAL*);
-        } native;
-        struct {
-            js_vm_t* vm;
-            js_image_t* image;
-            uint32_t section;
-            js_scope_t* outer_scope;
-        } js;
-    };
-} js_function_t;
 
 typedef struct {
     js_type_t type;
@@ -81,6 +64,24 @@ typedef struct {
         js_object_t object;
     };
 } js_value_t;
+
+typedef struct {
+    js_value_t base;
+    bool is_native;
+    union {
+        struct {
+            void* state;
+            VAL(*call)(void*, VAL, uint32_t, VAL*);
+            VAL(*construct)(void*, VAL, uint32_t, VAL*);
+        } native;
+        struct {
+            struct js_vm* vm;
+            struct js_image* image;
+            uint32_t section;
+            struct js_scope* outer_scope;
+        } js;
+    };
+} js_function_t;
 
 typedef struct js_object_internal_methods {
     /* all objects should have these implemented: */
@@ -93,10 +94,6 @@ typedef struct js_object_internal_methods {
     bool                        (*delete)               (js_value_t*, js_string_t*);
     VAL                         (*default_value)        (js_value_t*);
     bool                        (*define_own_property)  (js_value_t*, js_property_descriptor_t*);
-    
-    /* these are optional, set to NULL if not implemented: */
-    VAL                         (*call)                 (js_value_t*, VAL, uint32_t, VAL*);
-    VAL                         (*construct)            (js_value_t*, uint32_t, VAL*);
 } js_object_internal_methods_t;
 
 VAL js_value_make_pointer(js_value_t* ptr);
@@ -106,11 +103,15 @@ VAL js_value_null();
 VAL js_value_false();
 VAL js_value_true();
 VAL js_value_make_boolean(bool boolean);
-VAL js_value_make_native_function(VAL(*call)(VAL, uint32_t, VAL*), VAL(*construct)(VAL, uint32_t, VAL*));
+VAL js_value_make_object(VAL prototype, VAL class);
+VAL js_value_make_native_function(void* state, VAL(*call)(void*, VAL, uint32_t, VAL*), VAL(*construct)(void*, VAL, uint32_t, VAL*));
+VAL js_value_make_function(struct js_vm* vm, struct js_image* image, uint32_t section, struct js_scope* outer_scope);
 
 js_value_t* js_value_get_pointer(VAL val);
 double js_value_get_double(VAL val);
 bool js_value_is_truthy(VAL val);
+bool js_value_is_object(VAL val);
+bool js_value_is_primitive(VAL val);
 js_type_t js_value_get_type(VAL val);
 
 VAL js_to_object(VAL value);
@@ -120,5 +121,8 @@ VAL js_to_number(VAL value);
 
 VAL js_object_get(VAL obj, js_string_t* prop);
 void js_object_put(VAL obj, js_string_t* prop, VAL value);
+
+VAL js_call(VAL fn, VAL this, uint32_t argc, VAL* argv);
+VAL js_construct(VAL fn, uint32_t argc, VAL* argv);
 
 #endif

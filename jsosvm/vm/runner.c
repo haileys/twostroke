@@ -28,7 +28,7 @@ int main()
     js_image_t* image = js_image_parse(buff, len);
     js_vm_t* vm = js_vm_new();
     
-    VAL retn = js_vm_exec(vm, image, 0, js_scope_close(vm->global_scope), js_value_null(), 0, NULL);
+    VAL retn = js_vm_exec(vm, image, 0, vm->global_scope, js_value_null(), 0, NULL);
     if(js_value_get_type(retn) != JS_T_NUMBER) {
         printf("retn was not a number!\n");
     } else {

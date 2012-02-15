@@ -43,11 +43,12 @@ void js_scope_set_var(js_scope_t* scope, uint32_t index, uint32_t upper_scopes, 
     scope->locals.vars[index] = value;
 }
 
-js_scope_t* js_scope_close(js_scope_t* scope)
+js_scope_t* js_scope_close(js_scope_t* scope, VAL callee)
 {
     js_scope_t* new_scope = malloc(sizeof(js_scope_t));
     new_scope->parent = scope;
     new_scope->global = scope->global;
+    new_scope->locals.callee = callee;
     new_scope->locals.count = 4;
     new_scope->locals.vars = malloc(4 * sizeof(VAL));
     return new_scope;
@@ -55,24 +56,34 @@ js_scope_t* js_scope_close(js_scope_t* scope)
 
 VAL js_scope_get_global_var(js_scope_t* scope, js_string_t* name)
 {
-    js_value_t* obj = js_value_get_pointer(scope->global->global_object);
-    return obj->object.vtable->get(obj, name);
+    return js_object_get(scope->global->global_object, name);
 }
 
 void js_scope_set_global_var(js_scope_t* scope, js_string_t* name, VAL value)
 {
-    js_value_t* obj = js_value_get_pointer(scope->global->global_object);
-    obj->object.vtable->put(obj, name, value);
+    js_object_put(scope->global->global_object, name, value);
 }
 
 bool js_scope_global_var_exists(js_scope_t* scope, js_string_t* name)
 {
+    (void)scope;
+    (void)name;
+    /*
+    return js_object_get(scope->global->global_object, name);
     js_value_t* obj = js_value_get_pointer(scope->global->global_object);
     return obj->object.vtable->has_property(obj, name);
+    */
+    // @TODO
+    return false;
 }
 
 void js_scope_delete_global_var(js_scope_t* scope, js_string_t* name)
 {
+    (void)scope;
+    (void)name;
+    /*
     js_value_t* obj = js_value_get_pointer(scope->global->global_object);
     obj->object.vtable->delete(obj, name);
+    */
+    // @TODO
 }
