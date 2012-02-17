@@ -14,8 +14,10 @@ typedef struct allocation {
     struct allocation* prev;
     void* ptr;
     size_t size;
-    char* file;
-    int line;
+    #ifdef JS_GC_DEBUG
+        char* file;
+        int line;
+    #endif
     bool flag;
 } alloc_t;
 
