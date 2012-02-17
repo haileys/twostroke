@@ -70,7 +70,7 @@ module Twostroke::Runtime
         n /= fixup.to_f
         n = n.round digits - fixup
         Types::String.new (n * fixup).to_s
-      end, nil, "toString", [])
+      end, nil, "toPrecision", [])
     obj.proto_put "prototype", proto
     obj.proto_put "MAX_VALUE", Types::Number.new(Float::MAX)
     obj.proto_put "MIN_VALUE", Types::Number.new(Float::MIN)
