@@ -7,6 +7,8 @@ class Twostroke::Compiler::Binary
     @section_stack = [0]
     @scope_stack = []
     @interned_strings = {}
+    @continue_stack = []
+    @break_stack = []
     @label_ai = 0
   end
   
@@ -46,6 +48,8 @@ class Twostroke::Compiler::Binary
     lte:        24,
     gt:         25,
     gte:        26,
+    pop:        27,
+    array:      28,
   }
 
 private
@@ -225,6 +229,47 @@ private
     private method
   end
   
+  def post_mutate(left, op)
+    if type(left) == :Variable || type(left) == :Declaration
+      output :push, left.name.intern
+      output :dup
+      output op
+      output :set, left.name.intern
+      output :pop
+    elsif type(left) == :MemberAccess
+      compile left.object
+      output :dup
+      output :member, left.member.intern
+      output :dup
+      output :tst
+      output op
+      output :setprop, left.member.intern
+      output :pop
+      output :tld
+    elsif type(left) == :Index  
+      compile left.object
+      compile left.index
+      output :dup, 2
+      output :index
+      output :dup
+      output :tst
+      output op
+      output :setindex
+      output :pop
+      output :tld
+    else
+      error! "Bad lval in post-mutation"
+    end
+  end
+  
+  def PostIncrement(node)
+    post_mutate node.value, :inc
+  end
+  
+  def PostDecrement(node)
+    post_mutate node.value, :dec
+  end
+  
   def Function(node, in_hoist_stage = false)
     fnid = node.fnid
     
@@ -258,6 +303,12 @@ private
     end
   end
   
+  def MultiExpression(node)
+    compile_node node.left
+    output :pop
+    compile_node node.right
+  end
+  
   def Variable(node)
     idx, sc = lookup_var node.name
     if idx
@@ -269,6 +320,13 @@ private
   
   def Number(node)
     output :pushnum, node.number.to_f
+  end
+  
+  def Array(node)
+    node.items.each do |item|
+      compile_node item
+    end
+    output :array, node.items.count
   end
   
   def String(node)
@@ -339,6 +397,27 @@ private
     else
       output [:label, else_label]
     end
+  end
+  
+  def ForLoop(node, continue_label = nil)
+    compile_node node.initializer if node.initializer
+    start_label = uniqid
+    next_label = uniqid
+    end_label = uniqid
+    output [:label, start_label]
+    if node.condition
+      compile_node node.condition
+      output :jif, [:ref, end_label]
+    end
+    @continue_stack.push next_label
+    @break_stack.push end_label
+    compile_node node.body if node.body
+    output [:label, next_label]
+    compile_node node.increment if node.increment
+    output :jmp, [:ref, start_label]
+    output [:label, end_label]
+    @continue_stack.pop
+    @break_stack.pop
   end
   
   def Body(node)

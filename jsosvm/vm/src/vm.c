@@ -1,7 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "vm.h"
+#include "gc.h"
 #include "object.h"
+#include "lib.h"
 
 static js_instruction_t insns[] = {
     { "undefined",  OPERAND_NONE },
@@ -31,6 +33,8 @@ static js_instruction_t insns[] = {
     { "lte",        OPERAND_NONE },
     { "gt",         OPERAND_NONE },
     { "gte",        OPERAND_NONE },
+    { "pop",        OPERAND_NONE },
+    { "array",      OPERAND_UINT32 },
 };
 
 js_instruction_t* js_instruction(uint32_t opcode)
@@ -43,8 +47,11 @@ js_instruction_t* js_instruction(uint32_t opcode)
 
 js_vm_t* js_vm_new()
 {
-    js_vm_t* vm = malloc(sizeof(js_vm_t));
-    vm->global_scope = js_scope_make_global(js_value_make_object(js_value_undefined(), js_value_undefined()) /* @TODO: change to object */);
+    js_vm_t* vm = js_alloc(sizeof(js_vm_t));
+    // this proto/constructor is fixed up later by js_lib_initialize
+    vm->global_scope = js_scope_make_global(js_value_make_object(js_value_undefined(), js_value_undefined()));
+    js_object_put(vm->global_scope->global_object, js_cstring("global"), vm->global_scope->global_object);
+    js_lib_initialize(vm);
     return vm;
 }
 
@@ -55,7 +62,7 @@ js_vm_t* js_vm_new()
 
 #define PUSH(v) do { \
                     if(SP >= SMAX) { \
-                        STACK = realloc(STACK, sizeof(VAL) * (SMAX *= 2)); \
+                        STACK = js_realloc(STACK, sizeof(VAL) * (SMAX *= 2)); \
                     } \
                     STACK[SP++] = (v); \
                 } while(false)
@@ -88,15 +95,10 @@ VAL js_vm_exec(js_vm_t* vm, js_image_t* image, uint32_t section, js_scope_t* sco
     
     uint32_t SP = 0;
     uint32_t SMAX = 8;
-    VAL* STACK = malloc(sizeof(VAL) * SMAX);
-    
-    // shutup gcc @TODO:
-    (void)vm;
-    (void)this;
-    (void)argc;
-    (void)argv;
+    VAL* STACK = js_alloc(sizeof(VAL) * SMAX);
     
     while(1) {
+        js_gc_run();
         opcode = NEXT_UINT32();
         switch(opcode) {
             case JS_OP_UNDEFINED:
@@ -107,9 +109,11 @@ VAL js_vm_exec(js_vm_t* vm, js_image_t* image, uint32_t section, js_scope_t* sco
                 return POP();
                 break;
             
-            case JS_OP_PUSHNUM:
-                PUSH(js_value_make_double(NEXT_DOUBLE()));
+            case JS_OP_PUSHNUM: {
+                double d = NEXT_DOUBLE();
+                PUSH(js_value_make_double(d));
                 break;
+            }
             
             case JS_OP_ADD: {
                 VAL r = js_to_primitive(POP());
@@ -129,13 +133,25 @@ VAL js_vm_exec(js_vm_t* vm, js_image_t* image, uint32_t section, js_scope_t* sco
                 break;
             }
         
-            case JS_OP_PUSHSTR:
-                /* @TODO */
+            case JS_OP_PUSHSTR: {
+                js_string_t* str = NEXT_STRING();
+                PUSH(js_value_wrap_string(str));
                 break;
+            }
         
-            case JS_OP_METHCALL:
-                /* @TODO */
+            case JS_OP_METHCALL: {
+                uint32_t i, argc = NEXT_UINT32();
+                VAL* argv = js_alloc(sizeof(VAL) * argc);
+                VAL method, obj, fn;
+                for(i = 0; i < argc; i++) {
+                    argv[argc - i - 1] = POP();
+                }
+                method = POP();
+                obj = POP();
+                fn = js_object_get(obj, &js_value_get_pointer(js_to_string(method))->string);
+                PUSH(js_call(fn, obj, argc, argv));
                 break;
+            }
         
             case JS_OP_SETVAR: {
                 uint32_t idx = NEXT_UINT32();
@@ -220,7 +236,7 @@ VAL js_vm_exec(js_vm_t* vm, js_image_t* image, uint32_t section, js_scope_t* sco
 
             case JS_OP_CALL: {
                 uint32_t i, argc = NEXT_UINT32();
-                VAL* argv = malloc(sizeof(VAL) * argc);
+                VAL* argv = js_alloc(sizeof(VAL) * argc);
                 VAL fn;
                 for(i = 0; i < argc; i++) {
                     argv[argc - i - 1] = POP();
@@ -276,6 +292,20 @@ VAL js_vm_exec(js_vm_t* vm, js_image_t* image, uint32_t section, js_scope_t* sco
                 VAL right = POP();
                 VAL left = POP();
                 PUSH(js_value_make_boolean(comparison_oper(left, right) >= 0));
+                break;
+            }
+            
+            case JS_OP_POP:
+                (void)POP();
+                break;
+            
+            case JS_OP_ARRAY: {
+                uint32_t i, count = NEXT_UINT32();
+                VAL* items = js_alloc(sizeof(VAL) * count);
+                for(i = 0; i < count; i++) {
+                    items[count - i - 1] = POP();
+                }
+                PUSH(js_make_array(vm, count, items));
                 break;
             }
             

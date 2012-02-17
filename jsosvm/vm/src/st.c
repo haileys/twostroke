@@ -7,6 +7,9 @@
 #include <string.h>
 #include "st.h"
 
+/* js modification, add include gc.h */
+#include "gc.h"
+
 typedef struct st_table_entry st_table_entry;
 
 struct st_table_entry
@@ -47,8 +50,11 @@ static struct st_hash_type type_strhash =
 
 static void rehash(st_table *);
 
-#define alloc(type) (type*)malloc((unsigned)sizeof(type))
-#define Calloc(n,s) (char*)calloc((n),(s))
+/* js modification, change malloc to js_alloc */
+/* #define alloc(type) (type*)malloc((unsigned)sizeof(type))
+#define Calloc(n,s) (char*)calloc((n),(s)) */
+#define alloc(type) (type*)js_alloc((unsigned)sizeof(type))
+#define Calloc(n,s) (char*)memset(js_alloc((n)*(s)), 0, (n)*(s))
 
 #define EQUAL(table,x,y) ((x)==(y) || (*table->type->compare)((x),(y)) == 0)
 
@@ -203,13 +209,15 @@ st_table *table;
         ptr = table->bins[i];
         while (ptr != 0) {
             next = ptr->next;
-            free(ptr);
+            /* js modification, remove free
+            free(ptr); */
             ptr = next;
         }
     }
     
+    /* js modification, remove free
     free(table->bins);
-    free(table);
+    free(table); */
 }
 
 #define PTR_NOT_EQUAL(table, ptr, hash_val, key) \
@@ -329,8 +337,9 @@ register st_table *table;
             new_bins[hash_val] = ptr;
             ptr = next;
         }
-    }
-    free(table->bins);
+    }    
+    /* js modification, remove free
+    free(table->bins); */
     table->num_bins = new_num_bins;
     table->bins = new_bins;
 }
@@ -353,7 +362,8 @@ st_table *old_table;
     Calloc((unsigned)num_bins, sizeof(st_table_entry*));
 
     if (new_table->bins == 0) {
-        free(new_table);
+        /* js modification, remove free
+        free(new_table); */
         return 0;
     }
 
@@ -363,8 +373,9 @@ st_table *old_table;
         while (ptr != 0) {
             entry = alloc(st_table_entry);
             if (entry == 0) {
+                /* js modification, remove free
                 free(new_table->bins);
-                free(new_table);
+                free(new_table); */
                 return 0;
             }
             *entry = *ptr;
@@ -400,7 +411,8 @@ st_data_t *value;
         if (value != 0) *value = ptr->record;
         *key = ptr->key;
         
-        free(ptr);
+        /* js modification, remove free
+        free(ptr); */
         return 1;
     }
 
@@ -411,7 +423,8 @@ st_data_t *value;
             table->num_entries--;
             if (value != 0) *value = tmp->record;
             *key = tmp->key;
-            free(tmp);
+            /* js modification, remove free
+            free(tmp); */
             return 1;
         }
     }
@@ -454,7 +467,6 @@ static int
 delete_never(key, value, never)
 st_data_t key, value, never;
 {
-    (void)key; // make gcc shutup
     if (value == never) return ST_DELETE;
     return ST_CONTINUE;
 }
@@ -512,7 +524,8 @@ st_data_t arg;
                         last->next = ptr->next;
                     }
                     ptr = ptr->next;
-                    free(tmp);
+                    /* js modification, remove free
+                    free(tmp); */
                     table->num_entries--;
             }
         }

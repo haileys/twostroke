@@ -5,9 +5,11 @@
 #include "scope.h"
 #include "image.h"
 #include "value.h"
+#include "lib.h"
 
 typedef struct js_vm {
     js_scope_t* global_scope;
+    js_lib_t lib;
 } js_vm_t;
 
 js_vm_t* js_vm_new();
@@ -41,6 +43,8 @@ enum js_opcode {
     JS_OP_LTE           = 24,
     JS_OP_GT            = 25,
     JS_OP_GTE           = 26,
+    JS_OP_POP           = 27,
+    JS_OP_ARRAY         = 28,
 };
 
 typedef struct {

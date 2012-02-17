@@ -1,13 +1,20 @@
-CFLAGS=-m32 -Wall -Wextra -iquote inc -g -pg
-LDFLAGS=-m32
+CFLAGS=-m32 -Wall -Wextra -iquote inc -Wno-unused-parameter -g -DJS_GC_DEBUG
+LDFLAGS=
+OBJS=	src/image.o src/scope.o src/st.o src/value.o src/vm.o src/object.o \
+		src/gc.o src/lib.o src/lib/array.o src/lib/function.o \
+		src/lib/object.o src/lib/number.o
 
 all: disasm runner
 
-disasm: src/image.o src/scope.o src/st.o src/value.o src/vm.o src/object.o
+disasm: $(OBJS)
 
-runner: src/image.o src/scope.o src/st.o src/value.o src/vm.o src/object.o
+runner: $(OBJS)
+
+gctest: src/gc.o
 
 clean:
 	rm -f src/*.o
+	rm -f src/*/*.o
 	rm -f runner
 	rm -f disasm
+	rm -f gctest

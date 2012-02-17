@@ -68,14 +68,14 @@ typedef struct {
 typedef struct {
     js_value_t base;
     bool is_native;
+    struct js_vm* vm;
     union {
         struct {
             void* state;
-            VAL(*call)(void*, VAL, uint32_t, VAL*);
-            VAL(*construct)(void*, VAL, uint32_t, VAL*);
+            VAL(*call)(struct js_vm*, void*, VAL, uint32_t, VAL*);
+            VAL(*construct)(struct js_vm*, void*, VAL, uint32_t, VAL*);
         } native;
         struct {
-            struct js_vm* vm;
             struct js_image* image;
             uint32_t section;
             struct js_scope* outer_scope;
@@ -98,13 +98,17 @@ typedef struct js_object_internal_methods {
 
 VAL js_value_make_pointer(js_value_t* ptr);
 VAL js_value_make_double(double num);
+VAL js_value_make_string(char* buff, uint32_t len);
+VAL js_value_make_cstring(char* str);
+js_string_t* js_cstring(char* str);
+VAL js_value_wrap_string(js_string_t* string);
 VAL js_value_undefined();
 VAL js_value_null();
 VAL js_value_false();
 VAL js_value_true();
 VAL js_value_make_boolean(bool boolean);
 VAL js_value_make_object(VAL prototype, VAL class);
-VAL js_value_make_native_function(void* state, VAL(*call)(void*, VAL, uint32_t, VAL*), VAL(*construct)(void*, VAL, uint32_t, VAL*));
+VAL js_value_make_native_function(struct js_vm*, void* state, VAL(*call)(struct js_vm*, void*, VAL, uint32_t, VAL*), VAL(*construct)(struct js_vm*, void*, VAL, uint32_t, VAL*));
 VAL js_value_make_function(struct js_vm* vm, struct js_image* image, uint32_t section, struct js_scope* outer_scope);
 
 js_value_t* js_value_get_pointer(VAL val);
@@ -118,9 +122,13 @@ VAL js_to_object(VAL value);
 VAL js_to_primitive(VAL value);
 VAL js_to_boolean(VAL value);
 VAL js_to_number(VAL value);
+uint32_t js_to_uint32(VAL value);
+int32_t js_to_int32(VAL value);
+VAL js_to_string(VAL value);
 
 VAL js_object_get(VAL obj, js_string_t* prop);
 void js_object_put(VAL obj, js_string_t* prop, VAL value);
+bool js_object_has_property(VAL obj, js_string_t* prop);
 
 VAL js_call(VAL fn, VAL this, uint32_t argc, VAL* argv);
 VAL js_construct(VAL fn, uint32_t argc, VAL* argv);

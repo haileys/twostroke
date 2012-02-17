@@ -2,6 +2,7 @@
 #include <string.h>
 #include "object.h"
 #include "st.h"
+#include "gc.h"
 
 int js_string_cmp(js_string_t* a, js_string_t* b)
 {
@@ -60,9 +61,18 @@ static void js_object_base_put(js_value_t* obj, js_string_t* prop, VAL value)
         descr->value = value;
         return;
     }
-    descr = malloc(sizeof(js_property_descriptor_t));
+    descr = js_alloc(sizeof(js_property_descriptor_t));
     descr->value = value;
     st_insert(obj->object.properties, (st_data_t)prop, (st_data_t)descr);
+}
+
+static bool js_object_base_has_property(js_value_t* obj, js_string_t* prop)
+{
+    js_property_descriptor_t* descr = NULL;
+    if(st_lookup(obj->object.properties, (st_data_t)prop, (st_data_t*)&descr)) {
+        return true;
+    }
+    return false;
 }
 
 static js_object_internal_methods_t object_base_vtable = {
@@ -71,7 +81,7 @@ static js_object_internal_methods_t object_base_vtable = {
     /* get_property */          NULL,
     /* put */                   js_object_base_put,
     /* can_put */               NULL,
-    /* has_property */          NULL,
+    /* has_property */          js_object_base_has_property,
     /* delete */                NULL,
     /* default_value */         NULL,
     /* define_own_property */   NULL,

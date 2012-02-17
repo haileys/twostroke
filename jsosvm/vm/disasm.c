@@ -4,17 +4,18 @@
 #include <string.h>
 #include "image.h"
 #include "vm.h"
+#include "gc.h"
 
 char* read_until_eof(FILE* f, uint32_t* len)
 {
     size_t cap = 4096;
     size_t idx = 0;
-    char* buff = malloc(cap);
+    char* buff = js_alloc(cap);
     while(!feof(stdin)) {
         idx += fread(buff + idx, 1, 4096, f);
         if(idx >= cap) {
             cap *= 2;
-            buff = realloc(buff, cap);
+            buff = js_realloc(buff, cap);
         }
     }
     *len = idx;
@@ -23,11 +24,15 @@ char* read_until_eof(FILE* f, uint32_t* len)
 
 int main()
 {
+    uint32_t dummy;
     uint32_t len;
-    char* buff = read_until_eof(stdin, &len);
-    js_image_t* image = js_image_parse(buff, len);
+    char* buff;
+    js_image_t* image;
     uint32_t i, j, op;
     double number;
+    js_gc_init(&dummy);
+    buff = read_until_eof(stdin, &len);
+    image = js_image_parse(buff, len);
     printf("read %d sections\n", image->section_count);
     for(i = 0; i < image->section_count; i++) {
         printf("\nsection %d:\n", i);
@@ -64,6 +69,10 @@ int main()
     for(i = 0; i < image->string_count; i++) {
         printf("    %04d  \"%s\"\n", i, image->strings[i].buff);
     }
+    
+    printf("\n\nmemory in use before gc: %lu KiB\n", js_gc_memory_usage() / 1024);
+    js_gc_run();
+    printf("memory in use after gc: %lu KiB\n", js_gc_memory_usage() / 1024);
     
     return 0;
 }
