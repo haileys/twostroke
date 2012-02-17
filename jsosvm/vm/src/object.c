@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include "object.h"
 #include "st.h"
 #include "gc.h"
@@ -75,6 +76,53 @@ static bool js_object_base_has_property(js_value_t* obj, js_string_t* prop)
     return false;
 }
 
+static VAL js_object_base_default_value(js_value_t* obj, js_type_t preferred_type)
+{
+    VAL fn, ret, this = js_value_make_pointer(obj);
+    if(!preferred_type) {
+        preferred_type = JS_T_NUMBER;
+    }
+    if(preferred_type == JS_T_STRING) {
+        fn = js_object_get(this, js_cstring("toString"));
+        if(js_value_get_type(fn) == JS_T_FUNCTION) {
+            ret = js_call(fn, this, 0, NULL);
+            if(js_value_is_primitive(ret)) {
+                return ret;
+            }
+        }
+        fn = js_object_get(this, js_cstring("valueOf"));
+        if(js_value_get_type(fn) == JS_T_FUNCTION) {
+            ret = js_call(fn, this, 0, NULL);
+            if(js_value_is_primitive(ret)) {
+                return ret;
+            }
+        }
+        // @TODO throw exception
+        printf("[PANIC] could not convert object to string\n");
+        exit(-1);
+    } else if(preferred_type == JS_T_NUMBER) {    
+        fn = js_object_get(this, js_cstring("valueOf"));
+        if(js_value_get_type(fn) == JS_T_FUNCTION) {
+            ret = js_call(fn, this, 0, NULL);
+            if(js_value_is_primitive(ret)) {
+                return ret;
+            }
+        }
+        fn = js_object_get(this, js_cstring("toString"));
+        if(js_value_get_type(fn) == JS_T_FUNCTION) {
+            ret = js_call(fn, this, 0, NULL);
+            if(js_value_is_primitive(ret)) {
+                return ret;
+            }
+        }
+        // @TODO throw exception
+        printf("[PANIC] could not convert object to string\n");
+        exit(-1);
+    }    
+    printf("[PANIC] could not convert object to string\n");
+    exit(-1);
+}
+
 static js_object_internal_methods_t object_base_vtable = {
     /* get */                   js_object_base_get,
     /* get_own_property */      NULL,
@@ -83,7 +131,7 @@ static js_object_internal_methods_t object_base_vtable = {
     /* can_put */               NULL,
     /* has_property */          js_object_base_has_property,
     /* delete */                NULL,
-    /* default_value */         NULL,
+    /* default_value */         js_object_base_default_value,
     /* define_own_property */   NULL,
     // @TODO: ^^ all those
 };

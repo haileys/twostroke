@@ -260,40 +260,11 @@ VAL js_to_object(VAL value)
 
 VAL js_to_primitive(VAL value)
 {
-    switch(js_value_get_type(value)) {
-        case JS_T_NULL:
-        case JS_T_UNDEFINED:
-        case JS_T_BOOLEAN:
-        case JS_T_NUMBER:
-        case JS_T_STRING:
-            return value;
-            
-        case JS_T_OBJECT:
-            /* @TODO */
-            break;
-                
-        case JS_T_FUNCTION:
-            /* @TODO */
-            break;
-        
-        case JS_T_ARRAY:
-            /* @TODO */
-            break;
-            
-        case JS_T_STRING_OBJECT:
-            /* @TODO */
-            break;
-            
-        case JS_T_NUMBER_OBJECT:
-            /* @TODO */
-            break;
-            
-        case JS_T_BOOLEAN_OBJECT:
-            /* @TODO */
-            break;
+    if(js_value_is_primitive(value)) {
+        return value;
+    } else {
+        return js_object_default_value(value, JS_T_STRING);
     }
-    // @TODO throw?
-    return js_value_null();
 }
 
 VAL js_to_number(VAL value)
@@ -310,7 +281,7 @@ VAL js_to_number(VAL value)
         case JS_T_STRING:
             return js_value_make_double(js_number_parse(&js_value_get_pointer(value)->string));
         default:
-            /* @TODO js_to_number( js_to_primitive( value, "number" ) ) */
+            return js_to_number(js_to_primitive(value));
             break;
     }
     // @TODO throw?
@@ -390,6 +361,16 @@ bool js_object_has_property(VAL obj, js_string_t* prop)
     }
     val = js_value_get_pointer(obj);
     return val->object.vtable->has_property(val, prop);
+}
+
+VAL js_object_default_value(VAL obj, js_type_t preferred_type)
+{
+    js_value_t* val;
+    if(js_value_is_primitive(obj)) {
+        return js_object_default_value(js_to_object(obj), preferred_type);
+    }
+    val = js_value_get_pointer(obj);
+    return val->object.vtable->default_value(val, preferred_type);
 }
 
 VAL js_call(VAL fn, VAL this, uint32_t argc, VAL* argv)

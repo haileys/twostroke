@@ -92,7 +92,7 @@ typedef struct js_object_internal_methods {
     bool                        (*can_put)              (js_value_t*, js_string_t*);
     bool                        (*has_property)         (js_value_t*, js_string_t*);
     bool                        (*delete)               (js_value_t*, js_string_t*);
-    VAL                         (*default_value)        (js_value_t*);
+    VAL                         (*default_value)        (js_value_t*, js_type_t);
     bool                        (*define_own_property)  (js_value_t*, js_property_descriptor_t*);
 } js_object_internal_methods_t;
 
@@ -129,6 +129,7 @@ VAL js_to_string(VAL value);
 VAL js_object_get(VAL obj, js_string_t* prop);
 void js_object_put(VAL obj, js_string_t* prop, VAL value);
 bool js_object_has_property(VAL obj, js_string_t* prop);
+VAL js_object_default_value(VAL obj, js_type_t preferred_type);
 
 VAL js_call(VAL fn, VAL this, uint32_t argc, VAL* argv);
 VAL js_construct(VAL fn, uint32_t argc, VAL* argv);
