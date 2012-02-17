@@ -8,6 +8,7 @@
 #include "scope.h"
 #include "vm.h"
 #include "gc.h"
+#include "lib.h"
 
 /*
  *
@@ -307,7 +308,7 @@ VAL js_to_number(VAL value)
         case JS_T_NUMBER:
             return value;
         case JS_T_STRING:
-            /* @TODO parse string */
+            return js_value_make_double(js_number_parse(&js_value_get_pointer(value)->string));
         default:
             /* @TODO js_to_number( js_to_primitive( value, "number" ) ) */
             break;

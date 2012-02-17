@@ -31,5 +31,6 @@ VAL js_make_array(struct js_vm* vm, uint32_t count, VAL* items);
 
 /* Number */
 void js_lib_number_initialize(struct js_vm* vm);
+double js_number_parse(js_string_t* str);
 
 #endif
