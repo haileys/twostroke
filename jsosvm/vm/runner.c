@@ -5,6 +5,7 @@
 #include "vm.h"
 #include "value.h"
 #include "gc.h"
+#include "exception.h"
 
 char* read_until_eof(FILE* f, uint32_t* len)
 {
@@ -39,6 +40,7 @@ int main()
     char* buff;
     js_image_t* image;
     js_vm_t* vm;
+    VAL exception;
     
     js_gc_init(&dummy);
     buff = read_until_eof(stdin, &len);
@@ -49,7 +51,12 @@ int main()
     js_object_put(console, js_cstring("log"), js_value_make_native_function(vm, NULL, console_log, NULL));
     js_object_put(vm->global_scope->global_object, js_cstring("console"), console);
     
-    js_vm_exec(vm, image, 0, vm->global_scope, js_value_null(), 0, NULL);
+    JS_TRY({
+        js_vm_exec(vm, image, 0, vm->global_scope, js_value_null(), 0, NULL);
+    }, exception, {
+        fprintf(stderr, "Unhandled exception: %s\n", js_value_get_pointer(js_to_string(exception))->string.buff);
+        exit(-1);
+    });
     
     return 0;
 }

@@ -1,11 +1,12 @@
 #include <stdio.h>
 #include "lib.h"
 #include "gc.h"
+#include "exception.h"
 
 static VAL Function_call(js_vm_t* vm, void* state, VAL this, uint32_t argc, VAL* argv)
 {
     // @TODO: throw error
-    printf("[PANIC] new functions may not be created at runtime\n");
+    js_panic("new functions may not be created at runtime\n");
     exit(-1);
     return js_value_null();
 }

@@ -2,12 +2,16 @@
 #include <stdio.h>
 #include "scope.h"
 #include "gc.h"
+#include "exception.h"
 
 js_scope_t* js_scope_make_global(VAL object)
 {
     js_scope_t* scope = js_alloc(sizeof(js_scope_t));
     scope->parent = NULL;
     scope->global = scope;
+    if(js_value_is_primitive(object)) {
+        js_panic("primitive passed as global object");
+    }
     scope->global_object = object;
     return scope;
 }
@@ -62,8 +66,7 @@ VAL js_scope_get_global_var(js_scope_t* scope, js_string_t* name)
         return js_object_get(scope->global->global_object, name);
     } else {
         // @TODO throw
-        printf("[PANIC] undefined variable %s\n", name->buff);
-        exit(-1);
+        js_panic("undefined variable %s", name->buff);
     }
 }
 

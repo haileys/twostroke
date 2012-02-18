@@ -1,17 +1,76 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
 #include "lib.h"
+#include "object.h"
+#include "gc.h"
+#include "exception.h"
 
-VAL Number_call(js_vm_t* vm, void* state, VAL this, uint32_t argc, VAL* argv)
+typedef struct {
+    js_value_t base;
+    double number;
+} js_number_object_t;
+
+static VAL Number_call(js_vm_t* vm, void* state, VAL this, uint32_t argc, VAL* argv)
 {
     if(argc == 0) {
         return js_value_make_double(0);
     } else {
         return js_to_number(argv[0]);
     }
+}
+
+static VAL Number_construct(js_vm_t* vm, void* state, VAL this, uint32_t argc, VAL* argv)
+{
+    if(argc == 0) {
+        return js_make_number_object(vm, 0);
+    } else {
+        return js_make_number_object(vm, js_value_get_double(js_to_number(argv[0])));
+    }
+}
+
+VAL js_make_number_object(js_vm_t* vm, double number)
+{
+    js_number_object_t* num = js_alloc(sizeof(js_number_object_t));
+    num->base.type = JS_T_NUMBER_OBJECT;
+    num->base.object.vtable = js_object_base_vtable();
+    num->base.object.prototype = vm->lib.Number_prototype;
+    num->base.object.class = vm->lib.Number;
+    num->base.object.properties = js_st_table_new();
+    num->number = number;
+    return js_value_make_pointer((js_value_t*)num);
+}
+
+static VAL Number_prototype_toString(js_vm_t* vm, void* state, VAL this, uint32_t argc, VAL* argv)
+{
+    if(js_value_get_type(this) != JS_T_NUMBER_OBJECT) {
+        // @TODO throw exception
+        js_panic("Number.prototype.toString() is not generic");
+    }
+    return js_to_string(js_value_make_double(((js_number_object_t*)js_value_get_pointer(this))->number));
+}
+
+static VAL Number_prototype_valueOf(js_vm_t* vm, void* state, VAL this, uint32_t argc, VAL* argv)
+{
+    if(js_value_get_type(this) != JS_T_NUMBER_OBJECT) {
+        js_panic("Number.prototype.valueOf() is not generic");
+    }
+    return js_value_make_double(((js_number_object_t*)js_value_get_pointer(this))->number);
+}
+
+void js_lib_number_initialize(js_vm_t* vm)
+{
+    vm->lib.Number = js_value_make_native_function(vm, NULL, Number_call, Number_construct);
+    js_object_put(vm->global_scope->global_object, js_cstring("Number"), vm->lib.Number);
+    
+    vm->lib.Number_prototype = js_value_make_object(vm->lib.Object_prototype, vm->lib.Number);
+    js_object_put(vm->lib.Number, js_cstring("prototype"), vm->lib.Number_prototype);
+    
+    js_object_put(vm->lib.Number_prototype, js_cstring("toString"), js_value_make_native_function(vm, NULL, Number_prototype_toString, NULL));
+    js_object_put(vm->lib.Number_prototype, js_cstring("valueOf"), js_value_make_native_function(vm, NULL, Number_prototype_valueOf, NULL));
 }
 
 double js_number_parse(js_string_t* str)
@@ -128,12 +187,4 @@ whitespace_only:
         }
     }
     return (neg ? -1.0 : 1.0) * number;
-}
-
-void js_lib_number_initialize(js_vm_t* vm)
-{
-    vm->lib.Number = js_value_make_native_function(vm, NULL, Number_call, NULL);
-    vm->lib.Number_prototype = js_value_make_object(vm->lib.Object_prototype, vm->lib.Number);
-    js_object_put(vm->lib.Number, js_cstring("prototype"), vm->lib.Number_prototype);
-    js_object_put(vm->global_scope->global_object, js_cstring("Number"), vm->lib.Number);
 }

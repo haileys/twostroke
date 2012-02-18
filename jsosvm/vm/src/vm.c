@@ -1,9 +1,12 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <setjmp.h>
 #include "vm.h"
 #include "gc.h"
 #include "object.h"
 #include "lib.h"
+#include "string.h"
+#include "exception.h"
 
 static js_instruction_t insns[] = {
     { "undefined",  OPERAND_NONE },
@@ -35,6 +38,10 @@ static js_instruction_t insns[] = {
     { "gte",        OPERAND_NONE },
     { "pop",        OPERAND_NONE },
     { "array",      OPERAND_UINT32 },
+    { "newcall",    OPERAND_UINT32 },
+    { "throw",      OPERAND_NONE },
+    { "member",     OPERAND_STRING },
+    { "dup",        OPERAND_NONE },
 };
 
 js_instruction_t* js_instruction(uint32_t opcode)
@@ -98,7 +105,7 @@ VAL js_vm_exec(js_vm_t* vm, js_image_t* image, uint32_t section, js_scope_t* sco
     VAL* STACK = js_alloc(sizeof(VAL) * SMAX);
     
     while(1) {
-        js_gc_run();
+        //js_gc_run();
         opcode = NEXT_UINT32();
         switch(opcode) {
             case JS_OP_UNDEFINED:
@@ -119,8 +126,9 @@ VAL js_vm_exec(js_vm_t* vm, js_image_t* image, uint32_t section, js_scope_t* sco
                 VAL r = js_to_primitive(POP());
                 VAL l = js_to_primitive(POP());
                 if(js_value_get_type(l) == JS_T_STRING || js_value_get_type(r) == JS_T_STRING) {
-                    /* concatenate strings @TODO */
-                    PUSH(js_value_undefined());
+                    js_string_t* sl = &js_value_get_pointer(l)->string;
+                    js_string_t* sr = &js_value_get_pointer(r)->string;
+                    PUSH(js_value_wrap_string(js_string_concat(sl, sr)));
                 } else {
                     PUSH(js_value_make_double(js_value_get_double(js_to_number(l)) + js_value_get_double(js_to_number(r))));
                 }
@@ -148,6 +156,9 @@ VAL js_vm_exec(js_vm_t* vm, js_image_t* image, uint32_t section, js_scope_t* sco
                 }
                 method = POP();
                 obj = POP();
+                if(js_value_is_primitive(obj)) {
+                    obj = js_to_object(vm, obj);
+                }
                 fn = js_object_get(obj, &js_value_get_pointer(js_to_string(method))->string);
                 PUSH(js_call(fn, obj, argc, argv));
                 break;
@@ -202,22 +213,22 @@ VAL js_vm_exec(js_vm_t* vm, js_image_t* image, uint32_t section, js_scope_t* sco
             }
             
             case JS_OP_SUB: {
-                VAL r = js_to_primitive(POP());
-                VAL l = js_to_primitive(POP());
+                VAL r = js_to_number(POP());
+                VAL l = js_to_number(POP());
                 PUSH(js_value_make_double(js_value_get_double(js_to_number(l)) - js_value_get_double(js_to_number(r))));
                 break;
             }
             
             case JS_OP_MUL: {
-                VAL r = js_to_primitive(POP());
-                VAL l = js_to_primitive(POP());
+                VAL r = js_to_number(POP());
+                VAL l = js_to_number(POP());
                 PUSH(js_value_make_double(js_value_get_double(js_to_number(l)) * js_value_get_double(js_to_number(r))));
                 break;
             }
             
             case JS_OP_DIV: {
-                VAL r = js_to_primitive(POP());
-                VAL l = js_to_primitive(POP());
+                VAL r = js_to_number(POP());
+                VAL l = js_to_number(POP());
                 PUSH(js_value_make_double(js_value_get_double(js_to_number(l)) / js_value_get_double(js_to_number(r))));
                 break;
             }
@@ -242,7 +253,7 @@ VAL js_vm_exec(js_vm_t* vm, js_image_t* image, uint32_t section, js_scope_t* sco
                     argv[argc - i - 1] = POP();
                 }
                 fn = POP();
-                PUSH(js_call(fn, js_value_null() /* TODO this value */, argc, argv));
+                PUSH(js_call(fn, vm->global_scope->global_object, argc, argv));
                 break;
             }
             
@@ -309,10 +320,42 @@ VAL js_vm_exec(js_vm_t* vm, js_image_t* image, uint32_t section, js_scope_t* sco
                 break;
             }
             
+            case JS_OP_NEWCALL: {
+                uint32_t i, argc = NEXT_UINT32();
+                VAL* argv = js_alloc(sizeof(VAL) * argc);
+                VAL fn;
+                for(i = 0; i < argc; i++) {
+                    argv[argc - i - 1] = POP();
+                }
+                fn = POP();
+                PUSH(js_construct(fn, argc, argv));
+                break;
+            }
+            
+            case JS_OP_THROW: {
+                js_throw(POP());
+                break;
+            };
+            
+            case JS_OP_MEMBER: {
+                js_string_t* member = NEXT_STRING();
+                VAL obj = POP();
+                if(js_value_is_primitive(obj)) {
+                    obj = js_to_object(vm, obj);
+                }
+                PUSH(js_object_get(obj, member));
+                break;
+            }
+            
+            case JS_OP_DUP: {
+                VAL v = PEEK();
+                PUSH(v);
+                break;
+            }
+            
             default:
                 /* @TODO proper-ify this */
-                fprintf(stderr, "[PANIC] unknown opcode %u\n", opcode);
-                exit(-1);
+                js_panic("unknown opcode %u\n", opcode);
         }
     }
 }

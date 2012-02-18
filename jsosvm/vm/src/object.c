@@ -4,6 +4,8 @@
 #include "object.h"
 #include "st.h"
 #include "gc.h"
+#include "vm.h"
+#include "exception.h"
 
 int js_string_cmp(js_string_t* a, js_string_t* b)
 {
@@ -45,8 +47,8 @@ static VAL js_object_base_get(js_value_t* obj, js_string_t* prop)
     js_property_descriptor_t* descr = NULL;
     if(!st_lookup(obj->object.properties, (st_data_t)prop, (st_data_t*)&descr)) {
         /* if not in object, look in prototype */
-        if(js_value_get_type(obj->object.prototype) == JS_T_UNDEFINED || js_value_get_type(obj->object.prototype) == JS_T_NULL) {
-            /* do not attempt if prototype is null or undefined */
+        if(js_value_is_primitive(obj->object.prototype)) {
+            /* do not attempt if prototype is primitive */
             return js_value_undefined();
         }
         return js_object_get(obj->object.prototype, prop);
@@ -98,8 +100,7 @@ static VAL js_object_base_default_value(js_value_t* obj, js_type_t preferred_typ
             }
         }
         // @TODO throw exception
-        printf("[PANIC] could not convert object to string\n");
-        exit(-1);
+        js_panic("could not convert object to string");
     } else if(preferred_type == JS_T_NUMBER) {    
         fn = js_object_get(this, js_cstring("valueOf"));
         if(js_value_get_type(fn) == JS_T_FUNCTION) {
@@ -116,11 +117,9 @@ static VAL js_object_base_default_value(js_value_t* obj, js_type_t preferred_typ
             }
         }
         // @TODO throw exception
-        printf("[PANIC] could not convert object to string\n");
-        exit(-1);
+        js_panic("could not convert object to string");
     }    
-    printf("[PANIC] could not convert object to string\n");
-    exit(-1);
+    js_panic("could not convert object to string");
 }
 
 static js_object_internal_methods_t object_base_vtable = {

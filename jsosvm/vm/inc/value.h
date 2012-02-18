@@ -118,13 +118,14 @@ bool js_value_is_object(VAL val);
 bool js_value_is_primitive(VAL val);
 js_type_t js_value_get_type(VAL val);
 
-VAL js_to_object(VAL value);
+VAL js_to_object(struct js_vm* vm, VAL value);
 VAL js_to_primitive(VAL value);
 VAL js_to_boolean(VAL value);
 VAL js_to_number(VAL value);
 uint32_t js_to_uint32(VAL value);
 int32_t js_to_int32(VAL value);
 VAL js_to_string(VAL value);
+js_string_t* js_to_js_string_t(VAL value);
 
 VAL js_object_get(VAL obj, js_string_t* prop);
 void js_object_put(VAL obj, js_string_t* prop, VAL value);

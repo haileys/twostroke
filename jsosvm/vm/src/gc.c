@@ -1,8 +1,8 @@
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
 #include "gc.h"
+#include "exception.h"
 
 static uint16_t pointer_hash(void* ptr)
 {
@@ -21,8 +21,14 @@ typedef struct allocation {
     bool flag;
 } alloc_t;
 
+typedef struct global {
+    intptr_t** ptr;
+    struct global* next;
+} global_t;
+
 static bool current_mark_flag;
 static alloc_t* allocs[65536];
+static global_t* globals;
 static intptr_t* stack_top;
 static size_t memory_usage;
 
@@ -65,7 +71,6 @@ static void allocs_delete_alloc(alloc_t* alloc, uint16_t h)
     if(alloc->next) {
         alloc->next->prev = alloc->prev;
     }
-//    printf("freeing %p\n", alloc->ptr);
     #ifdef JS_GC_DEBUG
         memset(alloc->ptr, 0, alloc->size);
     #endif
@@ -83,14 +88,12 @@ void* js_alloc(size_t sz)
     void* ptr;
     alloc_t* alloc;
     if(stack_top == NULL) {
-        printf("[PANIC] js_alloc() called before js_gc_init()\n");
-        exit(-1);
+        js_panic("js_alloc() called before js_gc_init()");
     }
     ptr = malloc(sz);
     memory_usage += sz;
     if(ptr == NULL) {
-        printf("[PANIC] malloc(%lu) failed!\n", sz);
-        exit(-1);
+        js_panic("malloc(%lu) failed!", sz);
     }
     alloc = allocs_insert(ptr, sz);
     #ifdef JS_GC_DEBUG
@@ -153,6 +156,14 @@ void js_gc_init(void* stack_ptr)
     stack_top = (void*)(((intptr_t)stack_ptr + sizeof(intptr_t)) & ~(sizeof(intptr_t) - 1));
 }
 
+void js_gc_register_global(void** address)
+{
+    global_t* g = malloc(sizeof(global_t));
+    g->ptr = (intptr_t**)address;
+    g->next = globals;
+    globals = g;
+}
+
 size_t js_gc_memory_usage()
 {
     return memory_usage;
@@ -166,10 +177,7 @@ static void js_gc_mark_allocation(alloc_t* alloc)
         return;
     }
     alloc->flag = current_mark_flag;
-//    printf("marking object at %p\n", alloc->ptr);
     while((intptr_t)ptrptr < (intptr_t)((intptr_t)alloc->ptr + alloc->size)) {
-        // @TODO this is required to support our hacky pointers on 64 bit:
-        //suballoc = allocs_lookup((void*)((intptr_t)*ptrptr & 0x7ffffffffffful));
         suballoc = allocs_lookup(*ptrptr);
         if(suballoc) {
             js_gc_mark_allocation(suballoc);
@@ -183,17 +191,19 @@ static void js_gc_mark()
     uint32_t stack_dummy;
     intptr_t** ptrptr = (intptr_t**)stack_top;
     alloc_t* alloc;
-//    printf("marking from %p\n", ptrptr);
+    global_t* g;
     while((intptr_t)ptrptr > (intptr_t)&stack_dummy) {
-//        printf("checking value at %p --===> %p\n", ptrptr, *ptrptr);
-        // @TODO this is required to support our hacky pointers on 64 bit:
-        //alloc = allocs_lookup((void*)((intptr_t)*ptrptr & 0x7ffffffffffful));
         alloc = allocs_lookup(*ptrptr);
         if(alloc) {
-//            printf("  \\--> this is a pointer!\n");
             js_gc_mark_allocation(alloc);
         }
         ptrptr--;
+    }
+    for(g = globals; g; g = g->next) {
+        alloc = allocs_lookup(*g->ptr);
+        if(alloc) {
+            js_gc_mark_allocation(alloc);
+        }
     }
 }
 

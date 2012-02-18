@@ -9,6 +9,7 @@
 #include "vm.h"
 #include "gc.h"
 #include "lib.h"
+#include "exception.h"
 
 /*
  *
@@ -134,8 +135,7 @@ VAL js_value_make_native_function(js_vm_t* vm, void* state, VAL(*call)(js_vm_t*,
 VAL js_value_make_function(js_vm_t* vm, js_image_t* image, uint32_t section, js_scope_t* outer_scope)
 {
     js_function_t* fn = js_alloc(sizeof(js_function_t));
-    fn->base.type = JS_T_FUNCTION;uint32_t js_to_uint32(VAL value);
-    int32_t js_to_int32(VAL value);
+    fn->base.type = JS_T_FUNCTION;
     fn->base.object.vtable = js_object_base_vtable();
     fn->base.object.prototype = vm->lib.Function_prototype;
     fn->base.object.class = vm->lib.Function;
@@ -231,19 +231,21 @@ VAL js_to_boolean(VAL value)
     }
 }
 
-VAL js_to_object(VAL value)
+VAL js_to_object(js_vm_t* vm, VAL value)
 {
     switch(js_value_get_type(value)) {
         case JS_T_NULL:
         case JS_T_UNDEFINED:
-            printf("[PANIC] tried to convert undefined to object!\n");
-            exit(-1);
+            js_panic("tried to convert undefined to object!");
             // @TODO throw exception
         case JS_T_BOOLEAN:
+            js_panic("converting boolean to object not yet supported");
             // @TODO convert to Boolean object
         case JS_T_NUMBER:
+            return js_make_number_object(vm, js_value_get_double(value));
             // @TODO convert to Number object
         case JS_T_STRING:
+            js_panic("converting string to object not yet supported");
             // @TODO convert to String object
             
         case JS_T_OBJECT:
@@ -284,7 +286,7 @@ VAL js_to_number(VAL value)
             return js_to_number(js_to_primitive(value));
             break;
     }
-    // @TODO throw?
+    // @TODO throw
     return js_value_null();
 }
 
@@ -325,18 +327,32 @@ VAL js_to_string(VAL value)
         case JS_T_STRING:
             return value;
         default:
-            /* @TODO js_to_string( js_to_primitive( value, "string" ) ) */
-            break;
+            return js_to_string(js_object_default_value(value, JS_T_STRING));
     }
     // @TODO throw?
     return js_value_null();
 }
 
+js_string_t* js_to_js_string_t(VAL value)
+{
+    js_value_t* val = js_value_get_pointer(js_to_string(value));
+    // the gc doesn't let us point into the middle of structures, so reallocate the js_string_t*:
+    js_string_t* retn = js_alloc(sizeof(js_string_t));
+    memcpy(retn, &val->string, sizeof(js_string_t));
+    return retn;
+}
+
+static int lol;
 VAL js_object_get(VAL obj, js_string_t* prop)
 {
     js_value_t* val;
+    if(lol > 100) {
+        printf("about to SO\n");
+    }
+    lol++;
     if(js_value_is_primitive(obj)) {
-        return js_object_get(js_to_object(obj), prop);
+        // @TODO throw
+        js_panic("precondition failed, expected object but received number");
     }
     val = js_value_get_pointer(obj);
     return val->object.vtable->get(val, prop);
@@ -346,8 +362,8 @@ void js_object_put(VAL obj, js_string_t* prop, VAL value)
 {
     js_value_t* val;
     if(js_value_is_primitive(obj)) {
-        js_object_put(js_to_object(obj), prop, value);
-        return;
+        // @TODO throw
+        js_panic("precondition failed, expected object but received number");
     }
     val = js_value_get_pointer(obj);
     val->object.vtable->put(val, prop, value);
@@ -357,7 +373,8 @@ bool js_object_has_property(VAL obj, js_string_t* prop)
 {
     js_value_t* val;
     if(js_value_is_primitive(obj)) {
-        return js_object_has_property(js_to_object(obj), prop);
+        // @TODO throw
+        js_panic("precondition failed, expected object but received number");
     }
     val = js_value_get_pointer(obj);
     return val->object.vtable->has_property(val, prop);
@@ -367,7 +384,8 @@ VAL js_object_default_value(VAL obj, js_type_t preferred_type)
 {
     js_value_t* val;
     if(js_value_is_primitive(obj)) {
-        return js_object_default_value(js_to_object(obj), preferred_type);
+        // @TODO throw
+        js_panic("precondition failed, expected object but received number");
     }
     val = js_value_get_pointer(obj);
     return val->object.vtable->default_value(val, preferred_type);
@@ -377,8 +395,7 @@ VAL js_call(VAL fn, VAL this, uint32_t argc, VAL* argv)
 {
     js_function_t* function;
     if(js_value_get_type(fn) != JS_T_FUNCTION) {
-        // @TODO throw exception
-        printf("[PANIC] called non callable\n");
+        js_panic("js_call precondition failed - expected function!");
         exit(-1);
     }
     function = (js_function_t*)js_value_get_pointer(fn);
@@ -391,22 +408,24 @@ VAL js_call(VAL fn, VAL this, uint32_t argc, VAL* argv)
 
 VAL js_construct(VAL fn, uint32_t argc, VAL* argv)
 {
-    // @TODO
-    VAL this = js_value_make_object(js_object_get(fn, js_cstring("prototype")), fn);
+    VAL retn, this;
     js_function_t* function;
     if(js_value_get_type(fn) != JS_T_FUNCTION) {
-        // @TODO throw exception
-        printf("[PANIC] constructed non callable\n");
-        exit(-1);
+        js_panic("js_call precondition failed - expected function!");
     }
+    this = js_value_make_object(js_object_get(fn, js_cstring("prototype")), fn);
     function = (js_function_t*)js_value_get_pointer(fn);
     if(function->is_native) {
         if(function->native.construct) {
-            return function->native.construct(function->vm, function->native.state, this, argc, argv);
+            retn = function->native.construct(function->vm, function->native.state, this, argc, argv);
+            if(js_value_get_type(retn) == JS_T_UNDEFINED) {
+                return this;
+            } else {
+                return retn;
+            }
         } else {
-            // @TODO throw exception
-            printf("[PANIC] function is not a constructor\n");
-            exit(-1);
+            js_throw_error(function->vm->lib.TypeError, "function is not a constructor");
+            return js_value_null();
         }
     } else {
         return js_vm_exec(function->vm, function->js.image, function->js.section, js_scope_close(function->js.outer_scope, fn), this, argc, argv);

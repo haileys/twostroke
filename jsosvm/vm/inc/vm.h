@@ -45,6 +45,10 @@ enum js_opcode {
     JS_OP_GTE           = 26,
     JS_OP_POP           = 27,
     JS_OP_ARRAY         = 28,
+    JS_OP_NEWCALL       = 29,
+    JS_OP_THROW         = 30,
+    JS_OP_MEMBER        = 31,
+    JS_OP_DUP           = 32,
 };
 
 typedef struct {

@@ -6,7 +6,7 @@ static VAL Object_call(js_vm_t* vm, void* state, VAL this, uint32_t argc, VAL* a
     if(argc == 0) {
         return js_make_object(vm);
     } else {
-        return js_to_object(argv[0]);
+        return js_to_object(vm, argv[0]);
     }
 }
 

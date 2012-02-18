@@ -18,8 +18,8 @@ static js_object_internal_methods_t array_vtable;
 VAL js_make_array(struct js_vm* vm, uint32_t count, VAL* items)
 {
     js_array_t* ary = js_alloc(sizeof(js_array_t));
-    ary->base.type = JS_T_OBJECT;
-    ary->base.object.vtable = js_object_base_vtable();
+    ary->base.type = JS_T_ARRAY;
+    ary->base.object.vtable = &array_vtable;
     ary->base.object.prototype = vm->lib.Array_prototype;
     ary->base.object.class = vm->lib.Array;
     ary->base.object.properties = js_st_table_new();
