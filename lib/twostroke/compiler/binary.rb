@@ -50,6 +50,10 @@ class Twostroke::Compiler::Binary
     gte:        26,
     pop:        27,
     array:      28,
+    newcall:    29,
+    throw:      30,
+    member:     31,
+    dup:        32,
   }
 
 private
@@ -212,7 +216,7 @@ private
         elsif type(node.left) == :Index
           compile_node node.left.object
           compile_node node.left.index
-          output :dup, 2
+          output :dupn, 2
           output :index
           compile_node node.right
           output op
@@ -229,31 +233,39 @@ private
     private method
   end
   
-  def post_mutate(left, op)
+  def post_mutate(left)
     if type(left) == :Variable || type(left) == :Declaration
-      output :push, left.name.intern
+      if var = lookup_var(left.name)
+        output :pushvar, *var
+      else
+        output :pushglobal, left.name
+      end
       output :dup
-      output op
-      output :set, left.name.intern
+      yield
+      if var
+        output :setvar, *var
+      else
+        output :setglobal, left.name
+      end
       output :pop
     elsif type(left) == :MemberAccess
-      compile left.object
+      compile_node left.object
       output :dup
-      output :member, left.member.intern
+      output :member, left.member
       output :dup
       output :tst
-      output op
-      output :setprop, left.member.intern
+      yield
+      output :setprop, left.member
       output :pop
       output :tld
     elsif type(left) == :Index  
-      compile left.object
-      compile left.index
-      output :dup, 2
+      compile_node left.object
+      compile_node left.index
+      output :dupn, 2
       output :index
       output :dup
       output :tst
-      output op
+      yield
       output :setindex
       output :pop
       output :tld
@@ -263,11 +275,17 @@ private
   end
   
   def PostIncrement(node)
-    post_mutate node.value, :inc
+    post_mutate node.value do
+      output :pushnum, 1.0
+      output :add
+    end
   end
   
   def PostDecrement(node)
-    post_mutate node.value, :dec
+    post_mutate node.value do
+      output :pushnum, 1.0
+      output :sub
+    end
   end
   
   def Function(node, in_hoist_stage = false)
@@ -333,6 +351,17 @@ private
     output :pushstr, node.string
   end
   
+  def MemberAccess(node)
+    compile_node node.object
+    output :member, node.member
+  end
+  
+  def New(node)
+    compile_node node.callee
+    node.arguments.each { |n| compile_node n }
+    output :newcall, node.arguments.size
+  end
+  
   def Call(node)
     if type(node.callee) == :MemberAccess
       compile_node node.callee.object
@@ -376,6 +405,11 @@ private
     else  
       error! "Bad lval in assignment"
     end
+  end
+
+  def Throw(node)
+    compile_node node.expression
+    output :throw
   end
   
   def Return(node)
