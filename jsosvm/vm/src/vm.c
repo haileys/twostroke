@@ -42,6 +42,11 @@ static js_instruction_t insns[] = {
     { "throw",      OPERAND_NONE },
     { "member",     OPERAND_STRING },
     { "dup",        OPERAND_NONE },
+    { "this",       OPERAND_NONE },
+    { "setprop",    OPERAND_STRING },
+    { "tst",        OPERAND_NONE },
+    { "tld",        OPERAND_NONE },
+    { "index",      OPERAND_NONE },
 };
 
 js_instruction_t* js_instruction(uint32_t opcode)
@@ -103,6 +108,7 @@ VAL js_vm_exec(js_vm_t* vm, js_image_t* image, uint32_t section, js_scope_t* sco
     uint32_t SP = 0;
     uint32_t SMAX = 8;
     VAL* STACK = js_alloc(sizeof(VAL) * SMAX);
+    VAL temp_slot = js_value_undefined();
     
     while(1) {
         //js_gc_run();
@@ -350,6 +356,42 @@ VAL js_vm_exec(js_vm_t* vm, js_image_t* image, uint32_t section, js_scope_t* sco
             case JS_OP_DUP: {
                 VAL v = PEEK();
                 PUSH(v);
+                break;
+            }
+            
+            case JS_OP_THIS: {
+                PUSH(this);
+                break;
+            }
+            
+            case JS_OP_SETPROP: {
+                VAL val = POP();
+                VAL obj = POP();
+                if(js_value_is_primitive(obj)) {
+                    obj = js_to_object(vm, obj);
+                }
+                js_object_put(obj, NEXT_STRING(), val);
+                PUSH(val);
+                break;
+            }
+            
+            case JS_OP_TST: {
+                temp_slot = POP();
+                break;
+            }
+            
+            case JS_OP_TLD: {
+                PUSH(temp_slot);
+                break;
+            }
+            
+            case JS_OP_INDEX: {
+                VAL index = js_to_string(POP());
+                VAL object = POP();
+                if(js_value_is_primitive(object)) {
+                    object = js_to_object(vm, object);
+                }
+                PUSH(js_object_get(object, &js_value_get_pointer(index)->string));
                 break;
             }
             

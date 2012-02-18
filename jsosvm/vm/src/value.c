@@ -116,7 +116,7 @@ VAL js_value_make_object(VAL prototype, VAL class)
     return js_value_make_pointer(obj);
 }
 
-VAL js_value_make_native_function(js_vm_t* vm, void* state, VAL(*call)(js_vm_t*, void*, VAL, uint32_t, VAL*), VAL(*construct)(js_vm_t*, void*, VAL, uint32_t, VAL*))
+VAL js_value_make_native_function(js_vm_t* vm, void* state, js_string_t* name, VAL(*call)(js_vm_t*, void*, VAL, uint32_t, VAL*), VAL(*construct)(js_vm_t*, void*, VAL, uint32_t, VAL*))
 {
     js_function_t* fn = js_alloc(sizeof(js_function_t));
     fn->base.type = JS_T_FUNCTION;
@@ -126,6 +126,7 @@ VAL js_value_make_native_function(js_vm_t* vm, void* state, VAL(*call)(js_vm_t*,
     fn->base.object.properties = js_st_table_new();
     fn->is_native = true;
     fn->vm = vm;
+    fn->name = name;
     fn->native.state = state;
     fn->native.call = call;
     fn->native.construct = construct;
@@ -134,6 +135,7 @@ VAL js_value_make_native_function(js_vm_t* vm, void* state, VAL(*call)(js_vm_t*,
 
 VAL js_value_make_function(js_vm_t* vm, js_image_t* image, uint32_t section, js_scope_t* outer_scope)
 {
+    VAL retn;
     js_function_t* fn = js_alloc(sizeof(js_function_t));
     fn->base.type = JS_T_FUNCTION;
     fn->base.object.vtable = js_object_base_vtable();
@@ -145,7 +147,9 @@ VAL js_value_make_function(js_vm_t* vm, js_image_t* image, uint32_t section, js_
     fn->js.image = image;
     fn->js.section = section;
     fn->js.outer_scope = outer_scope;
-    return js_value_make_pointer((js_value_t*)fn);
+    retn = js_value_make_pointer((js_value_t*)fn);
+    js_object_put(retn, js_cstring("prototype"), js_value_make_object(vm->lib.Object_prototype, retn));
+    return retn;
 }
 
 VAL js_value_make_cstring(char* str)
@@ -320,8 +324,20 @@ VAL js_to_string(VAL value)
         case JS_T_BOOLEAN:
             return js_value_make_cstring(js_value_is_truthy(value) ? "true" : "false");
         case JS_T_NUMBER: {
-            char buff[32];
-            snprintf(buff, 32, "%lf", js_value_get_double(value));
+            char buff[64];
+            size_t i;
+            snprintf(buff, 63, "%lf", js_value_get_double(value));
+            if(strchr(buff, '.')) {
+                for(i = strlen(buff) - 1;; i--) {
+                    if(buff[i] == '0') {
+                        buff[i] = 0;
+                    }
+                    if(buff[i] == '.') {
+                        buff[i] = 0;
+                        break;
+                    }
+                }
+            }
             return js_value_make_cstring(buff);
         }
         case JS_T_STRING:
@@ -342,14 +358,9 @@ js_string_t* js_to_js_string_t(VAL value)
     return retn;
 }
 
-static int lol;
 VAL js_object_get(VAL obj, js_string_t* prop)
 {
     js_value_t* val;
-    if(lol > 100) {
-        printf("about to SO\n");
-    }
-    lol++;
     if(js_value_is_primitive(obj)) {
         // @TODO throw
         js_panic("precondition failed, expected object but received number");
@@ -418,16 +429,15 @@ VAL js_construct(VAL fn, uint32_t argc, VAL* argv)
     if(function->is_native) {
         if(function->native.construct) {
             retn = function->native.construct(function->vm, function->native.state, this, argc, argv);
-            if(js_value_get_type(retn) == JS_T_UNDEFINED) {
-                return this;
-            } else {
-                return retn;
-            }
         } else {
             js_throw_error(function->vm->lib.TypeError, "function is not a constructor");
-            return js_value_null();
         }
     } else {
-        return js_vm_exec(function->vm, function->js.image, function->js.section, js_scope_close(function->js.outer_scope, fn), this, argc, argv);
+        retn = js_vm_exec(function->vm, function->js.image, function->js.section, js_scope_close(function->js.outer_scope, fn), this, argc, argv);
+    }
+    if(js_value_get_type(retn) == JS_T_UNDEFINED) {
+        return this;
+    } else {
+        return retn;
     }
 }

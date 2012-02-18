@@ -35,6 +35,70 @@ VAL js_make_array(struct js_vm* vm, uint32_t count, VAL* items)
     return js_value_make_pointer((js_value_t*)ary);
 }
 
+static bool is_string_integer(js_string_t* str)
+{
+    uint32_t i;
+    for(i = 0; i < str->length; i++) {
+        if(str->buff[i] < '0' || str->buff[i] > '9') {
+            // not an integer
+            return false;
+        }
+    }
+    return true;
+}
+
+static VAL array_get(js_value_t* obj, js_string_t* prop)
+{
+    uint32_t index;
+    js_array_t* ary = (js_array_t*)obj;
+    if(is_string_integer(prop)) {
+        index = atoi(prop->buff);
+        if(index < ary->items_length) {
+            return ary->items[index];
+        }
+        if(index >= ary->items_length && index < ary->length) {
+            // sparse array
+            return js_value_undefined();
+        }
+    }
+    return js_object_base_vtable()->get(obj, prop);
+}
+
+static void array_put(js_value_t* obj, js_string_t* prop, VAL val)
+{
+    uint32_t index;
+    js_array_t* ary = (js_array_t*)obj;
+    if(is_string_integer(prop)) {
+        index = atoi(prop->buff);
+        if(index >= ary->length) {
+            ary->length = index + 1;
+        }
+        if(index >= ary->capacity) {
+            while(index >= ary->capacity) {
+                ary->capacity *= 2;
+            }
+            ary->items = js_realloc(ary->items, sizeof(VAL) * ary->capacity);
+        }
+        while(index > ary->items_length) {
+            ary->items[ary->items_length++] = js_value_undefined();
+        }
+        ary->items[ary->items_length++] = val;
+    } else {
+        js_object_base_vtable()->put(obj, prop, val);
+    }
+}
+
+static bool array_has_property(js_value_t* obj, js_string_t* prop)
+{
+    uint32_t index;
+    js_array_t* ary = (js_array_t*)obj;
+    if(is_string_integer(prop)) {
+        index = atoi(prop->buff);
+        return index <= ary->items_length;
+    }
+    return js_object_base_vtable()->has_property(obj, prop);
+}
+
 static VAL Array_call(js_vm_t* vm, void* state, VAL this, uint32_t argc, VAL* argv)
 {
     js_array_t* ary;
@@ -54,8 +118,12 @@ void js_lib_array_initialize(js_vm_t* vm)
     if(!statically_initialized) {
         statically_initialized = true;
         memcpy(&array_vtable, js_object_base_vtable(), sizeof(js_object_internal_methods_t));
+        array_vtable.get = array_get;
+        array_vtable.put = array_put;
+        array_vtable.has_property = array_has_property;
     }
     
-    vm->lib.Array = js_value_make_native_function(vm, NULL, Array_call, Array_call);
-//    vm->lib.Array_prototype = js_make_object()
+    vm->lib.Array = js_value_make_native_function(vm, NULL, js_cstring("Array"), Array_call, Array_call);
+    vm->lib.Array_prototype = js_object_get(vm->lib.Array, js_cstring("prototype"));
+    js_object_put(vm->global_scope->global_object, js_cstring("Array"), vm->lib.Array);
 }

@@ -49,6 +49,11 @@ enum js_opcode {
     JS_OP_THROW         = 30,
     JS_OP_MEMBER        = 31,
     JS_OP_DUP           = 32,
+    JS_OP_THIS          = 33,
+    JS_OP_SETPROP       = 34,
+    JS_OP_TST           = 35,
+    JS_OP_TLD           = 36,
+    JS_OP_INDEX         = 37,
 };
 
 typedef struct {

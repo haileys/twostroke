@@ -69,6 +69,7 @@ typedef struct {
     js_value_t base;
     bool is_native;
     struct js_vm* vm;
+    js_string_t* name;
     union {
         struct {
             void* state;
@@ -108,7 +109,7 @@ VAL js_value_false();
 VAL js_value_true();
 VAL js_value_make_boolean(bool boolean);
 VAL js_value_make_object(VAL prototype, VAL class);
-VAL js_value_make_native_function(struct js_vm*, void* state, VAL(*call)(struct js_vm*, void*, VAL, uint32_t, VAL*), VAL(*construct)(struct js_vm*, void*, VAL, uint32_t, VAL*));
+VAL js_value_make_native_function(struct js_vm*, void* state, js_string_t* name, VAL(*call)(struct js_vm*, void*, VAL, uint32_t, VAL*), VAL(*construct)(struct js_vm*, void*, VAL, uint32_t, VAL*));
 VAL js_value_make_function(struct js_vm* vm, struct js_image* image, uint32_t section, struct js_scope* outer_scope);
 
 js_value_t* js_value_get_pointer(VAL val);

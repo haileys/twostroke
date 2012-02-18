@@ -21,14 +21,14 @@ void js_set_exception_handler(js_exception_handler_t* exception_handler)
     handler = exception_handler;
 }
 
-void js_panic(char* fmt, ...)
+void js_panic_impl(const char* func, char* file, int line, char* fmt, ...)
 {
     char buff[1024];
     va_list va;
     va_start(va, fmt);
     vsnprintf(buff, 1023, fmt, va);
     va_end(va);
-    fprintf(stderr, "[PANIC] %s\n", buff);
+    fprintf(stderr, "[PANIC] %s\n        in %s() at %s:%d\n", buff, func, file, line);
     exit(-1);
 }
 

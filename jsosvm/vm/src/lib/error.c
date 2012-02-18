@@ -41,11 +41,6 @@ static VAL Error_toString(js_vm_t* vm, void* state, VAL this, uint32_t argc, VAL
     return js_value_wrap_string(str);
 }
 
-static VAL Error_valueOf(js_vm_t* vm, void* state, VAL this, uint32_t argc, VAL* argv)
-{
-    return this;
-}
-
 VAL js_make_error(VAL class, js_string_t* message)
 {
     VAL msg = js_value_wrap_string(message);
@@ -64,24 +59,23 @@ void js_throw_error(VAL class, char* fmt, ...)
 
 void js_lib_error_initialize(struct js_vm* vm)
 {
-    vm->lib.Error = js_value_make_native_function(vm, NULL, Error_construct, Error_construct);
+    vm->lib.Error = js_value_make_native_function(vm, NULL, js_cstring("Error"), Error_construct, Error_construct);
     js_object_put(vm->global_scope->global_object, js_cstring("Error"), vm->lib.Error);
     vm->lib.Error_prototype = js_value_make_object(vm->lib.Object_prototype, vm->lib.Error);
     js_object_put(vm->lib.Error, js_cstring("prototype"), vm->lib.Error_prototype);
-    js_object_put(vm->lib.Error_prototype, js_cstring("toString"), js_value_make_native_function(vm, js_cstring("Error"), Error_toString, NULL));
-    js_object_put(vm->lib.Error_prototype, js_cstring("valueOf"), js_value_make_native_function(vm, NULL, Error_valueOf, NULL));
+    js_object_put(vm->lib.Error_prototype, js_cstring("toString"), js_value_make_native_function(vm, js_cstring("Error"), js_cstring("toString"), Error_toString, NULL));
     
-    vm->lib.RangeError = js_value_make_native_function(vm, NULL, RangeError_construct, RangeError_construct);
+    vm->lib.RangeError = js_value_make_native_function(vm, NULL, js_cstring("RangeError"), RangeError_construct, RangeError_construct);
     vm->lib.RangeError_prototype = js_value_make_object(vm->lib.Error_prototype, vm->lib.Error);
     js_object_put(vm->lib.RangeError, js_cstring("prototype"), vm->lib.RangeError_prototype);
     js_object_put(vm->global_scope->global_object, js_cstring("RangeError"), vm->lib.RangeError);
     
-    vm->lib.ReferenceError = js_value_make_native_function(vm, NULL, ReferenceError_construct, ReferenceError_construct);
+    vm->lib.ReferenceError = js_value_make_native_function(vm, NULL, js_cstring("ReferenceError"), ReferenceError_construct, ReferenceError_construct);
     vm->lib.ReferenceError_prototype = js_value_make_object(vm->lib.Error_prototype, vm->lib.Error);
     js_object_put(vm->lib.ReferenceError, js_cstring("prototype"), vm->lib.ReferenceError_prototype);
     js_object_put(vm->global_scope->global_object, js_cstring("ReferenceError"), vm->lib.ReferenceError);
     
-    vm->lib.TypeError = js_value_make_native_function(vm, NULL, TypeError_construct, TypeError_construct);
+    vm->lib.TypeError = js_value_make_native_function(vm, NULL, js_cstring("TypeError"), TypeError_construct, TypeError_construct);
     vm->lib.TypeError_prototype = js_value_make_object(vm->lib.Error_prototype, vm->lib.Error);
     js_object_put(vm->lib.TypeError, js_cstring("prototype"), vm->lib.TypeError_prototype);
     js_object_put(vm->global_scope->global_object, js_cstring("TypeError"), vm->lib.TypeError);

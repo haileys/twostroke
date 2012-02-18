@@ -63,14 +63,14 @@ static VAL Number_prototype_valueOf(js_vm_t* vm, void* state, VAL this, uint32_t
 
 void js_lib_number_initialize(js_vm_t* vm)
 {
-    vm->lib.Number = js_value_make_native_function(vm, NULL, Number_call, Number_construct);
+    vm->lib.Number = js_value_make_native_function(vm, NULL, js_cstring("Number"), Number_call, Number_construct);
     js_object_put(vm->global_scope->global_object, js_cstring("Number"), vm->lib.Number);
     
     vm->lib.Number_prototype = js_value_make_object(vm->lib.Object_prototype, vm->lib.Number);
     js_object_put(vm->lib.Number, js_cstring("prototype"), vm->lib.Number_prototype);
     
-    js_object_put(vm->lib.Number_prototype, js_cstring("toString"), js_value_make_native_function(vm, NULL, Number_prototype_toString, NULL));
-    js_object_put(vm->lib.Number_prototype, js_cstring("valueOf"), js_value_make_native_function(vm, NULL, Number_prototype_valueOf, NULL));
+    js_object_put(vm->lib.Number_prototype, js_cstring("toString"), js_value_make_native_function(vm, NULL, js_cstring("toString"), Number_prototype_toString, NULL));
+    js_object_put(vm->lib.Number_prototype, js_cstring("valueOf"), js_value_make_native_function(vm, NULL, js_cstring("valueOf"), Number_prototype_valueOf, NULL));
 }
 
 double js_number_parse(js_string_t* str)

@@ -26,11 +26,9 @@ js_string_t* js_string_format(char* fmt, ...)
 
 js_string_t* js_string_vformat(char* fmt, va_list args)
 {
-    size_t chars = vsnprintf(NULL, 0, fmt, args);
     js_string_t* str = js_alloc(sizeof(js_string_t));
-    str->length = chars;
-    str->buff = js_alloc(chars + 2);
-    vsnprintf(NULL, chars + 2, fmt, args);
-    str->buff[chars + 1] = 0;
+    str->buff = js_alloc(1024);
+    str->length = vsnprintf(str->buff, 1023, fmt, args);
+    str->buff[1023] = 0;
     return str;
 }

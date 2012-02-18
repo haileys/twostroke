@@ -54,6 +54,11 @@ class Twostroke::Compiler::Binary
     throw:      30,
     member:     31,
     dup:        32,
+    this:       33,
+    setprop:    34,
+    tst:        35,
+    tld:        36,
+    index:      37,
   }
 
 private
@@ -356,6 +361,12 @@ private
     output :member, node.member
   end
   
+  def Index(node)
+    compile_node node.object
+    compile_node node.index
+    output :index
+  end
+  
   def New(node)
     compile_node node.callee
     node.arguments.each { |n| compile_node n }
@@ -396,7 +407,7 @@ private
     elsif type(node.left) == :MemberAccess
       compile_node node.left.object
       compile_node node.right
-      output :setprop, node.left.name
+      output :setprop, node.left.member
     elsif type(node.left) == :Index
       compile_node node.left.object
       compile_node node.left.index
@@ -454,6 +465,16 @@ private
     @break_stack.pop
   end
   
+  def Or(node)
+    compile_node node.left
+    output :dup
+    end_label = uniqid
+    output :jit, [:ref, end_label]
+    output :pop
+    compile_node node.right
+    output [:label, end_label]
+  end
+  
   def Body(node)
     node.statements.each &method(:compile_node)
   end
@@ -468,5 +489,9 @@ private
   
   def Null(node)
     output :null
+  end
+  
+  def This(node)
+    output :this
   end
 end

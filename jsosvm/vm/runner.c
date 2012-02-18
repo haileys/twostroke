@@ -48,7 +48,7 @@ int main()
     vm = js_vm_new();
     
     VAL console = js_value_make_object(js_value_null(), js_value_null());
-    js_object_put(console, js_cstring("log"), js_value_make_native_function(vm, NULL, console_log, NULL));
+    js_object_put(console, js_cstring("log"), js_value_make_native_function(vm, NULL, js_cstring("log"), console_log, NULL));
     js_object_put(vm->global_scope->global_object, js_cstring("console"), console);
     
     JS_TRY({
