@@ -23,7 +23,7 @@ module Twostroke
     RESERVED = %w(
       function var if instanceof in else for while do this return
         throw typeof try catch finally void null new delete switch
-        case break continue default true false with)
+        case break continue default true false with debugger)
     TOKENS = [
 
       [ :MULTI_COMMENT, %r{/\*.*?\*/} ],

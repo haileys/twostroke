@@ -58,6 +58,7 @@ module Twostroke
       when :BREAK;      send :break
       when :CONTINUE;   continue
       when :THROW;      send :throw
+      when :DEBUGGER;   debugger
       when :VAR;        var
       when :WITH;       consume_semicolon = false; with
       when :IF;         consume_semicolon = false; send :if
@@ -561,6 +562,10 @@ module Twostroke
       ind = expression
       assert_type next_token, :CLOSE_BRACKET
       AST::Index.new line: token.line, object: obj, index: ind
+    end
+    
+    def debugger
+      AST::Debugger.new
     end
     
     def return
