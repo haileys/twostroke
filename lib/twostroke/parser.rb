@@ -565,6 +565,7 @@ module Twostroke
     end
     
     def debugger
+      next_token
       AST::Debugger.new
     end
     
