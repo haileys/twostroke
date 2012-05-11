@@ -96,7 +96,8 @@ module Twostroke
     end
     
     def expression_statement
-      AST::ExpressionStatement.new expr: expression
+      expr = expression
+      AST::ExpressionStatement.new expr: expr, line: expr.line
     end
     
     def expression
