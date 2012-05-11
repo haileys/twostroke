@@ -444,10 +444,13 @@ module Twostroke
         AST::ForIn.new line: token.line, lval: lval, object: obj, body: statement
       else
         initializer = statement(false) unless peek_token.type == :SEMICOLON
+        initializer = initializer.expr if initializer.is_a? AST::ExpressionStatement
         assert_type next_token, :SEMICOLON
         condition = statement(false) unless peek_token.type == :SEMICOLON
+        condition = condition.expr if condition.is_a? AST::ExpressionStatement
         assert_type next_token, :SEMICOLON
         increment = statement(false) unless peek_token.type == :CLOSE_PAREN
+        increment = increment.expr if increment.is_a? AST::ExpressionStatement
         assert_type next_token, :CLOSE_PAREN
         AST::ForLoop.new line: token.line, initializer: initializer, condition: condition, increment: increment, body: statement
       end

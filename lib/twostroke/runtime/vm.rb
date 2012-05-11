@@ -39,6 +39,9 @@ module Twostroke::Runtime
       compiler = Twostroke::Compiler::TSASM.new parser.statements, prefix
       compiler.compile
       compiler.bytecode[:"#{prefix}main"][-2] = [:ret]
+      if compiler.bytecode[:"#{prefix}main"][-3] == [:pop]
+        compiler.bytecode[:"#{prefix}main"][-3] = [:ret]
+      end
       bytecode.merge! compiler.bytecode
       execute :"#{prefix}main", scope, this
     end
