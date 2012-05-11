@@ -72,7 +72,7 @@ module Twostroke
       when :SEMICOLON;  nil
       when :LINE_TERMINATOR;  nil
       when :BAREWORD;   label
-      else; expression
+      else; expression_statement
       end
       if consume_semicolon
         if try_peek_token and peek_token.type == :SEMICOLON
@@ -91,8 +91,12 @@ module Twostroke
         return AST::Label.new name: name, line: token.line, statement: statement(false)
       else
         load_state state
-        expression
+        expression_statement
       end
+    end
+    
+    def expression_statement
+      AST::ExpressionStatement.new expr: expression
     end
     
     def expression

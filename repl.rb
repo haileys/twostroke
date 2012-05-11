@@ -105,6 +105,10 @@ loop do
     end
   
     bytecode[:"repl_#{sect}_main"][-2] = [:ret] # hacky way to make main return the last evaluated value
+    if bytecode[:"repl_#{sect}_main"][-3] == [:pop]
+      # hack around the auto pop of expression statements:
+      bytecode[:"repl_#{sect}_main"][-3] = [:ret]
+    end
     obj = nil
     exception = catch(:exception) { obj = vm.execute(:"repl_#{sect}_main", vm.global_scope) || Twostroke::Runtime::Types::Undefined.new; nil }
     if exception

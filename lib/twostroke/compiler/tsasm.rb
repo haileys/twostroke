@@ -679,6 +679,11 @@ private
     compile node.value
   end
   
+  def ExpressionStatement(node)
+    compile node.expr
+    output :pop
+  end
+  
   def Void(node)
     compile node.value
     output :pop
