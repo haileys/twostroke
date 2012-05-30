@@ -121,8 +121,8 @@ module Twostroke
         :DIVIDE_EQUALS      => AST::Division,
         :MOD_EQUALS         => AST::Modulus,
         :LEFT_SHIFT         => AST::LeftShift,
-        :RIGHT_SHIFT_EQUALS => AST::RightArithmeticShift,
-        :RIGHT_TRIPLE_SHIFT_EQUALS => AST::RightLogicalShift,
+        :RIGHT_SHIFT_EQUALS => AST::RightLogicalShift,
+        :RIGHT_TRIPLE_SHIFT_EQUALS => AST::RightArithmeticShift,
         :BITWISE_AND_EQUALS => AST::BitwiseAnd,
         :BITWISE_XOR_EQUALS => AST::BitwiseXor,
         :BITWISE_OR_EQUALS  => AST::BitwiseOr
