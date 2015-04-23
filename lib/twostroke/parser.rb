@@ -255,11 +255,32 @@ module Twostroke
         :SLASH        => AST::Division,
         :MOD          => AST::Modulus
       }
-      expr = unary_expression
+      expr = lambda_expression
       while try_peek_token and nodes.keys.include? peek_token.type
-        expr = nodes[next_token.type].new left: expr, line: token.line, right: unary_expression
+        expr = nodes[next_token.type].new left: expr, line: token.line, right: lambda_expression
       end
       expr
+    end
+    
+    def lambda_expression
+      left = unary_expression
+      if try_peek_token and peek_token.type == :LAMBDA
+        next_token
+        # ensure the left expression is either a single argument or group of arguments
+        args = []
+        while left.is_a? AST::MultiExpression
+          error! "Only variables allowed in lambda argument lists" unless left.right.is_a? AST::Variable
+          args.unshift left.right.name
+          left = left.left
+        end
+        if left.is_a? AST::Variable
+          args.unshift left.name
+        else
+          error! "Unexpected lambda operator"
+        end
+        left = AST::Function.new arguments: args, statements: [AST::Return.new(expression: assignment_expression)]
+      end
+      left
     end
     
     def unary_expression

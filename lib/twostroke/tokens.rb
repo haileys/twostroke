@@ -99,6 +99,7 @@ module Twostroke
       [ :AMPERSAND, /&/ ],
       [ :OR, /\|\|/ ],
       [ :PIPE, /\|/ ],
+      [ :LAMBDA, /=>/ ],
       [ :TRIPLE_EQUALS, /===/ ],
       [ :DOUBLE_EQUALS, /==/ ],
       [ :EQUALS, /=/ ],
